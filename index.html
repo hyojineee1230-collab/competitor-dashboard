@@ -64,6 +64,17 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
 /* 시가총액 탭: 순위 박스 없이 추이 차트를 전체 너비·조금 더 높게 */
 .grid.solo{grid-template-columns:1fr}
 .grid.solo .chart-box{height:420px}
+.grid.solo .plot-row{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:20px;align-items:start}
+.grid.solo .legend{flex-direction:column;flex-wrap:nowrap;gap:0;margin-top:0;border-left:1px solid var(--grid);padding-left:16px}
+.legend .lg.rk{display:grid;grid-template-columns:18px 14px minmax(0,1fr) auto;gap:8px;width:100%;padding:8px 0;border-bottom:1px solid var(--grid);text-align:left}
+.legend .lg.rk:last-child{border-bottom:0}
+.lg.rk .no{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+.lg.rk i{height:3px;width:14px;align-self:start;margin-top:8px}
+.lg.rk .no,.lg.rk .v{align-self:start;line-height:1.55}
+.lg.rk .nm{color:var(--ink);font-weight:500;word-break:keep-all;line-height:1.35}
+.lg.rk .v{color:var(--ink-2);font-size:12px;font-variant-numeric:tabular-nums}
+.lg.rk .tag{margin-left:4px}
+@media (max-width:900px){.grid.solo .plot-row{grid-template-columns:1fr}.grid.solo .legend{border-left:0;padding-left:0;margin-top:12px}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
 #content > * + *{margin-top:16px}
 .ph{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -221,8 +232,10 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
             <div class="seg" id="periods" role="group" aria-label="기간"></div>
           </div>
         </div>
-        <div class="chart-box"><canvas id="priceChart" role="img" aria-label="주가 추이 차트"></canvas></div>
-        <div class="legend" id="legend"></div>
+        <div class="plot-row">
+          <div class="chart-box"><canvas id="priceChart" role="img" aria-label="주가 추이 차트"></canvas></div>
+          <div class="legend" id="legend"></div>
+        </div>
       </section>
       <section class="panel" id="secRank">
         <div class="ph"><div><h2 id="rankTitle"></h2><p class="hint" id="rankHint"></p></div></div>
@@ -575,8 +588,19 @@ function renderPrice(){
 }
 function renderLegend(){
   const el = $("legend"), isM = state.view === "mcap";
-  el.innerHTML = comps().filter(c => c.price && (!isM || mcapEligible(c))).map(c =>
-    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</button>`).join("");
+  const list = comps().filter(c => c.price && (!isM || mcapEligible(c)));
+  if (grp().mode === "market"){
+    // 시가총액 탭: 범례 = 현재 시가총액 순위 (보기를 바꿔도 같은 순서)
+    const cap = c => c.quote?.marketCap ?? c.price?.mcap?.at(-1) ?? -1;
+    el.innerHTML = list.slice().sort((a, b) => cap(b) - cap(a)).map((c, i) =>
+      `<button class="lg rk" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}" title="${esc(c.name)} · 클릭하면 그래프에서 숨기기/보이기">
+        <span class="no">${i + 1}</span><i style="background:${color(c._ci)}"></i>
+        <span class="nm">${esc(c.name)}${isSelf(c) ? '<span class="tag self">자사</span>' : ""}</span>
+        <span class="v">${fmtBig(cap(c) > 0 ? cap(c) : null, c.quote?.currency || "KRW")}</span></button>`).join("");
+  } else {
+    el.innerHTML = list.map(c =>
+      `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</button>`).join("");
+  }
   el.onclick = e => {
     const b = e.target.closest(".lg"); if (!b) return;
     const id = b.dataset.id;
