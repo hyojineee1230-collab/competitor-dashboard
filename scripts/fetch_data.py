@@ -615,6 +615,10 @@ def main():
         (DATA_DIR / f"{g['id']}.json").write_text(
             scrub(json.dumps(out, ensure_ascii=False, separators=(",", ":"))), encoding="utf-8")
 
+    # 같은 원인의 DART 오류가 회사마다 반복되면 한 줄로 묶음
+    if _corps_failed:
+        same = [e for e in errors if "DART 회사 목록을 받지 못함" in e]
+        errors[:] = [e for e in errors if e not in same] + ([f"위 DART 장애로 {len(same)}건 추가 실패"] if same else [])
     meta = {
         "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "sample": False,

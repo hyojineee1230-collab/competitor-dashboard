@@ -716,7 +716,7 @@ function renderGrid(list, today){
     });
     return {c, cells};
   });
-  const years = [...new Set(byCo.flatMap(x => Object.keys(x.cells).map(k => +k.split("-")[0])))].sort((a,b) => b - a);
+  const years = [...new Set(byCo.flatMap(x => Object.keys(x.cells).map(k => +k.split("-")[0])))].sort((a,b) => b - a).slice(0, 4);
   if (!years.length){ $("discGrid").innerHTML = `<tbody><tr><td class="empty">정기보고서 없음</td></tr></tbody>`; $("discYear").innerHTML = ""; return 0; }
   if (!years.includes(discYear)) discYear = years[0];
   $("discYear").innerHTML = years.map(y => `<button data-k="${y}" aria-pressed="${y === discYear}">${y}년</button>`).join("");
