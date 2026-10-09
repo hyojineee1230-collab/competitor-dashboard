@@ -133,7 +133,7 @@ def merge(new_items, old_items, keep_days=270, cap=200, names=()):
             continue
         if it["src"] == "뉴스" and NEWS_NOISE.search(it["title"]):
             continue
-        it = {**it, "cat": classify(it["title"])}
+        it = {k: v for k, v in it.items() if k != "n"} | {"cat": classify(it["title"])}
         if it["src"] == "공시":
             if it["url"] in seen:
                 continue
@@ -144,7 +144,6 @@ def merge(new_items, old_items, keep_days=270, cap=200, names=()):
                         and abs((datetime.strptime(o["date"], "%Y-%m-%d") - d).days) <= 1
                         and _similar(o, it, names, same_cat=o["cat"] == it["cat"] != "etc")), None)
             if dup:
-                dup["n"] = dup.get("n", 1) + 1          # 같은 내용 보도 건수
                 continue
         out.append(it)
     return out[:cap]
