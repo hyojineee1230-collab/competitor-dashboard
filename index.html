@@ -44,7 +44,13 @@ a{color:var(--brand)}
 [hidden]{display:none !important}
 
 header{padding:28px 0 20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 32px;justify-content:space-between}
-h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.set-btn{font-size:13px;font-weight:500;letter-spacing:0}
+.set-grid{display:grid;gap:10px;margin:0 0 16px}
+.set-grid label{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)}
+.set-grid select,.set-grid input[type=text]{width:100%;font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.set-grid h3{margin:6px 0 0;font-size:13px;color:var(--muted);font-weight:600}
+@media (max-width:600px){.set-grid label{grid-template-columns:1fr}}
 .sub{margin:4px 0 0;color:var(--ink-2)}
 .meta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
 .badge{padding:2px 8px;border-radius:999px;background:#fdf0d5;color:#7a4e00;font-weight:600;font-size:12px}
@@ -110,6 +116,8 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
 .btn:hover{background:var(--page)}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:var(--surface)}
 .toast{color:var(--brand);font-size:12px}
+.cap-tool{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 10px}
+.cap-tool .hint{margin:0}
 #discTable td.t{white-space:normal;text-align:left;min-width:280px}
 #discTable td.t a{color:var(--ink);text-decoration:none;font-weight:500}
 #discTable td.t a:hover{color:var(--brand);text-decoration:underline}
@@ -189,7 +197,7 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
 <div class="wrap">
   <header>
     <div>
-      <h1>경쟁사 모니터</h1>
+      <h1>경쟁사 모니터 <button class="info-btn set-btn" id="setBtn" aria-haspopup="dialog" title="자사·섹션 이름 설정 (이 브라우저에만 저장)">⚙ 설정</button></h1>
       <p class="sub">관심 기업의 시가총액과 사업현황, 산업군별 비교</p>
     </div>
     <div class="meta">
@@ -214,6 +222,12 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
             <div class="seg" id="periods" role="group" aria-label="기간"></div>
           </div>
         </div>
+        <div class="cap-tool" id="capTool" hidden>
+          <span class="hint">일자별 시가총액</span>
+          <input type="date" id="capDate" aria-label="기준일">
+          <button class="btn" id="capCopy" title="종목(코드)과 시가총액(억원, 원 단위까지)을 엑셀에 붙여넣을 수 있게 복사">시총 복사</button>
+          <span class="toast" id="capToast" role="status"></span>
+        </div>
         <div class="chart-box"><canvas id="priceChart" role="img" aria-label="주가 추이 차트"></canvas></div>
         <div class="legend" id="legend"></div>
       </section>
@@ -226,27 +240,6 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
     <section class="panel" id="secQuote">
       <div class="ph"><div><h2>시세 · 밸류에이션</h2><p class="hint">열 제목을 누르면 정렬, 행을 누르면 차트에서 강조됩니다</p></div></div>
       <div class="tbl-wrap"><table id="quoteTable"></table></div>
-    </section>
-
-    <!-- 기준일 시가총액 보고용 표 (market) -->
-    <section class="panel" id="secReport">
-      <div class="ph">
-        <div><h2>기준일 시가총액</h2><p class="hint">보고용 표 · 날짜를 고르고 복사하면 엑셀에 그대로 붙여넣을 수 있습니다</p></div>
-        <div class="controls">
-          <input type="date" id="repDate" aria-label="기준일">
-          <button class="btn primary" id="repCopy">표 복사</button>
-          <button class="btn" id="repCsv">CSV 다운로드</button>
-          <button class="btn" id="labelsBtn" aria-expanded="false" aria-controls="labelsBox">표시 설정</button>
-          <span class="toast" id="repToast" role="status"></span>
-        </div>
-      </div>
-      <div class="labels" id="labelsBox" hidden>
-        <p class="hint" style="margin:0">자사 표시와 섹션 이름은 <b>이 브라우저에만 저장</b>되고 사이트·저장소에는 올라가지 않습니다. PC와 휴대폰에서 각각 한 번 지정하세요.</p>
-        <div id="labelsFields"></div>
-        <div class="row"><button class="btn primary" id="labelsSave">저장</button><button class="btn" id="labelsReset">초기화</button></div>
-      </div>
-      <div class="tbl-wrap"><table id="repTable"></table></div>
-      <p class="note" id="repNote"></p>
     </section>
 
     <!-- 분기 실적 (business) -->
@@ -307,6 +300,18 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
   </footer>
 </div>
 
+<dialog class="intro" id="setDlg" aria-labelledby="setTitle">
+  <form class="intro-in" id="setForm" method="dialog">
+    <h2 id="setTitle">설정</h2>
+    <p class="lead">자사 표시와 섹션 이름은 모든 탭에 적용되며 <b>이 브라우저에만 저장</b>됩니다. 사이트·저장소에는 올라가지 않으니 PC와 휴대폰에서 각각 한 번 지정하세요.</p>
+    <div class="set-grid" id="setFields"></div>
+    <div class="intro-foot">
+      <span><button type="button" class="btn" id="setReset">초기화</button> <span class="toast" id="setToast" role="status"></span></span>
+      <span><button type="button" class="btn" id="setCancel">닫기</button> <button type="submit" class="btn primary">저장</button></span>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="intro" id="intro" aria-labelledby="introTitle">
   <div class="intro-in">
     <h2 id="introTitle">경쟁사 모니터, 이런 대시보드입니다</h2>
@@ -316,12 +321,12 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
       <span>평일 16:40 · 06:40 자동 수집</span><i>→</i><span class="hl">대시보드</span>
     </div>
     <div class="cards">
-      <div class="card"><b>시가총액</b><p>시가총액 추이와 순위, 등락률·PER·PBR. 원하는 날짜의 시가총액 표를 엑셀로 바로 복사</p></div>
+      <div class="card"><b>시가총액</b><p>시가총액 추이와 순위, 등락률·PER·PBR. 원하는 날짜의 시가총액을 엑셀로 바로 복사</p></div>
       <div class="card"><b>사업현황</b><p>최근 8개 분기 실적과 YoY·QoQ, 연간 실적. 비상장사는 감사보고서 수치와 원문 링크</p></div>
       <div class="card"><b>건강기능식품 · 마이크로바이옴 신약</b><p>산업군별 국내외 기업의 주가 흐름과 연간 실적 비교</p></div>
       <div class="card"><b>최근 공시 <span style="font-weight:400;color:var(--muted)">· 모든 탭 하단</span></b><p>연도별 1Q·2Q·3Q·연간 보고서와 IR을 칸 하나로 DART 원문 열기</p></div>
     </div>
-    <div class="tip"><span aria-hidden="true">💡</span><span><b>표시 설정</b>(시가총액 탭 하단)에서 기준 기업과 섹션 이름을 지정할 수 있습니다. 설정은 <b>내 브라우저에만</b> 저장되고 다른 사람에게는 보이지 않습니다.</span></div>
+    <div class="tip"><span aria-hidden="true">💡</span><span>제목 옆 <b>⚙ 설정</b>에서 기준 기업(자사)과 섹션 이름을 지정할 수 있습니다. 설정은 <b>내 브라우저에만</b> 저장되고 다른 사람에게는 보이지 않습니다.</span></div>
     <div class="intro-foot">
       <small id="introAsOf">공시·거래소 공개 자료 기반 · 투자 판단의 근거로 사용하지 마십시오</small>
       <button class="btn primary" id="introClose" autofocus>시작하기</button>
@@ -377,7 +382,7 @@ const LABELS_KEY = "cm-labels-v2";
 let labels = { self: "", sections: {} };
 try { labels = { ...labels, ...JSON.parse(localStorage.getItem(LABELS_KEY) || "{}") }; } catch(e){}
 const isSelf = c => labels.self && c.id === labels.self;
-const secKey = i => `${state.group}:s${i + 1}`;                 // 섹션은 이름 없이 순번으로만 구분
+const secKey = (i, gid = state.group) => `${gid}:s${i + 1}`;      // 섹션은 이름 없이 탭·순번으로만 구분
 const secTitle = i => (labels.sections && labels.sections[secKey(i)]) || (grp().sections?.[i]?.title || "");
 const coCell = (c, sub) => `<div class="co"><i style="background:${color(c._ci)}"></i><b>${esc(c.name)}</b>${
   isSelf(c) ? `<span class="tag self">자사</span>` : ""}${
@@ -463,7 +468,6 @@ async function selectGroup(id){
   const m = g.mode;
   $("secPrice").hidden = m === "business";
   $("secQuote").hidden = m === "business";
-  $("secReport").hidden = m !== "market";
   $("secQuarter").hidden = m !== "business";
   $("secAct").hidden = m !== "business";
   $("secAnnual").hidden = m === "market";
@@ -483,7 +487,8 @@ async function selectGroup(id){
 function renderAll(){
   const m = grp().mode;
   if (m !== "business"){ renderPrice(); renderLegend(); renderRank(); renderQuotes(); }
-  if (m === "market") renderReport(true);
+  $("capTool").hidden = m !== "market";
+  if (m === "market") renderCapTool(true);
   if (m === "business"){ renderQuarter(); renderAct(true); }
   if (m !== "market") renderAnnual();
   renderDisc(true);
@@ -567,7 +572,7 @@ function renderPrice(){
 function renderLegend(){
   const el = $("legend"), isM = state.view === "mcap";
   el.innerHTML = comps().filter(c => c.price && (!isM || mcapEligible(c))).map(c =>
-    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</button>`).join("");
+    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</button>`).join("");
   el.onclick = e => {
     const b = e.target.closest(".lg"); if (!b) return;
     const id = b.dataset.id;
@@ -599,7 +604,7 @@ function renderRank(){
     $("rankHint").textContent = `최근 ${state.period} 주가 등락률`;
     const rows = comps().map(c => ({c, r: periodReturn(c)})).filter(x => x.r != null).sort((a,b) => b.r - a.r);
     $("rank").innerHTML = rows.map(({c,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
-        <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</span>
+        <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
         <span class="rv">${fmtPct(r)}</span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
   }
   $("rank").onclick = e => { const li = e.target.closest("li[data-id]"); if (li) setFocus(li.dataset.id); };
@@ -652,64 +657,44 @@ function renderQuotes(){
   t.querySelector("tbody").onclick = e => { const r = e.target.closest("tr.click"); if (r) setFocus(r.dataset.id); };
 }
 
-/* ---------- 기준일 시가총액 (보고용) ---------- */
-function reportDates(){
+/* ---------- 일자별 시가총액 복사 (시가총액 탭 · 추이 섹션) ---------- */
+function capDates(){
   return [...new Set(comps().filter(c => c.listed && c.price?.mcap).flatMap(c => c.price.dates))].sort();
 }
-function reportRows(day){
-  // day 당일 데이터가 없으면 그 이전 가장 가까운 거래일 값 (휴장·미반영 대비)
+function capRows(day){
+  // day 당일 값이 없으면 그 이전 가장 가까운 거래일 (휴장·미반영 대비)
   const out = [];
   sectioned(comps().filter(c => c.listed)).forEach(sec => {
     if (sec.sec) out.push({title: sec.title, sec: true});
     sec.items.forEach(c => {
       const p = c.price; let i = -1;
       if (p?.mcap) for (let k = p.dates.length - 1; k >= 0; k--) if (p.dates[k] <= day){ i = k; break; }
-      out.push({c, code: c.ticker.slice(0,6), date: i < 0 ? null : p.dates[i], close: i < 0 ? null : p.close[i], mcap: i < 0 ? null : p.mcap[i],
-        src: p?.mcapSource });
+      out.push({c, code: c.ticker.slice(0,6), mcap: i < 0 ? null : p.mcap[i]});
     });
   });
   return out;
 }
-function renderReport(reset){
-  const dates = reportDates(), inp = $("repDate");
-  if (!dates.length){ $("repTable").innerHTML = `<tbody><tr><td class="empty">시가총액 데이터 없음</td></tr></tbody>`; return; }
+function renderCapTool(reset){
+  const dates = capDates(), inp = $("capDate");
+  $("capCopy").disabled = !dates.length;
+  if (!dates.length) return;
   inp.min = dates[0]; inp.max = dates.at(-1);
   if (reset || !inp.value) inp.value = dates.at(-1);
-  const day = inp.value;
-  const rows = reportRows(day);
-  const head = `<thead><tr><th>종목(코드)</th><th>기준일</th><th>종가</th><th>시가총액(억원)</th></tr></thead>`;
-  const body = rows.map(r => r.sec
-    ? (r.title ? `<tr class="sec"><td colspan="4">▼${esc(r.title)}</td></tr>` : `<tr class="sec gap" aria-hidden="true"><td colspan="4"></td></tr>`)
-    : `<tr><td>${coCell(r.c, r.code)}</td><td>${r.date ? r.date.replace(/-/g,"/") : "–"}${r.date && r.date !== day ? ' <span class="err">(직전 거래일)</span>' : ""}</td>
-       <td>${r.close == null ? "–" : r.close.toLocaleString("ko-KR")}</td>
-       <td>${r.mcap == null ? "–" : (r.mcap/1e8).toLocaleString("ko-KR",{minimumFractionDigits:1,maximumFractionDigits:1})}</td></tr>`).join("");
-  $("repTable").innerHTML = head + `<tbody>${body}</tbody>`;
-  const approx = rows.filter(r => r.c && r.src !== "KRX").map(r => r.c.name);
-  $("repNote").textContent = approx.length
-    ? `KRX 데이터가 없어 근사치로 표시: ${approx.join(", ")} (KRX_API_KEY 등록 후 자동 대체)`
-    : "출처: KRX 정보데이터시스템 일별매매정보. 복사 시 시가총액은 소수점까지 원값으로 들어갑니다.";
 }
-function reportTable(){
-  const day = $("repDate").value, lines = [["name(ticker)","date","close","market_cap_억원"]];
-  reportRows(day).forEach(r => {
-    if (r.sec){ lines.push(["","","",""]); if (r.title) lines.push(["▼" + r.title,"","",""]); return; }
-    lines.push([`${r.c.name}(${r.code})`, r.date ? r.date.replace(/-/g,"/") : "", r.close ?? "", r.mcap == null ? "" : r.mcap / 1e8]);
+function capTable(){
+  // 열: 종목(코드) · 시가총액(억원). 억원 값은 반올림하지 않고 원 단위까지 그대로
+  const lines = [["name(ticker)", "market_cap_억원"]];
+  capRows($("capDate").value).forEach(r => {
+    if (r.sec){ lines.push(["", ""]); if (r.title) lines.push(["▼" + r.title, ""]); return; }
+    lines.push([`${r.c.name}(${r.code})`, r.mcap == null ? "" : r.mcap / 1e8]);
   });
   return lines;
 }
-function toast(msg){ $("repToast").textContent = msg; setTimeout(() => $("repToast").textContent = "", 2000); }
-$("repDate").addEventListener("change", () => renderReport(false));
-$("repCopy").addEventListener("click", async () => {
-  const tsv = reportTable().map(r => r.join("\t")).join("\n");
+function toast(msg, id = "capToast"){ $(id).textContent = msg; setTimeout(() => $(id).textContent = "", 2000); }
+$("capCopy").addEventListener("click", async () => {
+  const tsv = capTable().map(r => r.join("\t")).join("\n");
   try { await navigator.clipboard.writeText(tsv); toast("복사했습니다"); }
-  catch(e){ toast("복사 실패 — CSV 다운로드를 이용하세요"); }
-});
-$("repCsv").addEventListener("click", () => {
-  const csv = "\ufeff" + reportTable().map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : v).join(",")).join("\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
-  a.download = `시가총액_${$("repDate").value.replace(/-/g,"")}.csv`;
-  a.click(); URL.revokeObjectURL(a.href);
+  catch(e){ toast("복사 실패 — 브라우저 클립보드 권한을 확인하세요"); }
 });
 
 /* ---------- 주요 활동 (사업현황): 회사별 3대 동향 요약 ---------- */
@@ -738,7 +723,7 @@ function resultLine(c){
 async function renderAct(reset){
   const S = await loadSummaries(), list = comps();
   if (reset || !list.some(c => c.id === actCo)) actCo = (list.find(c => S.companies?.[c.id]) || list[0])?.id;
-  $("actCo").innerHTML = list.map(c => `<button role="tab" data-k="${esc(c.id)}" aria-pressed="${c.id === actCo}">${esc(c.name)}</button>`).join("");
+  $("actCo").innerHTML = list.map(c => `<button role="tab" data-k="${esc(c.id)}" aria-pressed="${c.id === actCo}">${esc(c.name)}${isSelf(c) ? " · 자사" : ""}</button>`).join("");
   $("actHint").textContent = `최근 3~6개월 큰 동향 3가지 · ${S.window || ""} 공시·기사 기준 · 정리 ${S.updatedAt || "–"}`;
   const c = list.find(x => x.id === actCo), pts = S.companies?.[actCo] || [];
   const news = (c?.activity || []).filter(x => x.src === "뉴스").length;
@@ -854,35 +839,41 @@ $("discCo").addEventListener("change", () => { discLimit = 15; renderDisc(false)
 $("discYear").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; discYear = +b.dataset.k; renderDisc(false); });
 $("discMore").addEventListener("click", () => { discLimit += 30; renderDisc(false); });
 
-/* ---------- 표시 설정 ---------- */
-function renderLabels(){
-  const listed = comps().filter(c => c.listed).slice().sort((a,b) => a.name.localeCompare(b.name, "ko"));
-  const secs = grp().sections || [];
-  $("labelsFields").innerHTML =
-    `<label>자사<select id="lbSelf"><option value="">없음</option>${listed.map(c =>
-      `<option value="${esc(c.id)}" ${labels.self===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>` +
-    secs.map((x,i) => `<label>섹션 ${i+1} 이름<input type="text" data-sec="${esc(secKey(i))}" value="${esc(labels.sections?.[secKey(i)] || "")}" placeholder="${esc(x.title || "")} (기본값)"></label>`).join("");
+/* ---------- 설정 (전역: 자사 · 섹션 이름) ---------- */
+const setDlg = $("setDlg");
+async function openSettings(){
+  // 모든 탭 데이터를 읽어 전체 회사 목록과 섹션을 모음
+  const groups = state.meta?.groups || [];
+  await Promise.all(groups.map(async g => { if (!state.data[g.id]) { try { state.data[g.id] = await loadJSON(`data/${g.id}.json`); } catch(e){} } }));
+  const all = new Map();
+  groups.forEach(g => (state.data[g.id]?.companies || []).forEach(c => { if (!all.has(c.id)) all.set(c.id, c); }));
+  const cos = [...all.values()].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  const secGroups = groups.map(g => ({g, secs: state.data[g.id]?.sections || []})).filter(x => x.secs.length);
+  $("setFields").innerHTML =
+    `<label>자사<select id="setSelf"><option value="">없음</option>${cos.map(c =>
+      `<option value="${esc(c.id)}" ${labels.self === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>` +
+    secGroups.map(({g, secs}) => `<h3>${esc(g.name)} 탭 섹션 이름</h3>` + secs.map((x, i) =>
+      `<label>섹션 ${i + 1}<input type="text" data-sec="${esc(secKey(i, g.id))}" value="${esc(labels.sections?.[secKey(i, g.id)] || "")}" placeholder="${esc(x.title || "")} (기본값)"></label>`).join("")).join("");
+  if (typeof setDlg.showModal === "function") setDlg.showModal(); else setDlg.setAttribute("open", "");
 }
-$("labelsBtn").addEventListener("click", () => {
-  const box = $("labelsBox"), open = box.hidden;
-  box.hidden = !open; $("labelsBtn").setAttribute("aria-expanded", open);
-  if (open) renderLabels();
-});
-$("labelsSave").addEventListener("click", () => {
-  labels.self = $("lbSelf").value;
+$("setBtn").addEventListener("click", openSettings);
+$("setCancel").addEventListener("click", () => setDlg.close());
+$("setForm").addEventListener("submit", e => {
+  e.preventDefault();
+  labels.self = $("setSelf").value;
   labels.sections = labels.sections || {};
-  document.querySelectorAll("#labelsFields input[data-sec]").forEach(i => {
+  document.querySelectorAll("#setFields input[data-sec]").forEach(i => {
     const v = i.value.trim();
     if (v) labels.sections[i.dataset.sec] = v; else delete labels.sections[i.dataset.sec];
   });
-  try { localStorage.setItem(LABELS_KEY, JSON.stringify(labels)); toast("저장했습니다 (이 브라우저에만)"); }
-  catch(e){ toast("이 브라우저에서는 저장할 수 없습니다"); }
-  renderAll();
+  try { localStorage.setItem(LABELS_KEY, JSON.stringify(labels)); } catch(_){ toast("이 브라우저에서는 저장할 수 없습니다", "setToast"); return; }
+  setDlg.close(); renderAll();
 });
-$("labelsReset").addEventListener("click", () => {
+$("setReset").addEventListener("click", () => {
   labels = { self: "", sections: {} };
   try { localStorage.removeItem(LABELS_KEY); } catch(e){}
-  renderLabels(); renderAll(); toast("초기화했습니다");
+  document.querySelectorAll("#setFields input[data-sec]").forEach(i => i.value = "");
+  $("setSelf").value = ""; toast("초기화했습니다", "setToast"); renderAll();
 });
 
 /* ---------- 분기 실적 ---------- */
