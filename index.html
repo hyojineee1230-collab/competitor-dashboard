@@ -265,18 +265,6 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
     </section>
 
     <!-- 주요 활동 (business) -->
-    <section class="panel" id="secAct">
-      <div class="ph">
-        <div><h2>주요 활동</h2><p class="hint" id="actHint"></p></div>
-        <div class="controls">
-          <button class="btn" id="actCopy">요약 복사</button>
-          <span class="toast" id="actToast" role="status"></span>
-        </div>
-      </div>
-      <div class="seg act-tabs" id="actCo" role="tablist" aria-label="회사"></div>
-      <div id="actBody"></div>
-    </section>
-
     <!-- 연간 실적 (business, full) -->
     <section class="panel" id="secAnnual">
       <div class="ph">
@@ -289,6 +277,18 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
       <div class="chart-box"><canvas id="finChart" role="img" aria-label="연간 실적 차트"></canvas></div>
       <div class="tbl-wrap" style="margin-top:16px"><table id="finTable"></table></div>
       <div id="finNotes"></div>
+    </section>
+
+    <section class="panel" id="secAct">
+      <div class="ph">
+        <div><h2>주요 활동</h2><p class="hint" id="actHint"></p></div>
+        <div class="controls">
+          <button class="btn" id="actCopy">요약 복사</button>
+          <span class="toast" id="actToast" role="status"></span>
+        </div>
+      </div>
+      <div class="seg act-tabs" id="actCo" role="tablist" aria-label="회사"></div>
+      <div id="actBody"></div>
     </section>
     <!-- 최근 공시 (모든 탭) -->
     <section class="panel" id="secDisc">
