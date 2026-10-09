@@ -242,24 +242,14 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
       <div class="tbl-wrap"><table id="quoteTable"></table></div>
     </section>
 
-    <!-- 분기 실적 (business) -->
-    <section class="panel" id="secQuarter">
-      <div class="ph">
-        <div><h2>분기 실적 추이</h2><p class="hint" id="qHint"></p></div>
-        <div class="seg" id="qMetrics" role="group" aria-label="분기 지표"></div>
-      </div>
-      <div class="chart-box"><canvas id="qChart" role="img" aria-label="분기 실적 차트"></canvas></div>
-      <div class="tbl-wrap" style="margin-top:16px"><table id="qTable"></table></div>
-      <p class="note" id="qNote"></p>
-    </section>
-
     <!-- 주요 활동 (business) -->
     <!-- 연간 실적 (business, full) -->
     <section class="panel" id="secAnnual">
       <div class="ph">
-        <div><h2>연간 실적 비교</h2><p class="hint" id="finHint"></p></div>
+        <div><h2 id="finTitle">연간 실적 비교</h2><p class="hint" id="finHint"></p></div>
         <div class="controls">
-          <div class="seg" id="metrics" role="group" aria-label="연간 지표"></div>
+          <div class="seg" id="finPeriod" role="group" aria-label="실적 기간" hidden></div>
+          <div class="seg" id="metrics" role="group" aria-label="실적 지표"></div>
           <select id="currency" aria-label="통화"></select>
         </div>
       </div>
@@ -341,7 +331,7 @@ const PCT_METRICS = new Set(["opm"]);   // 비율 지표 (통화와 무관하게
 const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연구비/판관비"] };
 function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
 const MODE_LABEL = { market:"주가 · 시가총액", business:"분기 · 연간 실적", full:"주가 · 연간 실적" };
-const state = { meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", qMetric:"revenue",
+const state = { meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", finPeriod:"a",
   currency:"KRW", hidden:new Set(), focus:null, sort:{key:"marketCap",dir:"desc"} };
 const charts = {};
 
@@ -430,7 +420,7 @@ async function init(){
   segment("periods", PERIODS.map(p => [p[0], p[0]]), () => state.period, v => { state.period = v; renderPrice(); renderRank(); });
   segment("views", [["rel","상대 수익률"],["mcap","시가총액"]], () => state.view, v => { state.view = v; renderPrice(); renderRank(); });
   segment("metrics", METRICS, () => state.metric, v => { state.metric = v; renderAnnual(); });
-  segment("qMetrics", METRICS, () => state.qMetric, v => { state.qMetric = v; renderQuarter(); });
+  segment("finPeriod", [["a","연간"],["q","분기"]], () => state.finPeriod, v => { state.finPeriod = v; setMetricButtons(); renderAnnual(); });
   $("currency").addEventListener("change", e => { state.currency = e.target.value; renderAnnual(); });
 
   const first = groups.find(g => g.id === location.hash.slice(1)) || groups[0];
@@ -469,7 +459,6 @@ async function selectGroup(id){
   const m = g.mode;
   $("secPrice").hidden = m === "business";
   $("secQuote").hidden = m === "business";
-  $("secQuarter").hidden = m !== "business";
   $("secAct").hidden = m !== "business";
   $("secAnnual").hidden = m === "market";
   state.view = m === "market" ? "mcap" : "rel"; syncSeg("views", state.view);
@@ -478,19 +467,27 @@ async function selectGroup(id){
   const curs = [...new Set(g.companies.map(c => c.annual?.currency).filter(Boolean))].sort((a,b) => (b==="KRW") - (a==="KRW"));
   $("currency").innerHTML = curs.map(c => `<option value="${c}">${c==="KRW" ? "원화(국내)" : c}</option>`).join("");
   $("currency").hidden = curs.length < 2;
-  // 연간 지표 버튼: 탭 설정(extras)에 따라 광고비율·연구개발비율 추가
-  const ms = annualMetrics();
-  if (!ms.some(x => x[0] === state.metric)) state.metric = "revenue";
-  $("metrics").innerHTML = ms.map(([k,l]) => `<button data-k="${k}" aria-pressed="${k===state.metric}">${l}</button>`).join("");
+  // 분기 공시가 있는 탭(사업현황)만 연간/분기 전환 — 기본은 연간
+  const hasQ = m === "business" && g.companies.some(c => c.quarterly);
+  $("finPeriod").hidden = !hasQ;
+  $("finTitle").textContent = hasQ ? "실적 비교" : "연간 실적 비교";
+  state.finPeriod = "a"; syncSeg("finPeriod", "a");
+  setMetricButtons();
   state.currency = curs[0] || "KRW"; $("currency").value = state.currency;
   renderAll();
+}
+// 지표 버튼: 연간은 탭 설정(extras)의 광고비율·연구개발비율 포함, 분기는 기본 지표만
+function setMetricButtons(){
+  const ms = state.finPeriod === "q" ? METRICS : annualMetrics();
+  if (!ms.some(x => x[0] === state.metric)) state.metric = "revenue";
+  $("metrics").innerHTML = ms.map(([k,l]) => `<button data-k="${k}" aria-pressed="${k===state.metric}">${l}</button>`).join("");
 }
 function renderAll(){
   const m = grp().mode;
   if (m !== "business"){ renderPrice(); renderLegend(); renderRank(); renderQuotes(); }
   $("capTool").hidden = m !== "market";
   if (m === "market") renderCapTool(true);
-  if (m === "business"){ renderQuarter(); renderAct(true); }
+  if (m === "business") renderAct(true);
   if (m !== "market") renderAnnual();
   renderDisc(true);
 }
@@ -885,12 +882,15 @@ function vals(f, m, n){
   return f[m] || [];
 }
 function renderQuarter(){
-  const tip = chartBase(), m = state.qMetric, isPct = PCT_METRICS.has(m);
+  const tip = chartBase(), m = state.metric, isPct = PCT_METRICS.has(m);
   const list = comps().filter(c => c.quarterly);
+  const shown = comps().filter(c => c.quarterly || c.listed);     // 분기 공시 대상(상장사)만
+  const excluded = comps().filter(c => !c.quarterly && !c.listed).map(c => c.name);
   const periods = [...new Set(list.flatMap(c => c.quarterly.periods))].sort().slice(-8);
-  $("qHint").textContent = `단위: ${isPct ? "%" : "억원"} · 최근 ${periods.length}개 분기 (분기 단독 금액)`;
+  $("currency").hidden = true;
+  $("finHint").textContent = `단위: ${isPct ? "%" : "억원"} · 최근 ${periods.length}개 분기${isPct ? "" : " (분기 단독 금액)"} · 상장사만`;
 
-  draw("q", "qChart", {
+  draw("fin", "finChart", {
     type: "bar",
     data: {
       labels: periods.map(qLabel),
@@ -917,9 +917,9 @@ function renderQuarter(){
 
   // 표: 최근 분기 기준 + YoY, QoQ
   const head = `<thead><tr><th>종목</th><th>최근 분기</th><th>매출액</th><th>YoY</th><th>QoQ</th><th>영업이익</th><th>영업이익률</th><th>순이익</th><th>시가총액</th></tr></thead>`;
-  const body = comps().map(c => {
+  const body = shown.map(c => {
     const f = c.quarterly;
-    if (!f) return `<tr><td>${coCell(c)}</td><td colspan="8" class="err">${c.listed ? esc(c.error || "분기 데이터 없음") : "분기 공시 없음 — 아래 연간 실적(감사보고서) 참고"}</td></tr>`;
+    if (!f) return `<tr><td>${coCell(c)}</td><td colspan="8" class="err" style="text-align:left">${esc(waitMsg(c, c.error || "분기 데이터 없음"))}</td></tr>`;
     const i = f.periods.length - 1, p = f.periods[i];
     const yoyIdx = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
     const rev = f.revenue[i], op = f.operatingIncome[i];
@@ -928,9 +928,14 @@ function renderQuarter(){
       <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td><td>${signed(f.netIncome[i], f.currency)}</td>
       <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>`;
   }).join("");
-  $("qTable").innerHTML = head + `<tbody>${body}</tbody>`;
+  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="9" class="empty">분기 데이터 없음</td></tr>`}</tbody>`;
+
   const src = [...new Set(list.map(c => c.quarterly.source))].join(", ");
-  $("qNote").textContent = `출처: ${src || "–"} · 비상장사는 분기 공시 의무가 없어 연간 감사보고서 수치만 제공됩니다.`;
+  const notes = [`출처: ${src || "–"}`];
+  if (excluded.length) notes.push(`비상장사(${excluded.join(", ")})는 분기 공시 의무가 없어 제외했습니다. 연간 보기에서 감사보고서 기준으로 비교할 수 있습니다.`);
+  const staleHere = shown.filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
+  if (staleHere.length) notes.push(`DART 접속 장애로 이번 갱신에서 DART 값을 받지 못해 직전 수집값을 표시 중: ${staleHere.join(", ")}`);
+  $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
 }
 
 /* ---------- 연간 실적 ---------- */
@@ -1011,6 +1016,7 @@ function renderExtra(m){
   $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
 }
 function renderAnnual(){
+  if (state.finPeriod === "q") return renderQuarter();
   if (state.metric === "adr" || state.metric === "rndr") return renderExtra(state.metric);
   $("currency").hidden = $("currency").options.length < 2;
   const tip = chartBase(), m = state.metric, isPct = PCT_METRICS.has(m);
