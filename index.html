@@ -59,7 +59,7 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
 .tab-sep{width:1px;background:var(--line);margin:14px 6px}
 .gdesc{color:var(--ink-2);margin:12px 0 20px}
 
-.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:16px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
 #content > * + *{margin-top:16px}
@@ -79,12 +79,12 @@ h2{margin:0;font-size:16px;font-weight:600}
 .lg[aria-pressed="false"]{opacity:.35}
 
 .rank{list-style:none;margin:0;padding:0}
-.rank li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;height:40px;padding:0;border-bottom:1px solid var(--grid);cursor:pointer}
+.rank li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;height:40px;padding:0;border-bottom:1px solid var(--grid);cursor:pointer}
 .rank li:last-child{border-bottom:0}
-.rank .nm{display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
+.rank .nm{display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
 .rank .nm i{flex:none;width:8px;height:8px;border-radius:50%}
-.rank .rv{display:flex;gap:12px;align-items:baseline;justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
-.rank .rv .chg{min-width:62px;font-weight:400;font-size:13px}
+.rank .rv{display:flex;gap:8px;align-items:baseline;justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.rank .rv .chg{min-width:54px;font-weight:400;font-size:12px}
 
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
