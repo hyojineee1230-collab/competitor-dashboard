@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경쟁사 모니터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f2f4f3; --surface:#fcfcfb; --ink:#14201c; --ink-2:#4b5550; --muted:#858c88;
+  --grid:#e1e4e2; --axis:#c3c8c5; --line:rgba(20,32,28,.10);
+  --brand:#0e5e57; --brand-soft:#dcebe8; --tag:#eceeed;
+  --up:#d0342c; --down:#1f5fc4; --flat:#858c88;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0f1312; --surface:#191d1c; --ink:#f2f5f3; --ink-2:#c1c8c4; --muted:#8a918d;
+    --grid:#2a302e; --axis:#3a413e; --line:rgba(255,255,255,.10);
+    --brand:#5fc2b5; --brand-soft:#1f3532; --tag:#262c2a;
+    --up:#f06a60; --down:#5b93ee; --flat:#8a918d;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0f1312; --surface:#191d1c; --ink:#f2f5f3; --ink-2:#c1c8c4; --muted:#8a918d;
+  --grid:#2a302e; --axis:#3a413e; --line:rgba(255,255,255,.10);
+  --brand:#5fc2b5; --brand-soft:#1f3532; --tag:#262c2a;
+  --up:#f06a60; --down:#5b93ee; --flat:#8a918d;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px 64px}
+button{font:inherit;color:inherit}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+[hidden]{display:none !important}
+
+header{padding:28px 0 20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 32px;justify-content:space-between}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.sub{margin:4px 0 0;color:var(--ink-2)}
+.meta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
+.badge{padding:2px 8px;border-radius:999px;background:#fdf0d5;color:#7a4e00;font-weight:600;font-size:12px}
+.theme-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer}
+
+/* 그룹 탭: 화면에서 가장 큰 요소 */
+.tabs{display:flex;border-bottom:2px solid var(--line);margin-bottom:8px;overflow-x:auto}
+.tab{background:none;border:0;padding:14px 22px 12px;font-size:20px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px;white-space:nowrap;text-align:left}
+.tab:hover{color:var(--ink-2)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand)}
+.tab small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.tab-sep{width:1px;background:var(--line);margin:14px 6px}
+.gdesc{color:var(--ink-2);margin:12px 0 20px}
+
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:16px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+#content > * + *{margin-top:16px}
+.ph{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:14px}
+h2{margin:0;font-size:16px;font-weight:600}
+.hint{color:var(--muted);font-size:12px;margin:2px 0 0}
+
+.seg{display:inline-flex;background:var(--page);border-radius:8px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:6px;cursor:pointer;color:var(--ink-2);font-size:13px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.chart-box{position:relative;height:360px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px}
+.lg{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 0;cursor:pointer;color:var(--ink-2);font-size:13px}
+.lg i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.lg[aria-pressed="false"]{opacity:.35}
+
+.rank{list-style:none;margin:0;padding:0}
+.rank li{display:grid;grid-template-columns:minmax(0,130px) 1fr 76px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--grid);cursor:pointer}
+.rank li:last-child{border-bottom:0}
+.rank .nm{display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
+.rank .nm i{flex:none;width:8px;height:8px;border-radius:50%}
+.rank .rv{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.25}
+.rank .rv small{display:block;font-weight:400;font-size:12px}
+.bar-track{position:relative;height:14px}
+.bar-track.div::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--axis)}
+.bar{position:absolute;top:2px;height:10px;border-radius:0 4px 4px 0}
+.bar.neg{border-radius:4px 0 0 4px}
+
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+th{font-weight:500;color:var(--muted);font-size:12px}
+th[data-k]{cursor:pointer;user-select:none}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+th[data-dir="asc"]::after{content:" ▲";font-size:9px}
+th[data-dir="desc"]::after{content:" ▼";font-size:9px}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover, tbody tr.click:hover td:first-child{background:var(--page)}
+tbody tr.sel, tbody tr.sel td:first-child{background:var(--brand-soft)}
+.co{display:flex;align-items:center;gap:8px}
+.co i{width:8px;height:8px;border-radius:50%;flex:none}
+.co b{font-weight:600}
+.co span{color:var(--muted);font-size:12px}
+.tag.self{background:var(--brand-soft);color:var(--brand)}
+tr.sec td{background:var(--page);color:var(--ink-2);font-weight:600;font-size:12px;padding:7px 10px}
+tr.sec td:first-child{background:var(--page)}
+tr.sec.gap td{padding:0;height:8px;border-bottom:1px solid var(--grid)}  /* 섹션 이름이 비어 있을 때 구분선 */
+input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn{font-size:13px;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.btn:hover{background:var(--page)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+.toast{color:var(--brand);font-size:12px}
+#discTable td.t{white-space:normal;text-align:left;min-width:280px}
+#discTable td.t a{color:var(--ink);text-decoration:none;font-weight:500}
+#discTable td.t a:hover{color:var(--brand);text-decoration:underline}
+#discTable tr.co-row td{background:var(--page);padding:8px 10px}
+#discTable th:first-child{width:130px}
+#discGrid{table-layout:fixed;min-width:640px}           /* 내용과 상관없이 분기 열 너비 고정 */
+#discGrid th, #discGrid td{text-align:center}
+#discGrid th:first-child, #discGrid td:first-child{text-align:left;width:auto}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);text-decoration:none;font-size:13px;font-weight:500;white-space:nowrap}
+.chip:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+.chip small{color:var(--muted);font-weight:400;font-size:11px}
+.cell-empty{color:var(--axis)}
+#discTable th:nth-child(n+2){text-align:left}
+.tag.new{background:#fde5e3;color:#a1261e}
+:root[data-theme="dark"] .tag.new{background:#3a1f1d;color:#f3a29b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tag.new{background:#3a1f1d;color:#f3a29b}}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--ink-2)}
+.labels{border:1px dashed var(--axis);border-radius:10px;padding:14px 16px;margin:0 0 16px;display:grid;gap:10px}
+.labels label{display:grid;grid-template-columns:140px 1fr;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)}
+.labels input[type=text], .labels select{width:100%;max-width:320px}
+.labels input[type=text]{font:inherit;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.labels .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media (max-width:600px){.labels label{grid-template-columns:1fr}}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;background:var(--tag);color:var(--ink-2);font-weight:500}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
+.range{display:inline-block;position:relative;width:90px;height:6px;background:var(--grid);border-radius:3px;vertical-align:middle}
+.range i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--ink)}
+.err{color:var(--muted);font-size:12px}
+td.err[colspan]{text-align:left}
+.note{color:var(--muted);font-size:12px;margin:12px 0 0}
+.note + .note{margin-top:4px}
+select{font:inherit;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+footer{margin-top:32px;color:var(--muted);font-size:12px}
+
+/* 안내 팝업 */
+.info-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:13px}
+dialog.intro{border:0;padding:0;border-radius:16px;max-width:720px;width:calc(100% - 32px);background:var(--surface);color:var(--ink);
+  box-shadow:0 24px 64px rgba(0,0,0,.28);max-height:calc(100dvh - 32px);overflow:auto;word-break:keep-all}
+dialog.intro::backdrop{background:rgba(10,16,14,.45)}
+.intro-in{padding:28px 28px 22px}
+.intro h2{font-size:22px;margin:0 0 6px;letter-spacing:-.01em}
+.intro .lead{margin:0 0 20px;color:var(--ink-2);font-size:14px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 20px}
+.flow span{padding:7px 12px;border-radius:999px;background:var(--page);font-size:13px;font-weight:500}
+.flow span.hl{background:var(--brand-soft);color:var(--brand)}
+.flow i{color:var(--muted);font-style:normal}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 16px}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px}
+.card b{display:block;font-size:14px;margin-bottom:4px}
+.card p{margin:0;color:var(--ink-2);font-size:13px;line-height:1.5}
+.card.wide{grid-column:1 / -1}
+.tip{display:flex;gap:10px;align-items:flex-start;background:var(--page);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink-2);margin:0 0 18px}
+.tip b{color:var(--ink)}
+.intro-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.intro-foot small{color:var(--muted);font-size:12px}
+@media (max-width:600px){.cards{grid-template-columns:1fr}.intro-in{padding:22px 18px 18px}.intro h2{font-size:19px}}
+@media (max-width:600px){.wrap{padding:0 16px 48px}.tab{font-size:17px;padding:12px 14px 10px}.chart-box{height:280px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>경쟁사 모니터</h1>
+      <p class="sub">관심 기업의 시가총액과 사업현황, 산업군별 비교</p>
+    </div>
+    <div class="meta">
+      <span id="sampleBadge" class="badge" hidden>샘플 데이터</span>
+      <span id="updated"></span>
+      <button class="info-btn" id="introBtn" aria-haspopup="dialog">ⓘ 안내</button>
+      <button class="theme-btn" id="themeBtn" aria-label="밝은/어두운 테마 전환">◐</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="모니터링 그룹"></nav>
+  <p class="gdesc" id="gdesc"></p>
+
+  <div id="content">
+    <!-- 주가 · 시가총액 (market, full) -->
+    <div class="grid" id="secPrice">
+      <section class="panel">
+        <div class="ph">
+          <div><h2 id="priceTitle"></h2><p class="hint" id="priceHint"></p></div>
+          <div class="controls">
+            <div class="seg" id="views" role="group" aria-label="보기"></div>
+            <div class="seg" id="periods" role="group" aria-label="기간"></div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="priceChart" role="img" aria-label="주가 추이 차트"></canvas></div>
+        <div class="legend" id="legend"></div>
+      </section>
+      <section class="panel">
+        <div class="ph"><div><h2 id="rankTitle"></h2><p class="hint" id="rankHint"></p></div></div>
+        <ol class="rank" id="rank"></ol>
+      </section>
+    </div>
+
+    <section class="panel" id="secQuote">
+      <div class="ph"><div><h2>시세 · 밸류에이션</h2><p class="hint">열 제목을 누르면 정렬, 행을 누르면 차트에서 강조됩니다</p></div></div>
+      <div class="tbl-wrap"><table id="quoteTable"></table></div>
+    </section>
+
+    <!-- 기준일 시가총액 보고용 표 (market) -->
+    <section class="panel" id="secReport">
+      <div class="ph">
+        <div><h2>기준일 시가총액</h2><p class="hint">보고용 표 · 날짜를 고르고 복사하면 엑셀에 그대로 붙여넣을 수 있습니다</p></div>
+        <div class="controls">
+          <input type="date" id="repDate" aria-label="기준일">
+          <button class="btn primary" id="repCopy">표 복사</button>
+          <button class="btn" id="repCsv">CSV 다운로드</button>
+          <button class="btn" id="labelsBtn" aria-expanded="false" aria-controls="labelsBox">표시 설정</button>
+          <span class="toast" id="repToast" role="status"></span>
+        </div>
+      </div>
+      <div class="labels" id="labelsBox" hidden>
+        <p class="hint" style="margin:0">자사 표시와 섹션 이름은 <b>이 브라우저에만 저장</b>되고 사이트·저장소에는 올라가지 않습니다. PC와 휴대폰에서 각각 한 번 지정하세요.</p>
+        <div id="labelsFields"></div>
+        <div class="row"><button class="btn primary" id="labelsSave">저장</button><button class="btn" id="labelsReset">초기화</button></div>
+      </div>
+      <div class="tbl-wrap"><table id="repTable"></table></div>
+      <p class="note" id="repNote"></p>
+    </section>
+
+    <!-- 분기 실적 (business) -->
+    <section class="panel" id="secQuarter">
+      <div class="ph">
+        <div><h2>분기 실적 추이</h2><p class="hint" id="qHint"></p></div>
+        <div class="seg" id="qMetrics" role="group" aria-label="분기 지표"></div>
+      </div>
+      <div class="chart-box"><canvas id="qChart" role="img" aria-label="분기 실적 차트"></canvas></div>
+      <div class="tbl-wrap" style="margin-top:16px"><table id="qTable"></table></div>
+      <p class="note" id="qNote"></p>
+    </section>
+
+    <!-- 연간 실적 (business, full) -->
+    <section class="panel" id="secAnnual">
+      <div class="ph">
+        <div><h2>연간 실적 비교</h2><p class="hint" id="finHint"></p></div>
+        <div class="controls">
+          <div class="seg" id="metrics" role="group" aria-label="연간 지표"></div>
+          <select id="currency" aria-label="통화"></select>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="finChart" role="img" aria-label="연간 실적 차트"></canvas></div>
+      <div class="tbl-wrap" style="margin-top:16px"><table id="finTable"></table></div>
+      <div id="finNotes"></div>
+    </section>
+    <!-- 최근 공시 (모든 탭) -->
+    <section class="panel" id="secDisc">
+      <div class="ph">
+        <div><h2>최근 공시</h2><p class="hint" id="discHint">DART 접수 기준 · 공시명을 누르면 원문이 열립니다</p></div>
+        <div class="controls">
+          <div class="seg" id="discCat" role="group" aria-label="공시 종류"></div>
+          <select id="discCo" aria-label="회사 선택"></select>
+        </div>
+      </div>
+      <div class="controls" id="discYearWrap" style="margin-bottom:12px"><div class="seg" id="discYear" role="group" aria-label="연도"></div></div>
+      <div class="tbl-wrap" id="discGridWrap"><table id="discGrid"></table></div>
+      <div class="tbl-wrap" id="discListWrap"><table id="discTable"></table></div>
+      <div style="margin-top:12px" id="discMoreWrap"><button class="btn" id="discMore">더 보기</button></div>
+    </section>
+  </div>
+
+  <footer>
+    데이터: Yahoo Finance, OpenDART(정기보고서·감사보고서) · GitHub Actions로 평일 자동 갱신 · 투자 판단의 근거로 사용하지 마십시오.
+  </footer>
+</div>
+
+<dialog class="intro" id="intro" aria-labelledby="introTitle">
+  <div class="intro-in">
+    <h2 id="introTitle">경쟁사 모니터, 이런 대시보드입니다</h2>
+    <p class="lead">거래소·공시 데이터를 평일 하루 두 번 자동으로 모아, 관심 기업의 시가총액·실적·공시를 한 화면에서 봅니다.</p>
+    <div class="flow" aria-label="데이터 흐름">
+      <span>KRX 시가총액</span><span>DART 실적·공시</span><i>→</i>
+      <span>평일 16:40 · 06:40 자동 수집</span><i>→</i><span class="hl">대시보드</span>
+    </div>
+    <div class="cards">
+      <div class="card"><b>시가총액</b><p>시가총액 추이와 순위, 등락률·PER·PBR. 원하는 날짜의 시가총액 표를 엑셀로 바로 복사</p></div>
+      <div class="card"><b>사업현황</b><p>최근 8개 분기 실적과 YoY·QoQ, 연간 실적. 비상장사는 감사보고서 수치와 원문 링크</p></div>
+      <div class="card"><b>건강기능식품 · 마이크로바이옴 신약</b><p>산업군별 국내외 기업의 주가 흐름과 연간 실적 비교</p></div>
+      <div class="card"><b>최근 공시 <span style="font-weight:400;color:var(--muted)">· 모든 탭 하단</span></b><p>연도별 1Q·2Q·3Q·연간 보고서와 IR을 칸 하나로 DART 원문 열기</p></div>
+    </div>
+    <div class="tip"><span aria-hidden="true">💡</span><span><b>표시 설정</b>(시가총액 탭 하단)에서 기준 기업과 섹션 이름을 지정할 수 있습니다. 설정은 <b>내 브라우저에만</b> 저장되고 다른 사람에게는 보이지 않습니다.</span></div>
+    <div class="intro-foot">
+      <small id="introAsOf">공시·거래소 공개 자료 기반 · 투자 판단의 근거로 사용하지 마십시오</small>
+      <button class="btn primary" id="introClose" autofocus>시작하기</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const PERIODS = [["1M",21],["3M",63],["6M",126],["1Y",252],["2Y",504]];
+const METRICS = [["revenue","매출액"],["operatingIncome","영업이익"],["opm","영업이익률"],["netIncome","순이익"]];
+const MODE_LABEL = { market:"주가 · 시가총액", business:"분기 · 연간 실적", full:"주가 · 연간 실적" };
+const state = { meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", qMetric:"revenue",
+  currency:"KRW", hidden:new Set(), focus:null, sort:{key:"marketCap",dir:"desc"} };
+const charts = {};
+
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const color = i => css(`--s${(i % 8) + 1}`);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $ = id => document.getElementById(id);
+const grp = () => state.data[state.group] || {companies:[], mode:"full"};
+const comps = () => grp().companies;
+
+/* ---------- 숫자 표기 ---------- */
+function fmtPrice(v, cur){
+  if (v == null) return "–";
+  if (cur === "KRW") return Math.round(v).toLocaleString("ko-KR") + "원";
+  const sym = {USD:"$",EUR:"€",JPY:"¥",GBP:"£"}[cur] || "";
+  return sym + v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) + (sym ? "" : " " + (cur||""));
+}
+function fmtBig(v, cur){
+  if (v == null) return "–";
+  const neg = v < 0, a = Math.abs(v);
+  let s;
+  if (cur === "KRW") s = a >= 1e12 ? (a/1e12).toFixed(2) + "조" : Math.round(a/1e8).toLocaleString("ko-KR") + "억";
+  else { const sym = {USD:"$",EUR:"€"}[cur] || ""; s = a >= 1e9 ? sym + (a/1e9).toFixed(2) + "B" : sym + (a/1e6).toFixed(1) + "M"; }
+  return (neg ? "-" : "") + s;
+}
+function fmtPct(v, digits=1){
+  if (v == null || !isFinite(v)) return '<span class="flat">–</span>';
+  const cls = v > 0 ? "up" : v < 0 ? "down" : "flat";
+  return `<span class="${cls}">${v > 0 ? "▲" : v < 0 ? "▼" : ""}${Math.abs(v).toFixed(digits)}%</span>`;
+}
+const fmtX = v => v == null ? "–" : v.toFixed(1) + "배";
+const signed = (v, cur) => v == null ? "–" : `<span class="${v < 0 ? "down" : ""}">${fmtBig(v, cur)}</span>`;
+const margin = (op, rev) => (rev && op != null) ? op / rev * 100 : null;
+const fmtMargin = m => m == null ? "–" : `<span class="${m < 0 ? "down" : ""}">${m.toFixed(1)}%</span>`;
+const growth = (a, b) => (a != null && b > 0) ? (a / b - 1) * 100 : null;
+const qLabel = p => `${p.slice(2,4)}.${p.slice(5)}Q`;   // 2025Q3 → 25.3Q
+/* 자사·섹션 이름: 공개 저장소에 두지 않고 이 브라우저(localStorage)에만 보관 */
+const LABELS_KEY = "cm-labels-v2";
+let labels = { self: "", sections: {} };
+try { labels = { ...labels, ...JSON.parse(localStorage.getItem(LABELS_KEY) || "{}") }; } catch(e){}
+const isSelf = c => labels.self && c.id === labels.self;
+const secKey = i => `${state.group}:s${i + 1}`;                 // 섹션은 이름 없이 순번으로만 구분
+const secTitle = i => (labels.sections && labels.sections[secKey(i)]) || (grp().sections?.[i]?.title || "");
+const coCell = (c, sub) => `<div class="co"><i style="background:${color(c._ci)}"></i><b>${esc(c.name)}</b>${
+  isSelf(c) ? `<span class="tag self">자사</span>` : ""}${
+  c.listed ? `<span>${esc(sub ?? c.ticker)}</span>` : `<span class="tag">비상장</span>`}</div>`;
+// 섹션 구조: [{title|null, items:[company]}] — 자사(표시 설정)와 섹션 밖 회사가 맨 위
+function sectioned(list){
+  const secs = grp().sections || [];
+  const top = list.filter(isSelf);
+  if (!secs.length) return [{title:null, items:[...top, ...list.filter(c => !isSelf(c))]}];
+  const inSec = new Set(secs.flatMap(x => x.members));
+  const out = [{title:null, items:[...top, ...list.filter(c => !inSec.has(c.id) && !isSelf(c))]}];
+  secs.forEach((x, i) => out.push({title:secTitle(i), sec:true,
+    items:x.members.map(id => list.find(c => c.id === id)).filter(c => c && !isSelf(c))}));
+  return out.filter(x => x.items.length);
+}
+
+/* ---------- 데이터 로드 ---------- */
+async function loadJSON(path){
+  const r = await fetch(path, {cache:"no-cache"});
+  if (!r.ok) throw new Error(path + " " + r.status);
+  return r.json();
+}
+async function init(){
+  try { state.meta = await loadJSON("data/meta.json"); }
+  catch(e){
+    $("content").innerHTML = `<div class="panel empty">데이터를 불러오지 못했습니다. GitHub Pages 또는 로컬 웹서버(python -m http.server)로 열어주세요.</div>`;
+    return;
+  }
+  const groups = state.meta.groups || state.meta.industries || [];
+  $("sampleBadge").hidden = !state.meta.sample;
+  $("updated").textContent = "업데이트 " + new Date(state.meta.updatedAt).toLocaleString("ko-KR",{dateStyle:"medium",timeStyle:"short"});
+
+  // 모니터링 탭과 산업군 탭 사이에 구분선
+  let html = "", prevFU = null;
+  groups.forEach(g => {
+    const fu = g.mode !== "full";
+    if (prevFU === true && !fu) html += `<span class="tab-sep" aria-hidden="true"></span>`;
+    prevFU = fu;
+    html += `<button class="tab" role="tab" data-id="${esc(g.id)}" aria-selected="false">${esc(g.name)}<small>${MODE_LABEL[g.mode] || ""}</small></button>`;
+  });
+  $("tabs").innerHTML = html;
+  $("tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if (b) selectGroup(b.dataset.id); });
+
+  segment("periods", PERIODS.map(p => [p[0], p[0]]), () => state.period, v => { state.period = v; renderPrice(); renderRank(); });
+  segment("views", [["rel","상대 수익률"],["mcap","시가총액"]], () => state.view, v => { state.view = v; renderPrice(); renderRank(); });
+  segment("metrics", METRICS, () => state.metric, v => { state.metric = v; renderAnnual(); });
+  segment("qMetrics", METRICS, () => state.qMetric, v => { state.qMetric = v; renderQuarter(); });
+  $("currency").addEventListener("change", e => { state.currency = e.target.value; renderAnnual(); });
+
+  const first = groups.find(g => g.id === location.hash.slice(1)) || groups[0];
+  selectGroup(first.id);
+  maybeIntro();   // 처음 방문한 사람에게만 자동 표시
+  addEventListener("hashchange", () => {
+    const id = location.hash.slice(1);
+    if (id !== state.group && groups.some(g => g.id === id)) selectGroup(id);
+  });
+}
+function segment(id, items, get, set){
+  const el = $(id);
+  el.innerHTML = items.map(([k,l]) => `<button data-k="${k}" aria-pressed="${k===get()}">${l}</button>`).join("");
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    set(b.dataset.k);
+    el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === get()));
+  });
+}
+function syncSeg(id, val){ $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === val)); }
+
+async function selectGroup(id){
+  state.group = id; state.hidden.clear(); state.focus = null;
+  history.replaceState(null, "", "#" + id);
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.id === id));
+  if (!state.data[id]){
+    try { state.data[id] = await loadJSON(`data/${id}.json`); }
+    catch(e){ state.data[id] = {companies:[], mode:"full"}; }
+  }
+  const g = grp();
+  g.mode = g.mode || "full";
+  g.companies.forEach((c,i) => { c._ci = i; c.annual = c.annual || c.financials; c.listed = c.listed ?? !!c.ticker; });
+  $("gdesc").textContent = g.description || "";
+
+  // 탭 성격에 맞는 섹션만 표시
+  const m = g.mode;
+  $("secPrice").hidden = m === "business";
+  $("secQuote").hidden = m === "business";
+  $("secReport").hidden = m !== "market";
+  $("secQuarter").hidden = m !== "business";
+  $("secAnnual").hidden = m === "market";
+  state.view = m === "market" ? "mcap" : "rel"; syncSeg("views", state.view);
+  state.sort = g.sections?.length ? {key:"order", dir:"asc"} : {key:"marketCap", dir:"desc"};
+
+  const curs = [...new Set(g.companies.map(c => c.annual?.currency).filter(Boolean))].sort((a,b) => (b==="KRW") - (a==="KRW"));
+  $("currency").innerHTML = curs.map(c => `<option value="${c}">${c==="KRW" ? "원화(국내)" : c}</option>`).join("");
+  $("currency").hidden = curs.length < 2;
+  state.currency = curs[0] || "KRW"; $("currency").value = state.currency;
+  renderAll();
+}
+function renderAll(){
+  const m = grp().mode;
+  if (m !== "business"){ renderPrice(); renderLegend(); renderRank(); renderQuotes(); }
+  if (m === "market") renderReport(true);
+  if (m === "business") renderQuarter();
+  if (m !== "market") renderAnnual();
+  renderDisc(true);
+}
+
+/* ---------- 차트 공통 ---------- */
+function chartBase(){
+  Chart.defaults.font.family = '"IBM Plex Sans KR", system-ui, sans-serif';
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = css("--muted");
+  return {
+    backgroundColor: css("--surface"), titleColor: css("--ink"), bodyColor: css("--ink-2"),
+    borderColor: css("--axis"), borderWidth: 1, padding: 10, boxPadding: 4,
+  };
+}
+function draw(key, canvasId, cfg){
+  if (charts[key]) charts[key].destroy();
+  charts[key] = new Chart($(canvasId), cfg);
+}
+
+/* ---------- 주가 · 시가총액 ---------- */
+function periodSlice(c){
+  const n = PERIODS.find(p => p[0] === state.period)[1], p = c.price;
+  if (!p) return null;
+  const s = Math.max(0, p.dates.length - n - 1);
+  return { dates: p.dates.slice(s), close: p.close.slice(s), mcap: p.mcap ? p.mcap.slice(s) : null };
+}
+function periodReturn(c){
+  const s = periodSlice(c); if (!s || s.close.length < 2) return null;
+  return (s.close.at(-1) / s.close[0] - 1) * 100;
+}
+// 시가총액 보기는 원화 종목만 (통화가 다르면 금액 비교 불가)
+const mcapEligible = c => c.price?.mcap && (c.quote?.currency || "KRW") === "KRW";
+
+function renderPrice(){
+  const tip = chartBase(), isM = state.view === "mcap";
+  $("priceTitle").textContent = isM ? "시가총액 추이" : "상대 주가 추이";
+  const allKrx = comps().filter(mcapEligible).every(c => c.price.mcapSource === "KRX");
+  $("priceHint").textContent = isM ? (allKrx ? "단위: 억원 · KRX 일별 시가총액" : "단위: 억원 · 일부 종목은 현재 주식수 × 종가 근사치 (KRX 이력 수집 중)") : "기간 시작일 종가 = 100";
+  const series = comps().filter(c => c.price && (!isM || mcapEligible(c))).map(c => ({c, s: periodSlice(c)}));
+  const all = [...new Set(series.flatMap(x => x.s.dates))].sort();
+  const datasets = series.map(({c, s}) => {
+    const base = s.close[0];
+    const map = new Map(s.dates.map((d,i) => [d, isM ? s.mcap[i] / 1e8 : s.close[i] / base * 100]));
+    const col = color(c._ci), dim = state.focus != null && state.focus !== c.id;
+    return {
+      label: c.name, cid: c.id,
+      data: all.map(d => map.has(d) ? +map.get(d).toFixed(isM ? 0 : 2) : null),
+      borderColor: dim ? col + "40" : col, backgroundColor: col,
+      borderWidth: state.focus === c.id ? 3 : 2, pointRadius: 0, pointHoverRadius: 4,
+      pointHoverBorderWidth: 2, pointHoverBorderColor: css("--surface"),
+      spanGaps: true, tension: 0, hidden: state.hidden.has(c.id),
+    };
+  });
+  draw("price", "priceChart", {
+    type: "line",
+    data: { labels: all, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tip, usePointStyle: true, itemSort: (a,b) => b.parsed.y - a.parsed.y,
+          callbacks: { label: x => isM
+            ? ` ${x.dataset.label}  ${x.parsed.y >= 10000 ? (x.parsed.y/10000).toFixed(2) + "조" : Math.round(x.parsed.y).toLocaleString("ko-KR") + "억"}`
+            : ` ${x.dataset.label}  ${x.parsed.y.toFixed(1)} (${x.parsed.y >= 100 ? "+" : ""}${(x.parsed.y-100).toFixed(1)}%)` } },
+      },
+      scales: {
+        x: { grid: { display: false }, border: { color: css("--axis") },
+             ticks: { maxTicksLimit: 7, maxRotation: 0, callback: function(v){ return this.getLabelForValue(v).slice(2).replace(/-/g,"."); } } },
+        y: { grid: { color: css("--grid") }, border: { display: false }, beginAtZero: isM,
+             ticks: { maxTicksLimit: 6, callback: v => isM ? v.toLocaleString("ko-KR") : v } },
+      },
+    },
+    plugins: isM ? [] : [{ id: "base100", beforeDatasetsDraw(ch){
+      const y = ch.scales.y.getPixelForValue(100), {left,right} = ch.chartArea, ctx = ch.ctx;
+      ctx.save(); ctx.strokeStyle = css("--axis"); ctx.setLineDash([4,4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke(); ctx.restore(); } }],
+  });
+}
+function renderLegend(){
+  const el = $("legend"), isM = state.view === "mcap";
+  el.innerHTML = comps().filter(c => c.price && (!isM || mcapEligible(c))).map(c =>
+    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</button>`).join("");
+  el.onclick = e => {
+    const b = e.target.closest(".lg"); if (!b) return;
+    const id = b.dataset.id;
+    state.hidden.has(id) ? state.hidden.delete(id) : state.hidden.add(id);
+    b.setAttribute("aria-pressed", !state.hidden.has(id));
+    renderPrice();
+  };
+}
+function setFocus(id){
+  state.focus = state.focus === id ? null : id;
+  if (state.focus) state.hidden.delete(state.focus);
+  renderPrice(); renderLegend();
+  document.querySelectorAll("#quoteTable tbody tr, #rank li").forEach(r => r.classList.toggle("sel", r.dataset.id === state.focus));
+}
+function renderRank(){
+  const isM = state.view === "mcap";
+  renderLegend();
+  if (isM){
+    // 시가총액 크기 순, 막대 = 현재 시총, 아래 숫자 = 기간 변화율
+    $("rankTitle").textContent = "시가총액 순위";
+    $("rankHint").textContent = `현재 시가총액 · 최근 ${state.period} 변화율`;
+    const rows = comps().filter(mcapEligible).map(c => ({c, v: c.quote?.marketCap ?? c.price.mcap.at(-1), r: periodReturn(c)}))
+      .sort((a,b) => b.v - a.v);
+    const max = Math.max(...rows.map(x => x.v), 1);
+    $("rank").innerHTML = rows.map(({c,v,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
+      <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
+      <span class="bar-track"><span class="bar" style="left:0;width:${v/max*100}%;background:${color(c._ci)}"></span></span>
+      <span class="rv">${fmtBig(v,"KRW")}<small>${fmtPct(r)}</small></span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
+  } else {
+    $("rankTitle").textContent = "기간 수익률 순위";
+    $("rankHint").textContent = `최근 ${state.period} 주가 등락률`;
+    const rows = comps().map(c => ({c, r: periodReturn(c)})).filter(x => x.r != null).sort((a,b) => b.r - a.r);
+    const max = Math.max(5, ...rows.map(x => Math.abs(x.r)));
+    $("rank").innerHTML = rows.map(({c,r}) => {
+      const w = Math.abs(r) / max * 50;
+      const pos = r >= 0 ? `left:50%;width:${w}%;background:var(--up)` : `right:50%;width:${w}%;background:var(--down)`;
+      return `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
+        <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</span>
+        <span class="bar-track div"><span class="bar ${r<0?"neg":""}" style="${pos}"></span></span>
+        <span class="rv">${fmtPct(r)}</span></li>`;
+    }).join("") || `<li class="empty">데이터 없음</li>`;
+  }
+  $("rank").onclick = e => { const li = e.target.closest("li[data-id]"); if (li) setFocus(li.dataset.id); };
+}
+
+/* ---------- 시세 표 ---------- */
+const QCOLS = [["name","종목"],["price","현재가"],["change1d","1일"],["change1w","1주"],["change1m","1개월"],
+  ["change3m","3개월"],["change1y","1년"],["range","52주 범위"],["marketCap","시가총액"],["per","PER"],["pbr","PBR"]];
+function qval(c, k){
+  const q = c.quote || {};
+  if (k === "name") return c.name;
+  if (k === "order") return c._ci;
+  if (k === "range") return (q.high52w && q.low52w && q.high52w > q.low52w) ? (q.price - q.low52w) / (q.high52w - q.low52w) : null;
+  if (k === "marketCap") return q.marketCap == null ? null : q.marketCap * (q.currency === "KRW" ? 1 : 1350); // 정렬용 대략 환산
+  return q[k];
+}
+function renderQuotes(){
+  const {key, dir} = state.sort;
+  const rows = comps().filter(c => c.listed).sort((a,b) => {
+    const x = qval(a,key), y = qval(b,key);
+    if (x == null) return 1; if (y == null) return -1;
+    const r = typeof x === "string" ? x.localeCompare(y, "ko") : x - y;
+    return dir === "asc" ? r : -r;
+  });
+  const head = `<thead><tr>${QCOLS.map(([k,l]) => `<th data-k="${k}" ${k===key?`data-dir="${dir}"`:""}>${l}</th>`).join("")}</tr></thead>`;
+  const rowHtml = c => {
+    const q = c.quote;
+    if (!q) return `<tr data-id="${esc(c.id)}"><td>${coCell(c)}</td><td colspan="${QCOLS.length-1}" class="err">${esc(c.error || "데이터 없음")}</td></tr>`;
+    const pos = qval(c, "range");
+    return `<tr data-id="${esc(c.id)}" class="click ${state.focus===c.id?"sel":""}">
+      <td>${coCell(c)}</td><td>${fmtPrice(q.price, q.currency)}</td>
+      <td>${fmtPct(q.change1d,2)}</td><td>${fmtPct(q.change1w)}</td><td>${fmtPct(q.change1m)}</td>
+      <td>${fmtPct(q.change3m)}</td><td>${fmtPct(q.change1y)}</td>
+      <td title="최저 ${fmtPrice(q.low52w,q.currency)} / 최고 ${fmtPrice(q.high52w,q.currency)}">${pos==null?"–":`<span class="range"><i style="left:calc(${pos*100}% - 1px)"></i></span>`}</td>
+      <td>${fmtBig(q.marketCap, q.currency)}</td><td>${fmtX(q.per)}</td><td>${fmtX(q.pbr)}</td></tr>`;
+  };
+  const body = key === "order"
+    ? sectioned(comps().filter(c => c.listed)).map(sec =>
+        (sec.sec ? (sec.title ? `<tr class="sec"><td colspan="${QCOLS.length}">▼${esc(sec.title)}</td></tr>`
+                      : `<tr class="sec gap" aria-hidden="true"><td colspan="${QCOLS.length}"></td></tr>`) : "") + sec.items.map(rowHtml).join("")).join("")
+    : rows.map(rowHtml).join("");
+  const t = $("quoteTable");
+  t.innerHTML = head + `<tbody>${body}</tbody>`;
+  t.querySelector("thead").onclick = e => {
+    const th = e.target.closest("th[data-k]"); if (!th) return;
+    const k = th.dataset.k;
+    state.sort = { key:k, dir: state.sort.key === k && state.sort.dir === "desc" ? "asc" : (k==="name" ? "asc" : "desc") };
+    renderQuotes();
+  };
+  t.querySelector("tbody").onclick = e => { const r = e.target.closest("tr.click"); if (r) setFocus(r.dataset.id); };
+}
+
+/* ---------- 기준일 시가총액 (보고용) ---------- */
+function reportDates(){
+  return [...new Set(comps().filter(c => c.listed && c.price?.mcap).flatMap(c => c.price.dates))].sort();
+}
+function reportRows(day){
+  // day 당일 데이터가 없으면 그 이전 가장 가까운 거래일 값 (휴장·미반영 대비)
+  const out = [];
+  sectioned(comps().filter(c => c.listed)).forEach(sec => {
+    if (sec.sec) out.push({title: sec.title, sec: true});
+    sec.items.forEach(c => {
+      const p = c.price; let i = -1;
+      if (p?.mcap) for (let k = p.dates.length - 1; k >= 0; k--) if (p.dates[k] <= day){ i = k; break; }
+      out.push({c, code: c.ticker.slice(0,6), date: i < 0 ? null : p.dates[i], close: i < 0 ? null : p.close[i], mcap: i < 0 ? null : p.mcap[i],
+        src: p?.mcapSource });
+    });
+  });
+  return out;
+}
+function renderReport(reset){
+  const dates = reportDates(), inp = $("repDate");
+  if (!dates.length){ $("repTable").innerHTML = `<tbody><tr><td class="empty">시가총액 데이터 없음</td></tr></tbody>`; return; }
+  inp.min = dates[0]; inp.max = dates.at(-1);
+  if (reset || !inp.value) inp.value = dates.at(-1);
+  const day = inp.value;
+  const rows = reportRows(day);
+  const head = `<thead><tr><th>종목(코드)</th><th>기준일</th><th>종가</th><th>시가총액(억원)</th></tr></thead>`;
+  const body = rows.map(r => r.sec
+    ? (r.title ? `<tr class="sec"><td colspan="4">▼${esc(r.title)}</td></tr>` : `<tr class="sec gap" aria-hidden="true"><td colspan="4"></td></tr>`)
+    : `<tr><td>${coCell(r.c, r.code)}</td><td>${r.date ? r.date.replace(/-/g,"/") : "–"}${r.date && r.date !== day ? ' <span class="err">(직전 거래일)</span>' : ""}</td>
+       <td>${r.close == null ? "–" : r.close.toLocaleString("ko-KR")}</td>
+       <td>${r.mcap == null ? "–" : (r.mcap/1e8).toLocaleString("ko-KR",{minimumFractionDigits:1,maximumFractionDigits:1})}</td></tr>`).join("");
+  $("repTable").innerHTML = head + `<tbody>${body}</tbody>`;
+  const approx = rows.filter(r => r.c && r.src !== "KRX").map(r => r.c.name);
+  $("repNote").textContent = approx.length
+    ? `KRX 데이터가 없어 근사치로 표시: ${approx.join(", ")} (KRX_API_KEY 등록 후 자동 대체)`
+    : "출처: KRX 정보데이터시스템 일별매매정보. 복사 시 시가총액은 소수점까지 원값으로 들어갑니다.";
+}
+function reportTable(){
+  const day = $("repDate").value, lines = [["name(ticker)","date","close","market_cap_억원"]];
+  reportRows(day).forEach(r => {
+    if (r.sec){ lines.push(["","","",""]); if (r.title) lines.push(["▼" + r.title,"","",""]); return; }
+    lines.push([`${r.c.name}(${r.code})`, r.date ? r.date.replace(/-/g,"/") : "", r.close ?? "", r.mcap == null ? "" : r.mcap / 1e8]);
+  });
+  return lines;
+}
+function toast(msg){ $("repToast").textContent = msg; setTimeout(() => $("repToast").textContent = "", 2000); }
+$("repDate").addEventListener("change", () => renderReport(false));
+$("repCopy").addEventListener("click", async () => {
+  const tsv = reportTable().map(r => r.join("\t")).join("\n");
+  try { await navigator.clipboard.writeText(tsv); toast("복사했습니다"); }
+  catch(e){ toast("복사 실패 — CSV 다운로드를 이용하세요"); }
+});
+$("repCsv").addEventListener("click", () => {
+  const csv = "\ufeff" + reportTable().map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : v).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
+  a.download = `시가총액_${$("repDate").value.replace(/-/g,"")}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+/* ---------- 최근 공시 (정기보고서 · IR) ---------- */
+const DISC_CATS = [["report","정기보고서"],["ir","IR"]];
+let discCat = "report", discLimit = 15;
+// 예전 데이터(cat 없음) 호환: 제목으로 분류
+const discCatOf = d => d.cat || (/사업보고서|반기보고서|분기보고서|감사보고서/.test(d.title) ? "report" : /IR|기업설명회/.test(d.title) ? "ir" : null);
+// 정기보고서 제목 → {year, q}  예) "반기보고서 (2026.06)" → 2026, 2 / "사업보고서 (2025.12)" → 2025, 4
+const Q_LABEL = {1:"1Q", 2:"2Q", 3:"3Q", 4:"연간"};
+function periodOf(d){
+  const m = d.title.match(/\((\d{4})\.(\d{2})\)/);
+  if (!m) return null;
+  let q = /반기/.test(d.title) ? 2 : /사업보고서|감사보고서/.test(d.title) ? 4 : Math.ceil(+m[2] / 3);
+  if (/분기/.test(d.title) && (q === 2 || q === 4)) q = +m[2] <= 4 ? 1 : 3;   // 결산월이 다른 회사 보정
+  return { year: +m[1], q };
+}
+let discYear = null;
+function renderGrid(list, today){
+  // 회사 × (1Q, 반기, 3Q, 사업보고서) — 선택한 연도
+  const byCo = list.map(c => {
+    const cells = {};
+    c.disclosures.filter(d => discCatOf(d) === "report").forEach(d => {
+      const p = periodOf(d); if (!p) return;
+      const k = `${p.year}-${p.q}`;
+      if (!cells[k] || cells[k].date < d.date) cells[k] = d;          // 정정 등 중복이면 최신
+    });
+    return {c, cells};
+  });
+  const years = [...new Set(byCo.flatMap(x => Object.keys(x.cells).map(k => +k.split("-")[0])))].sort((a,b) => b - a);
+  if (!years.length){ $("discGrid").innerHTML = `<tbody><tr><td class="empty">정기보고서 없음</td></tr></tbody>`; $("discYear").innerHTML = ""; return 0; }
+  if (!years.includes(discYear)) discYear = years[0];
+  $("discYear").innerHTML = years.map(y => `<button data-k="${y}" aria-pressed="${y === discYear}">${y}년</button>`).join("");
+  const head = `<colgroup><col style="width:28%">${[1,2,3,4].map(() => `<col style="width:18%">`).join("")}</colgroup>` +
+    `<thead><tr><th>회사</th>${[1,2,3,4].map(q => `<th>${Q_LABEL[q]}</th>`).join("")}</tr></thead>`;
+  const body = byCo.map(({c, cells}) => `<tr><td>${coCell(c, "")}</td>${[1,2,3,4].map(q => {
+      const d = cells[`${discYear}-${q}`];
+      if (!d) return `<td class="cell-empty">–</td>`;
+      const label = Q_LABEL[q];
+      const isNew = (today - new Date(d.date)) / 864e5 <= 3;
+      return `<td><a class="chip" href="${esc(d.url)}" target="_blank" rel="noopener" title="${esc(d.title)} · 접수 ${d.date}">${label} ↗ <small>${d.date.slice(5).replace("-",".")}</small></a>${isNew ? ' <span class="tag new">NEW</span>' : ""}</td>`;
+    }).join("")}</tr>`).join("");
+  $("discGrid").innerHTML = head + `<tbody>${body}</tbody>`;
+  return byCo.reduce((n, x) => n + Object.keys(x.cells).filter(k => k.startsWith(discYear + "-")).length, 0);
+}
+function renderDisc(reset){
+  const list = comps().filter(c => c.disclosures);
+  $("secDisc").hidden = !list.length;
+  if (!list.length) return;
+  const sel = $("discCo");
+  if (reset){
+    discLimit = 15;
+    sel.innerHTML = `<option value="">전체 회사</option>` + list.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+  }
+  const pick = sel.value;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isGrid = discCat === "report";
+  $("discGridWrap").hidden = $("discYearWrap").hidden = !isGrid;
+  $("discListWrap").hidden = isGrid;
+  if (isGrid){
+    const n = renderGrid(list.filter(c => !pick || c.id === pick), today);
+    $("discMoreWrap").hidden = true;
+    $("discHint").textContent = `${discYear ?? ""}년 정기보고서 ${n}건 · 연간 = 사업보고서 (비상장사는 감사보고서) · 칸을 누르면 DART 원문이 열립니다`;
+    return;
+  }
+  // IR: 접수일 최근순 목록 (회사 선택 시 그 회사만)
+  const rows = list.filter(c => !pick || c.id === pick)
+    .flatMap(c => c.disclosures.filter(d => discCatOf(d) === discCat).map(d => ({...d, c})))
+    .sort((a,b) => b.date.localeCompare(a.date) || a.c._ci - b.c._ci);
+  const body = rows.slice(0, discLimit).map(d => {
+    const days = (today - new Date(d.date)) / 864e5;
+    return `<tr><td>${d.date.slice(2).replace(/-/g,".")}${days <= 3 ? ' <span class="tag new">NEW</span>' : ""}</td>
+      <td>${coCell(d.c, "")}</td>
+      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)} ↗</a></td></tr>`;
+  }).join("");
+  $("discTable").innerHTML = `<thead><tr><th>접수일</th><th>회사</th><th>공시명</th></tr></thead><tbody>${
+    body || `<tr><td colspan="3" class="empty">최근 3년 ${discCat === "ir" ? "IR" : "정기보고서"} 공시 없음</td></tr>`}</tbody>`;
+  $("discMoreWrap").hidden = rows.length <= discLimit;
+  $("discHint").textContent = (discCat === "ir"
+    ? "기업설명회(IR) 개최 공시"
+    : "사업·반기·분기보고서 (비상장사는 감사보고서)") + ` · 최근 3년 ${rows.length}건 · 공시명을 누르면 DART 원문이 열립니다`;
+}
+segment("discCat", DISC_CATS, () => discCat, v => { discCat = v; discLimit = 15; renderDisc(false); });
+$("discCo").addEventListener("change", () => { discLimit = 15; renderDisc(false); });
+$("discYear").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; discYear = +b.dataset.k; renderDisc(false); });
+$("discMore").addEventListener("click", () => { discLimit += 30; renderDisc(false); });
+
+/* ---------- 표시 설정 ---------- */
+function renderLabels(){
+  const listed = comps().filter(c => c.listed).slice().sort((a,b) => a.name.localeCompare(b.name, "ko"));
+  const secs = grp().sections || [];
+  $("labelsFields").innerHTML =
+    `<label>자사<select id="lbSelf"><option value="">없음</option>${listed.map(c =>
+      `<option value="${esc(c.id)}" ${labels.self===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>` +
+    secs.map((x,i) => `<label>섹션 ${i+1} 이름<input type="text" data-sec="${esc(secKey(i))}" value="${esc(labels.sections?.[secKey(i)] || "")}" placeholder="${esc(x.title || "")} (기본값)"></label>`).join("");
+}
+$("labelsBtn").addEventListener("click", () => {
+  const box = $("labelsBox"), open = box.hidden;
+  box.hidden = !open; $("labelsBtn").setAttribute("aria-expanded", open);
+  if (open) renderLabels();
+});
+$("labelsSave").addEventListener("click", () => {
+  labels.self = $("lbSelf").value;
+  labels.sections = labels.sections || {};
+  document.querySelectorAll("#labelsFields input[data-sec]").forEach(i => {
+    const v = i.value.trim();
+    if (v) labels.sections[i.dataset.sec] = v; else delete labels.sections[i.dataset.sec];
+  });
+  try { localStorage.setItem(LABELS_KEY, JSON.stringify(labels)); toast("저장했습니다 (이 브라우저에만)"); }
+  catch(e){ toast("이 브라우저에서는 저장할 수 없습니다"); }
+  renderAll();
+});
+$("labelsReset").addEventListener("click", () => {
+  labels = { self: "", sections: {} };
+  try { localStorage.removeItem(LABELS_KEY); } catch(e){}
+  renderLabels(); renderAll(); toast("초기화했습니다");
+});
+
+/* ---------- 분기 실적 ---------- */
+function vals(f, m, n){
+  if (!f) return [];
+  const len = (f.years || f.periods).length;
+  if (m === "opm") return Array.from({length:len}, (_,i) => margin(f.operatingIncome?.[i], f.revenue?.[i]));
+  return f[m] || [];
+}
+function renderQuarter(){
+  const tip = chartBase(), m = state.qMetric, isPct = m === "opm";
+  const list = comps().filter(c => c.quarterly);
+  const periods = [...new Set(list.flatMap(c => c.quarterly.periods))].sort().slice(-8);
+  $("qHint").textContent = `단위: ${isPct ? "%" : "억원"} · 최근 ${periods.length}개 분기 (분기 단독 금액)`;
+
+  draw("q", "qChart", {
+    type: "bar",
+    data: {
+      labels: periods.map(qLabel),
+      datasets: list.map(c => {
+        const v = vals(c.quarterly, m);
+        return { label: c.name, backgroundColor: color(c._ci), borderRadius: 4, borderSkipped: "start", maxBarThickness: 26,
+          data: periods.map(p => { const i = c.quarterly.periods.indexOf(p); const x = i < 0 ? null : v[i];
+            return x == null ? null : isPct ? +x.toFixed(1) : Math.round(x / 1e8); }) };
+      }),
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      datasets: { bar: { categoryPercentage: .7, barPercentage: .9 } },
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 2, color: css("--ink-2"), padding: 14 } },
+        tooltip: { ...tip, callbacks: { label: x => ` ${x.dataset.label}  ${x.parsed.y == null ? "–" : x.parsed.y.toLocaleString("ko-KR")}${isPct ? "%" : "억원"}` } },
+      },
+      scales: {
+        x: { grid: { display:false }, border: { color: css("--axis") } },
+        y: { grid: { color: css("--grid") }, border: { display:false }, ticks: { maxTicksLimit: 6, callback: v => v.toLocaleString("ko-KR") + (isPct ? "%" : "") } },
+      },
+    },
+  });
+
+  // 표: 최근 분기 기준 + YoY, QoQ
+  const head = `<thead><tr><th>종목</th><th>최근 분기</th><th>매출액</th><th>YoY</th><th>QoQ</th><th>영업이익</th><th>영업이익률</th><th>순이익</th><th>시가총액</th></tr></thead>`;
+  const body = comps().map(c => {
+    const f = c.quarterly;
+    if (!f) return `<tr><td>${coCell(c)}</td><td colspan="8" class="err">${c.listed ? esc(c.error || "분기 데이터 없음") : "분기 공시 없음 — 아래 연간 실적(감사보고서) 참고"}</td></tr>`;
+    const i = f.periods.length - 1, p = f.periods[i];
+    const yoyIdx = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
+    const rev = f.revenue[i], op = f.operatingIncome[i];
+    return `<tr><td>${coCell(c)}</td><td>${qLabel(p)}</td><td>${fmtBig(rev,"KRW")}</td>
+      <td>${fmtPct(yoyIdx < 0 ? null : growth(rev, f.revenue[yoyIdx]))}</td><td>${fmtPct(i ? growth(rev, f.revenue[i-1]) : null)}</td>
+      <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td><td>${signed(f.netIncome[i], f.currency)}</td>
+      <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>`;
+  }).join("");
+  $("qTable").innerHTML = head + `<tbody>${body}</tbody>`;
+  const src = [...new Set(list.map(c => c.quarterly.source))].join(", ");
+  $("qNote").textContent = `출처: ${src || "–"} · 비상장사는 분기 공시 의무가 없어 연간 감사보고서 수치만 제공됩니다.`;
+}
+
+/* ---------- 연간 실적 ---------- */
+function renderAnnual(){
+  const tip = chartBase(), m = state.metric, isPct = m === "opm";
+  const list = comps().filter(c => c.annual && (isPct || c.annual.currency === state.currency));
+  $("currency").disabled = isPct;
+  const years = [...new Set(list.flatMap(c => c.annual.years))].sort().slice(-3);
+  const unit = isPct ? "%" : state.currency === "KRW" ? "억원" : `백만 ${state.currency}`;
+  const scale = v => v == null ? null : isPct ? +v.toFixed(1) : state.currency === "KRW" ? Math.round(v / 1e8) : +(v / 1e6).toFixed(1);
+  $("finHint").textContent = `단위: ${unit} · 최근 ${years.length}개 사업연도`;
+
+  draw("fin", "finChart", {
+    type: "bar",
+    data: {
+      labels: years.map(y => y + "년"),
+      datasets: list.map(c => {
+        const v = vals(c.annual, m);
+        return { label: c.name + (c.listed ? "" : " (비상장)"), backgroundColor: color(c._ci), borderRadius: 4, borderSkipped: "start", maxBarThickness: 22,
+          data: years.map(y => { const i = c.annual.years.indexOf(y); return i < 0 ? null : scale(v[i]); }) };
+      }),
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 2, color: css("--ink-2"), padding: 14 } },
+        tooltip: { ...tip, callbacks: { label: x => ` ${x.dataset.label}  ${x.parsed.y == null ? "–" : x.parsed.y.toLocaleString("ko-KR")}${isPct ? "%" : " " + unit}` } },
+      },
+      scales: {
+        x: { grid: { display:false }, border: { color: css("--axis") } },
+        y: { grid: { color: css("--grid") }, border: { display:false }, ticks: { maxTicksLimit: 6, callback: v => v.toLocaleString("ko-KR") + (isPct ? "%" : "") } },
+      },
+    },
+  });
+
+  const last = years.at(-1), prev = years.at(-2);
+  const head = `<thead><tr><th>종목</th><th>${last ?? ""} 매출액</th><th>매출 성장률</th><th>영업이익</th><th>영업이익률</th><th>순이익</th><th>출처</th></tr></thead>`;
+  const body = list.map(c => {
+    const f = c.annual, i = f.years.indexOf(last), j = f.years.indexOf(prev), cur = f.currency;
+    const rev = f.revenue?.[i], op = f.operatingIncome?.[i];
+    const link = f.links?.[last];
+    return `<tr><td>${coCell(c, "")}</td><td>${fmtBig(rev, cur)}</td><td>${fmtPct(j < 0 ? null : growth(rev, f.revenue?.[j]))}</td>
+      <td>${signed(op, cur)}</td><td>${fmtMargin(margin(op, rev))}</td><td>${signed(f.netIncome?.[i], cur)}</td>
+      <td class="err">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(f.source)} ↗</a>` : esc(f.source)}</td></tr>`;
+  }).join("");
+  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="7" class="empty">재무 데이터 없음</td></tr>`}</tbody>`;
+
+  const notes = [isPct ? "영업이익률은 통화와 관계없이 전체 종목을 비교합니다." : "금액 지표는 같은 통화로 보고하는 종목끼리만 비교합니다."];
+  if (comps().some(c => !c.listed)) notes.push("비상장사 수치는 DART 감사보고서 원문에서 자동 추출합니다. 출처 링크로 원문을 확인할 수 있습니다.");
+  comps().filter(c => !c.annual).forEach(c => notes.push(`${c.name}: ${c.error || "재무 데이터 없음"}`));
+  const staleHere = comps().filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
+  if (staleHere.length) notes.push(`DART 접속 장애로 이번 갱신에서 DART 값을 받지 못해 직전 수집값을 표시 중: ${staleHere.join(", ")}`);
+  $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
+}
+
+/* ---------- 안내 팝업 ---------- */
+const INTRO_KEY = "cm-intro-seen-v1";
+const intro = $("intro");
+function openIntro(){
+  if (state.meta?.updatedAt)
+    $("introAsOf").textContent = `데이터 업데이트 ${new Date(state.meta.updatedAt).toLocaleString("ko-KR",{dateStyle:"medium",timeStyle:"short"})} · 투자 판단의 근거로 사용하지 마십시오`;
+  if (typeof intro.showModal === "function") intro.showModal(); else intro.setAttribute("open", "");
+  intro.scrollTop = 0;   // 작은 화면에서 제목부터 보이도록
+}
+function closeIntro(){
+  if (typeof intro.close === "function") intro.close(); else intro.removeAttribute("open");
+  try { localStorage.setItem(INTRO_KEY, "1"); } catch(e){}
+}
+$("introBtn").addEventListener("click", openIntro);
+$("introClose").addEventListener("click", closeIntro);
+intro.addEventListener("click", e => { if (e.target === intro) closeIntro(); });   // 바깥 클릭
+intro.addEventListener("cancel", () => { try { localStorage.setItem(INTRO_KEY, "1"); } catch(e){} });  // Esc
+function maybeIntro(){ let seen = false; try { seen = !!localStorage.getItem(INTRO_KEY); } catch(e){} if (!seen) openIntro(); }
+
+/* ---------- 테마 ---------- */
+$("themeBtn").onclick = () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch(e){}
+  if (state.group) renderAll();
+};
+try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch(e){}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => state.group && renderAll());
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "_help": "companies에 회사를 한 번만 등록하고, groups의 members에 id를 나열하면 탭이 만들어집니다. mode: market(주가·시가총액) / business(분기·연간 실적) / full(전체). 비상장사는 ticker 없이 dart_name(DART 법인명)만 적습니다. sections 는 표에서 구분선으로 묶을 회사들입니다(title 은 보고용 표의 기본 소제목). 자사 표시·섹션 이름은 공개되지 않도록 화면의 표시 설정에서 브라우저에만 저장합니다.",
+
+  "companies": {
+    "hpo":          { "name": "에이치피오",       "ticker": "357230.KQ", "dart": "357230", "country": "KR" },
+    "nutri":        { "name": "뉴트리",           "ticker": "270870.KQ", "dart": "270870", "country": "KR" },
+    "bioneer":      { "name": "바이오니아",       "ticker": "064550.KQ", "dart": "064550", "country": "KR" },
+    "hem":          { "name": "에이치이엠파마",    "ticker": "376270.KQ", "dart": "376270", "country": "KR" },
+    "kobiolabs":    { "name": "고바이오랩",       "ticker": "348150.KQ", "dart": "348150", "country": "KR" },
+    "genome":       { "name": "지놈앤컴퍼니",     "ticker": "314130.KQ", "dart": "314130", "country": "KR" },
+    "cjbs":         { "name": "CJ바이오사이언스", "ticker": "311690.KQ", "dart": "311690", "country": "KR" },
+    "ckdhealth":    { "name": "종근당건강",       "dart_name": "종근당건강",   "country": "KR" },
+    "acebiome":     { "name": "에이스바이옴",     "dart_name": "에이스바이옴", "country": "KR" },
+    "esther":       { "name": "에스더포뮬러",     "dart_name": "에스더포뮬러", "country": "KR" },
+
+    "kolmarbnh":    { "name": "콜마비앤에이치",   "ticker": "200130.KQ", "dart": "200130", "country": "KR" },
+    "cosmaxnbt":    { "name": "코스맥스엔비티",   "ticker": "222040.KQ", "dart": "222040", "country": "KR" },
+    "novarex":      { "name": "노바렉스",         "ticker": "194700.KQ", "dart": "194700", "country": "KR" },
+    "suheung":      { "name": "서흥",             "ticker": "008490.KS", "dart": "008490", "country": "KR" },
+    "herbalife":    { "name": "Herbalife",        "ticker": "HLF",       "country": "US" },
+    "usana":        { "name": "USANA Health Sciences", "ticker": "USNA", "country": "US" },
+    "cellbiotech":  { "name": "쎌바이오텍",       "ticker": "049960.KQ", "dart": "049960", "country": "KR" },
+    "bifido":       { "name": "비피도",           "ticker": "238200.KQ", "dart": "238200", "country": "KR" },
+    "seres":        { "name": "Seres Therapeutics", "ticker": "MCRB",    "country": "US" },
+    "maat":         { "name": "MaaT Pharma",      "ticker": "MAAT.PA",   "country": "FR" }
+  },
+
+  "groups": [
+    {
+      "id": "mcap",
+      "name": "시가총액",
+      "mode": "market",
+      "description": "KRX 일별 시가총액 기준",
+      "members": ["kobiolabs", "bioneer", "genome", "hem", "hpo", "nutri", "cjbs"],
+      "sections": [
+        { "title": "마이크로바이옴", "members": ["kobiolabs", "genome", "hem", "cjbs"] },
+        { "title": "건강기능식품", "members": ["bioneer", "hpo", "nutri"] }
+      ]
+    },
+    {
+      "id": "biz",
+      "name": "사업현황",
+      "mode": "business",
+      "description": "분기 실적 (비상장사는 연간 감사보고서 기준)",
+      "members": ["ckdhealth", "hpo", "acebiome", "esther", "hem"]
+    },
+    {
+      "id": "hff",
+      "name": "건강기능식품",
+      "mode": "full",
+      "description": "국내 건기식 ODM/브랜드사 및 글로벌 주요 업체",
+      "members": ["kolmarbnh", "cosmaxnbt", "novarex", "suheung", "nutri", "hpo", "herbalife", "usana"]
+    },
+    {
+      "id": "microbiome",
+      "name": "마이크로바이옴 신약",
+      "mode": "full",
+      "description": "마이크로바이옴 기반 치료제 개발사 및 프로바이오틱스 소재사",
+      "members": ["genome", "kobiolabs", "hem", "cellbiotech", "cjbs", "bifido", "seres", "maat"]
+    }
+  ]
+}
