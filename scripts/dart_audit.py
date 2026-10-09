@@ -126,6 +126,113 @@ def extract_income(doc: str):
     return out
 
 
+# ---------------------------------------------------------------- 표 단위 유틸
+TABLE_RE = re.compile(r"<TABLE\b[^>]*>(.*?)</TABLE>", re.S | re.I)
+PCT_RE = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
+
+
+def tables(doc):
+    """(시작 위치, [[셀 텍스트, ...], ...]) 목록"""
+    out = []
+    for tm in TABLE_RE.finditer(doc):
+        rows = [[cell_text(c) for c in CELL_RE.findall(rm.group(1))] for rm in ROW_RE.finditer(tm.group(1))]
+        out.append((tm.start(), [r for r in rows if r]))
+    return out
+
+
+def unit_before(doc, pos, span=3000):
+    units = UNIT_RE.findall(doc[max(0, pos - span): pos])
+    return re.sub(r"\s", "", units[-1]) if units else "원"
+
+
+def parse_pct(s):
+    s = s.replace(" ", "")
+    if not s or s in ("-", "–", "—") or "%" not in s and not PCT_RE.fullmatch(s):
+        return None
+    m = PCT_RE.search(s)
+    if not m:
+        return None
+    v = float(m.group(0).replace(",", ""))
+    return -v if (s.startswith("(") and s.endswith(")")) or s.startswith("△") else v
+
+
+# ---------------------------------------------------------------- 광고선전비 · 판매촉진비 (판관비 주석)
+AD_KEYS = ("광고선전비", "광고비")
+PROMO_KEYS = ("판매촉진비", "판촉비", "판매촉진수수료")
+ADPROMO_KEYS = ("광고판촉비", "광고선전및판매촉진비", "광고선전비및판매촉진비", "광고및판촉비")
+EXPENSE_HINT = ("급여", "감가상각비", "지급수수료", "복리후생비")
+
+
+def extract_ad(doc):
+    """
+    판매비와관리비(또는 비용의 성격별 분류) 주석 표에서 광고선전비·판매촉진비 (당기, 전기).
+    사업보고서는 연결 주석이 먼저 나오므로 첫 번째로 맞는 표를 쓴다.
+    반환: {"unit", "ad": (당기, 전기)|None, "promo": (..)|None, "adPromo": (..)|None} 또는 None
+    """
+    for pos, rows in tables(doc):
+        labels = [norm_label(r[0]) for r in rows]
+        if not any(l.startswith(EXPENSE_HINT) for l in labels):
+            continue
+        found = {}
+        for r, l in zip(rows, labels):
+            key = ("adPromo" if l.startswith(ADPROMO_KEYS) else
+                   "ad" if l.startswith(AD_KEYS) else
+                   "promo" if l.startswith(PROMO_KEYS) else None)
+            if key and key not in found:
+                vals = row_values(r)
+                if vals:
+                    found[key] = (vals[0], vals[1] if len(vals) > 1 else None)
+        if not found:
+            continue
+        mult = UNIT_MULT.get(unit_before(doc, pos), 1)
+        out = {"unit": unit_before(doc, pos)}
+        for k in ("ad", "promo", "adPromo"):
+            v = found.get(k)
+            out[k] = tuple(x * mult if x is not None else None for x in v) if v else None
+        return out
+    return None
+
+
+# ---------------------------------------------------------------- 연구개발비용 표 (사업·반기·분기보고서)
+def extract_rnd(doc):
+    """
+    '연구개발비용' 표: 연구개발비 합계와 매출액 대비 비율 (최근 순으로 최대 3개 기간).
+    반환: {"unit", "amount": [당기, 전기, 전전기], "ratio": [%...]} 또는 None
+    """
+    for pos, rows in tables(doc):
+        labels = [norm_label(r[0]) for r in rows]
+        joined = ["".join(norm_label(c) for c in r if not PCT_RE.fullmatch(c.replace(" ", "").replace("%", ""))) for r in rows]
+        ratio_i = next((i for i, j in enumerate(joined) if "매출액" in j and "비율" in j), None)
+        if ratio_i is None or not any("연구개발" in j for j in joined):
+            continue
+        # 합계 행: 정부보조금 차감 전 총계를 우선
+        amt_i = None
+        for want in ("연구개발비용계", "연구개발비용합계", "연구개발비용총계", "연구개발비계", "연구개발비합계", "합계", "계"):
+            amt_i = next((i for i, j in enumerate(joined[:ratio_i])
+                          if want in j and "차감후" not in j and not j.lstrip("(").startswith("정부보조금")), None)
+            if amt_i is not None:
+                break
+        ratio = [v for v in (parse_pct(c) for c in rows[ratio_i][1:]) if v is not None][:3]
+        amount = []
+        if amt_i is not None:
+            amount = [v for v in (parse_num(c.replace(" ", "")) for c in rows[amt_i][1:] if "%" not in c) if v is not None][:3]
+        if not ratio and not amount:
+            continue
+        unit = unit_before(doc, pos)
+        mult = UNIT_MULT.get(unit, 1)
+        return {"unit": unit, "amount": [a * mult for a in amount], "ratio": ratio}
+    return None
+
+
+def report_period(report_nm: str):
+    """'반기보고서 (2026.06)' → ('2026.06', 'H') / 사업보고서 → 'A' / 분기 → 'Q'"""
+    m = re.search(r"\((\d{4})\.(\d{2})\)", report_nm)
+    if not m:
+        return None, None
+    kind = "A" if "사업보고서" in report_nm else "H" if "반기" in report_nm else "Q" if "분기" in report_nm else None
+    return f"{m.group(1)}.{m.group(2)}", kind
+
+
 def fiscal_year(report_nm: str):
     """'감사보고서 (2025.12)' → 2025"""
     m = re.search(r"\((\d{4})\.(\d{2})\)", report_nm)

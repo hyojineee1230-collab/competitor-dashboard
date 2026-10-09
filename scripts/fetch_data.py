@@ -22,7 +22,7 @@ import requests
 import yfinance as yf
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dart_audit import decode, extract_income, fiscal_year  # noqa: E402
+from dart_audit import decode, extract_income, extract_ad, extract_rnd, report_period, fiscal_year  # noqa: E402
 import krx  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -139,6 +139,20 @@ def annual_from_yf(t):
     rev, op, ni = yf_statement(inc, cols)
     return {"years": [str(c.year) for c in cols], "revenue": rev, "operatingIncome": op,
             "netIncome": ni, "currency": cur, "source": "Yahoo Finance"}
+
+
+def rnd_from_yf(t):
+    try:
+        inc = t.income_stmt
+    except Exception:
+        return None
+    if inc is None or inc.empty or "Research And Development" not in inc.index:
+        return None
+    cols = sorted(inc.columns)[-3:]
+    amt = [clean(inc.loc["Research And Development"][c]) for c in cols]
+    if not any(amt):
+        return None
+    return {"years": [str(c.year) for c in cols], "amount": amt, "ratio": [None] * len(cols), "source": "Yahoo Finance"}
 
 
 def quarterly_from_yf(t):
@@ -345,7 +359,13 @@ RECENT_DAYS = 365 * 3 + 30   # 최근 3년 (정기보고서·IR은 연 4건 안�
 IR_RE = re.compile(r"IR|기업설명회")
 
 
+_list_cache = {}
+
+
 def _dart_list(corp, ty, pages=1):
+    key = (corp, ty, pages)
+    if key in _list_cache:
+        return _list_cache[key]
     rows = []
     for page in range(1, pages + 1):
         r = dart_get("list.json", corp_code=corp, pblntf_ty=ty,
@@ -359,6 +379,7 @@ def _dart_list(corp, ty, pages=1):
         rows += r.get("list", [])
         if page >= int(r.get("total_page", 1)):
             break
+    _list_cache[key] = rows
     return rows
 
 
@@ -374,6 +395,93 @@ def dart_recent(corp, listed):
         out += [item(x, "ir") for x in _dart_list(corp, "I", pages=8) if IR_RE.search(x.get("report_nm", ""))]
     out.sort(key=lambda d: d["date"], reverse=True)
     return out[:60]
+
+
+# ---------------------------------------------------------------- 공시 원문 (접수번호별 파싱 결과 캐시)
+DOC_CACHE = DATA_DIR / "dart_docs.json"
+PARSER_V = 1          # 파서를 고치면 올려서 다시 읽게 함
+try:
+    _doc_cache = json.loads(DOC_CACHE.read_text(encoding="utf-8"))
+except Exception:
+    _doc_cache = {}
+
+
+def _pack(t):
+    return list(t) if t else None
+
+
+def parse_doc(rcept_no):
+    """공시 원문 → {"income", "ad", "rnd"} (한 번 읽은 원문은 다시 받지 않음)"""
+    hit = _doc_cache.get(rcept_no)
+    if hit and hit.get("v") == PARSER_V:
+        return hit
+    raw = dart_get("document.xml", rcept_no=rcept_no).content
+    try:
+        z = zipfile.ZipFile(io.BytesIO(raw))
+    except zipfile.BadZipFile:
+        raise DartError(f"원문 응답 오류: {_dart_status(raw)}")
+    texts = [decode(z.read(fn)) for fn in sorted(z.namelist(), key=lambda n: -z.getinfo(n).file_size)]
+    first = lambda f: next((r for r in (f(t) for t in texts) if r), None)
+    inc, ad, rnd = first(extract_income), first(extract_ad), first(extract_rnd)
+    out = {"v": PARSER_V,
+           "income": {k: _pack(inc.get(k)) for k in KEYS} if inc else None,
+           "ad": {k: _pack(ad.get(k)) for k in ("ad", "promo", "adPromo")} if ad else None,
+           "rnd": rnd}
+    _doc_cache[rcept_no] = out
+    return out
+
+
+def _periodic(corp):
+    """정기보고서 목록 → [{period:'2025.12', kind:'A'|'H'|'Q', rcept_no}] 최신순 (정정은 최종본)"""
+    out = {}
+    for x in _dart_list(corp, "A"):
+        per, kind = report_period(x.get("report_nm", ""))
+        if per and kind and (per not in out or x["rcept_dt"] > out[per]["dt"]):
+            out[per] = {"period": per, "kind": kind, "rcept_no": x["rcept_no"], "dt": x["rcept_dt"]}
+    return sorted(out.values(), key=lambda r: r["period"], reverse=True)
+
+
+def listed_extras(corp, want_ad, want_rnd):
+    """상장사: 사업보고서 2건(광고 3개년) + 최신 사업보고서 R&D 3개년 + 그 뒤 최신 분기·반기 R&D 누적"""
+    reps = _periodic(corp)
+    annual = [r for r in reps if r["kind"] == "A"][:2]
+    res = {}
+    if not annual:
+        return res
+    if want_ad:
+        ad, links = {}, {}
+        for r in reversed(annual):                     # 오래된 것부터 → 최신이 덮어씀(재작성 반영)
+            d = parse_doc(r["rcept_no"])["ad"]
+            if not d:
+                continue
+            y = int(r["period"][:4])
+            for k in ("ad", "promo", "adPromo"):
+                if d.get(k):
+                    cur, prev = (d[k] + [None, None])[:2]
+                    ad.setdefault(y, {})[k] = cur
+                    if prev is not None:
+                        ad.setdefault(y - 1, {}).setdefault(k, prev)
+            links[str(y)] = DART_VIEW + r["rcept_no"]
+        if ad:
+            ys = sorted(ad)[-3:]
+            res["ad"] = {"years": [str(y) for y in ys], **{k: [ad[y].get(k) for y in ys] for k in ("ad", "promo", "adPromo")},
+                         "source": "사업보고서 판관비 주석", "links": links}
+    if want_rnd:
+        top = annual[0]
+        d = parse_doc(top["rcept_no"])["rnd"]
+        if d:
+            y = int(top["period"][:4]); n = max(len(d["amount"]), len(d["ratio"]))
+            ys = [y - i for i in range(n)][::-1]
+            pick = lambda arr: [(arr[i] if i < len(arr) else None) for i in range(n)][::-1]
+            res["rnd"] = {"years": [str(v) for v in ys], "amount": pick(d["amount"]), "ratio": pick(d["ratio"]),
+                          "source": "사업보고서 연구개발비용", "links": {str(y): DART_VIEW + top["rcept_no"]}}
+            newer = next((r for r in reps if r["kind"] in ("H", "Q") and r["period"] > top["period"]), None)
+            if newer:
+                q = parse_doc(newer["rcept_no"])["rnd"]
+                if q and (q["amount"] or q["ratio"]):
+                    res["rnd"]["ytd"] = {"period": newer["period"], "amount": (q["amount"] or [None])[0],
+                                         "ratio": (q["ratio"] or [None])[0], "url": DART_VIEW + newer["rcept_no"]}
+    return res
 
 
 # ---------------------------------------------------------------- 감사보고서 (비상장)
@@ -404,20 +512,20 @@ def dart_audit(name, corp_code=None):
         if cur is None or (cur["_c"] and not consolidated) or (cur["_c"] == consolidated):
             by_year[fy] = {**x, "_c": consolidated}
 
-    data, links = {}, {}
+    data, links, ad = {}, {}, {}
     for fy in sorted(by_year)[-3:]:
         rep = by_year[fy]
-        raw = dart_get("document.xml", rcept_no=rep["rcept_no"]).content
         try:
-            z = zipfile.ZipFile(io.BytesIO(raw))
-        except zipfile.BadZipFile:
-            log_err(f"{name} {fy}: 원문 파일 형식 오류")
+            doc = parse_doc(rep["rcept_no"])
+        except DartError as ex:
+            log_err(f"{name} {fy}: {ex}")
             continue
-        parsed = None
-        for fn in sorted(z.namelist(), key=lambda n: -z.getinfo(n).file_size):
-            parsed = extract_income(decode(z.read(fn)))
-            if parsed:
-                break
+        parsed = {k: tuple(v) for k, v in (doc["income"] or {}).items() if v}
+        for k, v in (doc["ad"] or {}).items():
+            if v:
+                ad.setdefault(fy, {})[k] = v[0]
+                if v[1] is not None:
+                    ad.setdefault(fy - 1, {}).setdefault(k, v[1])
         if not parsed:
             log_err(f"{name} {fy}: 감사보고서에서 손익계산서를 찾지 못함 ({DART_VIEW}{rep['rcept_no']})")
             continue
@@ -434,9 +542,14 @@ def dart_audit(name, corp_code=None):
     years = sorted(y for y in data if any(data[y].get(k) is not None for k in KEYS))[-3:]
     if not years:
         raise RuntimeError("감사보고서 파싱 결과 없음")
-    return {"years": [str(y) for y in years], "currency": "KRW",
-            **{k: [data[y].get(k) for y in years] for k in KEYS},
-            "source": "DART 감사보고서", "links": links}
+    out = {"years": [str(y) for y in years], "currency": "KRW",
+           **{k: [data[y].get(k) for y in years] for k in KEYS},
+           "source": "DART 감사보고서", "links": links}
+    if ad:
+        ys = [y for y in sorted(ad) if str(y) in out["years"]] or sorted(ad)[-3:]
+        out["_ad"] = {"years": [str(y) for y in ys], **{k: [ad[y].get(k) for y in ys] for k in ("ad", "promo", "adPromo")},
+                      "source": "감사보고서 판관비 주석", "links": links}
+    return out
 
 
 # ================================================================ KRX 반영
@@ -471,7 +584,7 @@ def load_previous():
     """직전 수집 결과 (회사 id → 항목)"""
     prev = {}
     for f in DATA_DIR.glob("*.json"):
-        if f.name in ("meta.json", "krx_cache.json", "dart_codes.json"):
+        if f.name in ("meta.json", "krx_cache.json", "dart_codes.json", "dart_docs.json"):
             continue
         try:
             for c in json.loads(f.read_text(encoding="utf-8")).get("companies", []):
@@ -494,9 +607,10 @@ def carry_over(e, p):
         if is_dart(p.get(k)) and not is_dart(e.get(k)):
             e[k] = p[k]
             kept.append(k)
-    if not e.get("disclosures") and p.get("disclosures"):
-        e["disclosures"] = p["disclosures"]
-        kept.append("disclosures")
+    for k in ("disclosures", "ad", "rnd"):
+        if not e.get(k) and p.get(k):
+            e[k] = p[k]
+            kept.append(k)
     if kept and not e["listed"]:
         e["error"] = None
     return kept
@@ -513,6 +627,8 @@ def main():
     needs_fin = {m for g in groups if g.get("mode", "full") != "market" for m in g["members"]}
     # 분기 실적은 사업현황(business) 탭에서만 보여주므로 그 회사들만 조회 (회사당 DART 12회 호출 절약)
     needs_q = {m for g in groups if g.get("mode") == "business" for m in g["members"]}
+    needs_ad = {m for g in groups if "ad" in g.get("extras", []) for m in g["members"]}
+    needs_rnd = {m for g in groups if "rnd" in g.get("extras", []) for m in g["members"]}
     used = []
     for g in groups:
         for m in g["members"]:
@@ -596,6 +712,27 @@ def main():
                     e["disclosures"] = dart_recent(corp, e["listed"])
             except Exception as ex:
                 log_err(f"{c['name']} 최근 공시 실패: {ex}")
+        # 광고선전비 · 연구개발비 (사업보고서·감사보고서 원문)
+        want_ad, want_rnd = cid in needs_ad, cid in needs_rnd
+        if e.get("annual") and "_ad" in e["annual"]:
+            ad_audit = e["annual"].pop("_ad")
+            if want_ad:
+                e["ad"] = ad_audit
+        if (want_ad or want_rnd) and DART_KEY and c.get("dart") and not _corps_failed:
+            try:
+                corp = c.get("corp_code") or corp_code_by_stock(c["dart"])
+                if corp:
+                    e.update(listed_extras(corp, want_ad, want_rnd))
+            except Exception as ex:
+                log_err(f"{c['name']} 광고·R&D 실패: {ex}")
+        if want_rnd and not e.get("rnd") and yf_t is not None and not c.get("dart"):
+            e["rnd"] = rnd_from_yf(yf_t)
+        # 비율 계산용 매출액(같은 연도)
+        rev = dict(zip((e.get("annual") or {}).get("years", []), (e.get("annual") or {}).get("revenue", [])))
+        for k in ("ad", "rnd"):
+            if e.get(k):
+                e[k]["revenue"] = [rev.get(y) for y in e[k]["years"]]
+
         if DART_KEY:
             kept = carry_over(e, previous.get(cid))
             if kept:
@@ -610,7 +747,7 @@ def main():
 
     for g in groups:
         out = {"id": g["id"], "name": g["name"], "mode": g.get("mode", "full"),
-               "description": g.get("description", ""), "sections": g.get("sections"),
+               "description": g.get("description", ""), "sections": g.get("sections"), "extras": g.get("extras", []),
                "companies": [results[m] for m in g["members"] if m in results]}
         (DATA_DIR / f"{g['id']}.json").write_text(
             scrub(json.dumps(out, ensure_ascii=False, separators=(",", ":"))), encoding="utf-8")
@@ -630,6 +767,7 @@ def main():
     }
     (DATA_DIR / "meta.json").write_text(scrub(json.dumps(meta, ensure_ascii=False, indent=2)), encoding="utf-8")
     CODE_CACHE.write_text(json.dumps(_code_cache, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
+    DOC_CACHE.write_text(json.dumps(_doc_cache, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"완료 · 오류 {len(errors)}건")
 
 

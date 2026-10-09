@@ -1,5 +1,5 @@
 {
-  "_help": "companies에 회사를 한 번만 등록하고, groups의 members에 id를 나열하면 탭이 만들어집니다. mode: market(주가·시가총액) / business(분기·연간 실적) / full(전체). 비상장사는 ticker 없이 dart_name(DART 법인명)만 적습니다. sections 는 표에서 구분선으로 묶을 회사들입니다(title 은 보고용 표의 기본 소제목). 자사 표시·섹션 이름은 공개되지 않도록 화면의 표시 설정에서 브라우저에만 저장합니다.",
+  "_help": "companies에 회사를 한 번만 등록하고, groups의 members에 id를 나열하면 탭이 만들어집니다. mode: market(주가·시가총액) / business(분기·연간 실적) / full(전체). 비상장사는 ticker 없이 dart_name(DART 법인명)만 적습니다. sections 는 표에서 구분선으로 묶을 회사들입니다(title 은 보고용 표의 기본 소제목). extras: ad(광고선전비 비율) · rnd(연구개발비 비율). 자사 표시·섹션 이름은 공개되지 않도록 화면의 표시 설정에서 브라우저에만 저장합니다.",
 
   "companies": {
     "hpo":          { "name": "에이치피오",       "ticker": "357230.KQ", "dart": "357230", "country": "KR" },
@@ -41,6 +41,7 @@
       "id": "biz",
       "name": "사업현황",
       "mode": "business",
+      "extras": ["ad", "rnd"],
       "description": "분기 실적 (비상장사는 연간 감사보고서 기준)",
       "members": ["ckdhealth", "hpo", "acebiome", "esther", "hem"]
     },
@@ -49,6 +50,7 @@
       "name": "건강기능식품",
       "mode": "full",
       "description": "국내 건기식 ODM/브랜드사 및 글로벌 주요 업체",
+      "extras": ["ad"],
       "members": ["kolmarbnh", "cosmaxnbt", "novarex", "suheung", "nutri", "hpo", "herbalife", "usana"]
     },
     {
@@ -56,6 +58,7 @@
       "name": "마이크로바이옴 신약",
       "mode": "full",
       "description": "마이크로바이옴 기반 치료제 개발사 및 프로바이오틱스 소재사",
+      "extras": ["rnd"],
       "members": ["genome", "kobiolabs", "hem", "cellbiotech", "cjbs", "bifido", "seres", "maat"]
     }
   ]

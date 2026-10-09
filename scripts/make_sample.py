@@ -73,6 +73,17 @@ def make(cid, c):
                    "currency": cur, "source": "샘플" if listed else "샘플(감사보고서)"}
     if not listed:
         e["annual"]["links"] = {}
+    yrs, rv = e["annual"]["years"], e["annual"]["revenue"]
+    if kr and not bio:   # 광고선전비 (샘플)
+        adr = random.uniform(0.02, 0.15)
+        e["ad"] = {"years": yrs, "ad": [r * adr * random.uniform(.85, 1.15) for r in rv],
+                   "promo": [r * random.uniform(.01, .05) for r in rv] if random.random() < .6 else [None] * 3,
+                   "adPromo": [None] * 3, "revenue": rv, "source": "샘플", "links": {}}
+    if bio or cid in ("hpo",):   # 연구개발비 (샘플)
+        amt = [random.uniform(5e9, 4e10) if kr else random.uniform(2e7, 1.5e8) for _ in rv]
+        e["rnd"] = {"years": yrs, "amount": amt, "ratio": [a / r * 100 if r and kr else None for a, r in zip(amt, rv)],
+                    "revenue": rv, "source": "샘플", "links": {},
+                    "ytd": {"period": f"{y}.06", "amount": amt[-1] * .55, "ratio": 40.0, "url": "#"} if kr else None}
     if kr:
         items = []
         for yy in range(y - 3, y + 1):
@@ -100,7 +111,7 @@ for g in cfg["groups"]:
         comps.append(cache[m])
     (DATA / f"{g['id']}.json").write_text(json.dumps(
         {"id": g["id"], "name": g["name"], "mode": g.get("mode", "full"),
-         "description": g.get("description", ""), "sections": g.get("sections"), "companies": comps},
+         "description": g.get("description", ""), "sections": g.get("sections"), "extras": g.get("extras", []), "companies": comps},
         ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 (DATA / "meta.json").write_text(json.dumps({

@@ -309,6 +309,8 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
 <script>
 const PERIODS = [["1M",21],["3M",63],["6M",126],["1Y",252],["2Y",504]];
 const METRICS = [["revenue","매출액"],["operatingIncome","영업이익"],["opm","영업이익률"],["netIncome","순이익"]];
+const EXTRA_METRICS = { ad: ["adr","광고비율"], rnd: ["rndr","연구개발비율"] };
+function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
 const MODE_LABEL = { market:"주가 · 시가총액", business:"분기 · 연간 실적", full:"주가 · 연간 실적" };
 const state = { meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", qMetric:"revenue",
   currency:"KRW", hidden:new Set(), focus:null, sort:{key:"marketCap",dir:"desc"} };
@@ -447,6 +449,10 @@ async function selectGroup(id){
   const curs = [...new Set(g.companies.map(c => c.annual?.currency).filter(Boolean))].sort((a,b) => (b==="KRW") - (a==="KRW"));
   $("currency").innerHTML = curs.map(c => `<option value="${c}">${c==="KRW" ? "원화(국내)" : c}</option>`).join("");
   $("currency").hidden = curs.length < 2;
+  // 연간 지표 버튼: 탭 설정(extras)에 따라 광고비율·연구개발비율 추가
+  const ms = annualMetrics();
+  if (!ms.some(x => x[0] === state.metric)) state.metric = "revenue";
+  $("metrics").innerHTML = ms.map(([k,l]) => `<button data-k="${k}" aria-pressed="${k===state.metric}">${l}</button>`).join("");
   state.currency = curs[0] || "KRW"; $("currency").value = state.currency;
   renderAll();
 }
@@ -862,7 +868,83 @@ function renderQuarter(){
 }
 
 /* ---------- 연간 실적 ---------- */
+// 광고비율 = 광고선전비 ÷ 매출액 / 참고 = (광고선전비 + 판매촉진비) ÷ 매출액 (판촉 계정이 따로 있는 회사만)
+const ratio = (a, r) => (a != null && r) ? a / r * 100 : null;
+function extraSeries(c, m){
+  if (m === "adr" && c.ad) return { years: c.ad.years, v: c.ad.years.map((_, i) => ratio(c.ad.ad?.[i], c.ad.revenue?.[i])) };
+  if (m === "rndr" && c.rnd) return { years: c.rnd.years, v: c.rnd.years.map((_, i) => c.rnd.ratio?.[i] ?? ratio(c.rnd.amount?.[i], c.rnd.revenue?.[i])) };
+  return null;
+}
+const RATIO_CAP = 200;   // 매출이 작은 신약사의 수천 % 비율이 차트를 덮지 않도록 표시 상한
+function renderExtra(m){
+  const tip = chartBase(), isAd = m === "adr";
+  const list = comps().map(c => ({c, s: extraSeries(c, m)})).filter(x => x.s && x.s.v.some(v => v != null));
+  const years = [...new Set(list.flatMap(x => x.s.years))].sort().slice(-3);
+  const over = list.some(x => x.s.v.some(v => v > RATIO_CAP));
+  $("currency").hidden = true;
+  $("finHint").textContent = `단위: % · 최근 ${years.length}개 사업연도` + (over ? ` · ${RATIO_CAP}% 초과 막대는 상단에서 잘림(실제 값은 툴팁·표)` : "");
+  draw("fin", "finChart", {
+    type: "bar",
+    data: { labels: years.map(y => y + "년"), datasets: list.map(({c, s}) => ({
+      label: c.name + (c.listed ? "" : " (비상장)"), backgroundColor: color(c._ci), borderRadius: 4, borderSkipped: "start", maxBarThickness: 22,
+      raw: years.map(y => { const i = s.years.indexOf(y); return i < 0 ? null : s.v[i]; }),
+      data: years.map(y => { const i = s.years.indexOf(y), v = i < 0 ? null : s.v[i]; return v == null ? null : +Math.min(v, RATIO_CAP).toFixed(1); }) })) },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 2, color: css("--ink-2"), padding: 14 } },
+        tooltip: { ...tip, callbacks: { label: x => { const v = x.dataset.raw[x.dataIndex]; return ` ${x.dataset.label}  ${v == null ? "–" : v.toLocaleString("ko-KR", {maximumFractionDigits: 1})}%`; } } },
+      },
+      scales: {
+        x: { grid: { display:false }, border: { color: css("--axis") } },
+        y: { grid: { color: css("--grid") }, border: { display:false }, beginAtZero: true, max: over ? RATIO_CAP : undefined,
+             ticks: { maxTicksLimit: 6, callback: v => v + "%" } },
+      },
+    },
+  });
+  const last = years.at(-1), prev = years.at(-2);
+  const pct = v => v == null ? "–" : `${v.toLocaleString("ko-KR", {minimumFractionDigits: 1, maximumFractionDigits: 1})}%`;
+  const src = (d, y) => { const l = d.links?.[y] || Object.values(d.links || {}).at(-1);
+    return l ? `<a href="${esc(l)}" target="_blank" rel="noopener">${esc(d.source)} ↗</a>` : esc(d.source || ""); };
+  let head, body;
+  if (isAd){
+    head = `<thead><tr><th>종목</th><th>${last ?? ""} 광고선전비</th><th>광고비율</th><th>${prev ?? ""} 광고비율</th><th>(참고) 광고+판촉 비율</th><th>출처</th></tr></thead>`;
+    body = comps().filter(c => c.ad || c.annual).map(c => {
+      const d = c.ad;
+      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">광고선전비 공시 없음 (해외 기업 또는 주석 미기재)</td></tr>`;
+      const i = d.years.indexOf(last), j = d.years.indexOf(prev);
+      const adPromo = i < 0 ? null : (d.promo?.[i] != null && d.ad?.[i] != null ? d.ad[i] + d.promo[i] : d.adPromo?.[i]);
+      const adOnly = i < 0 ? null : d.ad?.[i];
+      return `<tr><td>${coCell(c, "")}</td><td>${adOnly == null ? (d.adPromo?.[i] != null ? "<span class='err'>광고판촉비로 합산</span>" : "–") : fmtBig(adOnly, "KRW")}</td>
+        <td><b>${pct(ratio(adOnly, d.revenue?.[i]))}</b></td><td>${j < 0 ? "–" : pct(ratio(d.ad?.[j], d.revenue?.[j]))}</td>
+        <td>${adPromo == null ? "–" : pct(ratio(adPromo, d.revenue?.[i]))}</td><td class="err">${src(d, last)}</td></tr>`;
+    }).join("");
+  } else {
+    head = `<thead><tr><th>종목</th><th>${last ?? ""} 연구개발비</th><th>연구개발비율</th><th>${prev ?? ""} 비율</th><th>최근 누적 (기준)</th><th>출처</th></tr></thead>`;
+    body = comps().filter(c => c.rnd || c.annual).map(c => {
+      const d = c.rnd;
+      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">연구개발비 공시 없음</td></tr>`;
+      const s = extraSeries(c, "rndr"), i = d.years.indexOf(last), j = d.years.indexOf(prev);
+      const cur = c.annual?.currency || "KRW", y = d.ytd;
+      return `<tr><td>${coCell(c, "")}</td><td>${i < 0 ? "–" : fmtBig(d.amount?.[i], d.source?.includes("Yahoo") ? cur : "KRW")}</td>
+        <td><b>${i < 0 ? "–" : pct(s.v[i])}</b></td><td>${j < 0 ? "–" : pct(s.v[j])}</td>
+        <td>${y ? `<a href="${esc(y.url)}" target="_blank" rel="noopener">${fmtBig(y.amount, "KRW")} · ${pct(y.ratio)}</a> <span class="err">(${y.period.slice(2).replace(".", ".")} 누적)</span>` : "–"}</td>
+        <td class="err">${src(d, last)}</td></tr>`;
+    }).join("");
+  }
+  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="6" class="empty">데이터 없음</td></tr>`}</tbody>`;
+  const notes = isAd
+    ? ["비교 기준: 광고비율 = 광고선전비 ÷ 매출액 (판매비와관리비 주석, 상장사는 연결 기준·비상장사는 감사보고서 기준).",
+       "참고 비율은 판매촉진비를 별도 계정으로 공시한 회사만 표시합니다. 판매수수료(홈쇼핑 등)는 포함하지 않습니다."]
+    : ["비교 기준: 연구개발비율 = 연구개발비용(정부보조금 차감 전) ÷ 매출액, 사업보고서 '연구개발비용' 표의 공시 비율.",
+       "매출이 작은 신약 개발사는 비율이 매우 크게 나오므로 연구개발비 금액을 함께 보세요. 해외 기업은 Yahoo Finance 기준으로 계산합니다."];
+  const staleHere = comps().filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
+  if (staleHere.length) notes.push(`DART 접속 장애로 직전 수집값 표시 중: ${staleHere.join(", ")}`);
+  $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
+}
 function renderAnnual(){
+  if (state.metric === "adr" || state.metric === "rndr") return renderExtra(state.metric);
+  $("currency").hidden = $("currency").options.length < 2;
   const tip = chartBase(), m = state.metric, isPct = m === "opm";
   const list = comps().filter(c => c.annual && (isPct || c.annual.currency === state.currency));
   $("currency").disabled = isPct;
