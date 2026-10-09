@@ -63,12 +63,13 @@ def make(cid, c):
             qs.append(f"{qy}Q{qq + 1}")
             qr.append(rev / 4 * (1 + random.uniform(-0.15, 0.2)) * (1 + 0.02 * i))
         qo = [r * (margin + random.uniform(-0.04, 0.04)) for r in qr]
-        e["quarterly"] = {"periods": qs, "revenue": qr, "operatingIncome": qo,
+        e["quarterly"] = {"periods": qs, "revenue": qr, "operatingIncome": qo, "costOfSales": [r * random.uniform(.5, .8) for r in qr],
                           "netIncome": [o * random.uniform(0.6, 0.9) for o in qo],
                           "currency": cur, "source": "샘플"}
     revs = [rev * (1 + random.uniform(-0.1, 0.2)) ** i for i in range(3)]
     ops = [r * (margin + random.uniform(-0.03, 0.03)) for r in revs]
-    e["annual"] = {"years": [str(y - 3), str(y - 2), str(y - 1)], "revenue": revs,
+    cr = random.uniform(.45, .8)
+    e["annual"] = {"costOfSales": [r * cr * random.uniform(.95, 1.05) for r in revs], "years": [str(y - 3), str(y - 2), str(y - 1)], "revenue": revs,
                    "operatingIncome": ops, "netIncome": [o * random.uniform(0.6, 0.9) for o in ops],
                    "currency": cur, "source": "샘플" if listed else "샘플(감사보고서)"}
     if not listed:

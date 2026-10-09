@@ -124,8 +124,9 @@ def yf_statement(df, cols):
     rev = row("Total Revenue", "Operating Revenue")
     op = row("Operating Income", "EBIT")
     ni = row("Net Income", "Net Income Common Stockholders")
+    cost = row("Cost Of Revenue", "Reconciled Cost Of Revenue")
     pick = lambda s: [clean(s[c]) if s is not None else None for c in cols]
-    return pick(rev), pick(op), pick(ni)
+    return pick(rev), pick(op), pick(ni), pick(cost)
 
 
 def annual_from_yf(t):
@@ -137,9 +138,9 @@ def annual_from_yf(t):
     if inc is None or inc.empty:
         return None
     cols = sorted(inc.columns)[-4:]
-    rev, op, ni = yf_statement(inc, cols)
+    rev, op, ni, cost = yf_statement(inc, cols)
     return {"years": [str(c.year) for c in cols], "revenue": rev, "operatingIncome": op,
-            "netIncome": ni, "currency": cur, "source": "Yahoo Finance"}
+            "netIncome": ni, "costOfSales": cost, "currency": cur, "source": "Yahoo Finance"}
 
 
 def rnd_from_yf(t):
@@ -171,10 +172,10 @@ def quarterly_from_yf(t):
     if inc is None or inc.empty:
         return None
     cols = sorted(inc.columns)[-8:]
-    rev, op, ni = yf_statement(inc, cols)
+    rev, op, ni, cost = yf_statement(inc, cols)
     periods = [f"{c.year}Q{(c.month - 1) // 3 + 1}" for c in cols]
     return {"periods": periods, "revenue": rev, "operatingIncome": op,
-            "netIncome": ni, "currency": cur, "source": "Yahoo Finance"}
+            "netIncome": ni, "costOfSales": cost, "currency": cur, "source": "Yahoo Finance"}
 
 
 # ================================================================ DART 공통
@@ -304,6 +305,62 @@ def _find(rows, key):
 
 KEYS = ("revenue", "operatingIncome", "netIncome")
 
+# ---------------------------------------------------------------- 매출원가 (전체 재무제표 API)
+FIN_CACHE = DATA_DIR / "dart_fin.json"
+try:
+    _fin_cache = json.loads(FIN_CACHE.read_text(encoding="utf-8"))
+except Exception:
+    _fin_cache = {}
+_COST_IDS = ("ifrs-full_CostOfSales", "ifrs_CostOfSales")
+_GP_IDS = ("ifrs-full_GrossProfit", "ifrs_GrossProfit")
+_REV_IDS = ("ifrs-full_Revenue", "ifrs_Revenue")
+AMT_COLS = ("thstrm_amount", "thstrm_add_amount", "frmtrm_amount", "bfefrmtrm_amount")
+
+
+def _pick_row(rows, ids, names, exclude=()):
+    for x in rows:
+        if x.get("account_id") in ids:
+            return x
+    for x in rows:
+        nm = x.get("account_nm", "").replace(" ", "")
+        if nm.startswith(names) and not nm.startswith(exclude):
+            return x
+    return None
+
+
+def cost_rows(corp, year, code, fs):
+    """
+    전체 재무제표(fnlttSinglAcntAll)에서 손익계산서의 매출원가·매출총이익·매출액 원값.
+    같은 보고서는 다시 받지 않도록 결과를 저장. 반환: {"cost":{col:금액}, "gp":{..}, "rev":{..}} 또는 None
+    """
+    key = f"{corp}|{year}|{code}|{fs}"
+    if key in _fin_cache:
+        return _fin_cache[key]
+    r = dart_get("fnlttSinglAcntAll.json", corp_code=corp, bsns_year=str(year), reprt_code=code, fs_div=fs).json()
+    if r.get("status") == "013":          # 해당 보고서·재무제표 없음 → 다시 묻지 않음
+        _fin_cache[key] = None
+        return None
+    if r.get("status") != "000":
+        raise DartError(f"전체 재무제표 {r.get('status')} {r.get('message')}")
+    rows = [x for x in r.get("list", []) if x.get("sj_div") in ("IS", "CIS")]
+    grab = lambda x: {c: _num(x.get(c)) for c in AMT_COLS} if x else None
+    out = {"cost": grab(_pick_row(rows, _COST_IDS, ("매출원가",), ("매출원가율",))),
+           "gp": grab(_pick_row(rows, _GP_IDS, ("매출총이익", "매출총손익", "매출총이익(손실)"))),
+           "rev": grab(_pick_row(rows, _REV_IDS, ("매출액", "수익(매출액)", "영업수익", "매출"), ("매출원가", "매출총")))}
+    _fin_cache[key] = out
+    return out
+
+
+def _cost_of(d, col):
+    """매출원가 = 매출원가 계정, 없으면 매출액 − 매출총이익 (성격별 분류라 둘 다 없으면 None)"""
+    if not d:
+        return None
+    c = (d.get("cost") or {}).get(col)
+    if c is not None:
+        return abs(c)
+    rev, gp = (d.get("rev") or {}).get(col), (d.get("gp") or {}).get(col)
+    return rev - gp if rev is not None and gp is not None else None
+
 
 def dart_listed(stock, quarterly=True):
     """상장사 연간(최근 3년) + 분기(최근 8개 분기, quarterly=True일 때만) 실적"""
@@ -324,6 +381,11 @@ def dart_listed(stock, quarterly=True):
             x = _find(rows, k)
             annual[k] = ([_num(x.get("bfefrmtrm_amount")), _num(x.get("frmtrm_amount")),
                           _num(x.get("thstrm_amount"))] if x else [None] * 3)
+        try:
+            d = cost_rows(corp, year, "11011", fs)
+            annual["costOfSales"] = [_cost_of(d, c) for c in ("bfefrmtrm_amount", "frmtrm_amount", "thstrm_amount")]
+        except DartError as ex:
+            log_err(f"{stock} 매출원가(연간) 실패: {ex}")
         break
 
     # 분기: 보고서별 누적 금액을 받아 차감으로 분기 금액 계산
@@ -336,8 +398,17 @@ def dart_listed(stock, quarterly=True):
             got = _acc_rows(year, code, corp)
             if not got:
                 continue
-            _, rows = got
+            fs_q, rows = got
             vals = {}
+            try:
+                d = cost_rows(corp, year, code, fs_q)
+                cum_col = "thstrm_add_amount" if q in (2, 3) else "thstrm_amount"
+                v = _cost_of(d, cum_col)
+                if v is None and q in (2, 3):
+                    v = None
+                vals["costOfSales"] = v
+            except DartError as ex:
+                log_err(f"{stock} 매출원가({year}Q{q}) 실패: {ex}")
             for k in KEYS:
                 x = _find(rows, k)
                 if x:
@@ -345,13 +416,14 @@ def dart_listed(stock, quarterly=True):
                         else _num(x.get("thstrm_amount"))
             cum[(year, q)] = vals
 
-    periods, out = [], {k: [] for k in KEYS}
+    QKEYS = KEYS + ("costOfSales",)
+    periods, out = [], {k: [] for k in QKEYS}
     for (year, q) in sorted(cum):
         prev = cum.get((year, q - 1)) if q > 1 else {}
         if q > 1 and prev is None:
             continue  # 직전 분기 누적이 없으면 분기 금액 계산 불가
         periods.append(f"{year}Q{q}")
-        for k in KEYS:
+        for k in QKEYS:
             c, p = cum[(year, q)].get(k), (prev or {}).get(k)
             out[k].append(c if q == 1 else (c - p if c is not None and p is not None else None))
     quarterly = None
@@ -407,7 +479,7 @@ def dart_recent(corp, listed):
 
 # ---------------------------------------------------------------- 공시 원문 (접수번호별 파싱 결과 캐시)
 DOC_CACHE = DATA_DIR / "dart_docs.json"
-PARSER_V = 2          # 파서를 고치면 올려서 다시 읽게 함
+PARSER_V = 3          # 파서를 고치면 올려서 다시 읽게 함
 try:
     _doc_cache = json.loads(DOC_CACHE.read_text(encoding="utf-8"))
 except Exception:
@@ -432,7 +504,7 @@ def parse_doc(rcept_no):
     first = lambda f: next((r for r in (f(t) for t in texts) if r), None)
     inc, ad, rnd = first(extract_income), first(extract_ad), first(extract_rnd)
     out = {"v": PARSER_V,
-           "income": {k: _pack(inc.get(k)) for k in KEYS} if inc else None,
+           "income": {k: _pack(inc.get(k)) for k in KEYS + ("costOfSales", "grossProfit")} if inc else None,
            "ad": {k: _pack(ad.get(k)) for k in ("ad", "promo", "adPromo", "sga", "rndExp")} if ad else None,
            "rnd": rnd}
     _doc_cache[rcept_no] = out
@@ -563,8 +635,16 @@ def dart_audit(name, corp_code=None):
         missing = [n for k, n in (("revenue", "매출액"), ("operatingIncome", "영업이익"), ("netIncome", "당기순이익")) if k not in parsed]
         if missing:
             log_err(f"{name} {fy}: 감사보고서에서 {', '.join(missing)} 못 찾음 ({DART_VIEW}{rep['rcept_no']})")
-        for k in KEYS:
+        # 매출원가가 없고 매출총이익만 있으면 매출액 − 매출총이익
+        if "costOfSales" not in parsed and "grossProfit" in parsed and "revenue" in parsed:
+            parsed["costOfSales"] = tuple(r - g if r is not None and g is not None else None
+                                          for r, g in zip(parsed["revenue"], parsed["grossProfit"]))
+        for k in KEYS + ("costOfSales",):
             cur, prev = parsed.get(k, (None, None))
+            if cur is not None and k == "costOfSales":
+                cur = abs(cur)
+            if prev is not None and k == "costOfSales":
+                prev = abs(prev)
             data.setdefault(fy, {})[k] = cur
             if prev is not None and k not in data.setdefault(fy - 1, {}):
                 data[fy - 1][k] = prev   # 전기 금액으로 이전 연도 보완
@@ -573,7 +653,7 @@ def dart_audit(name, corp_code=None):
     if not years:
         raise RuntimeError("감사보고서 파싱 결과 없음")
     out = {"years": [str(y) for y in years], "currency": "KRW",
-           **{k: [data[y].get(k) for y in years] for k in KEYS},
+           **{k: [data[y].get(k) for y in years] for k in KEYS + ("costOfSales",)},
            "source": "DART 감사보고서", "links": links}
     out["_notes"] = (_notes_by_year(ad_docs), links)
     return out
@@ -611,7 +691,7 @@ def load_previous():
     """직전 수집 결과 (회사 id → 항목)"""
     prev = {}
     for f in DATA_DIR.glob("*.json"):
-        if f.name in ("meta.json", "krx_cache.json", "dart_codes.json", "dart_docs.json", "summaries.json"):
+        if f.name in ("meta.json", "krx_cache.json", "dart_codes.json", "dart_docs.json", "summaries.json", "dart_fin.json"):
             continue
         try:
             for c in json.loads(f.read_text(encoding="utf-8")).get("companies", []):
@@ -816,6 +896,7 @@ def main():
     (DATA_DIR / "meta.json").write_text(scrub(json.dumps(meta, ensure_ascii=False, indent=2)), encoding="utf-8")
     CODE_CACHE.write_text(json.dumps(_code_cache, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
     DOC_CACHE.write_text(json.dumps(_doc_cache, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    FIN_CACHE.write_text(json.dumps(_fin_cache, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"완료 · 오류 {len(errors)}건")
 
 

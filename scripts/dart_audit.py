@@ -51,7 +51,11 @@ def norm_label(s: str) -> str:
 
 
 def classify(label: str):
-    if label.startswith(("매출원가", "매출총", "매출채권", "매출할인")):
+    if label.startswith("매출원가") and not label.startswith("매출원가율"):
+        return "costOfSales"
+    if label.startswith(("매출총이익", "매출총손익", "매출총손실")):
+        return "grossProfit"
+    if label.startswith(("매출총", "매출채권", "매출할인")):
         return None
     if label.startswith(("매출액", "수익(매출액)", "영업수익")) or label in ("매출", "수익"):
         return "revenue"
@@ -91,7 +95,7 @@ def _scan(doc, start):
             found[key] = (vals[0], vals[1] if len(vals) > 1 else None)
             if first_pos is None:
                 first_pos = rm.start()
-        if len(found) == 3:
+        if len(found) == 5:
             break
     return found, window, first_pos
 
@@ -110,7 +114,7 @@ def extract_income(doc: str):
             continue
         if best is None or len(found) > len(best[0]):
             best = (found, window, first_pos)
-        if len(found) == 3:
+        if len(found) >= 4:
             break
     if best is None:
         return None
