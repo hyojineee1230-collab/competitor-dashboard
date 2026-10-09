@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-09T03:56:09+00:00",
+  "updatedAt": "2026-10-09T04:13:10+00:00",
   "sample": false,
   "dart": true,
   "krx": true,
@@ -27,7 +27,7 @@
   ],
   "errors": [
     "KRX: 2회 호출",
-    "고바이오랩 DART 실패: DART 접속 실패(ConnectTimeout) — corpCode.xml",
+    "고바이오랩 DART 실패: DART 회사 목록 응답 오류: 800 시스템 점검으로 인한  서비스가 중지 중입니다.",
     "위 DART 장애로 34건 추가 실패"
   ],
   "dartStale": [
