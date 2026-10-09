@@ -61,6 +61,9 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
 
 .grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:16px}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
+/* 시가총액 탭: 순위 박스 없이 추이 차트를 전체 너비·조금 더 높게 */
+.grid.solo{grid-template-columns:1fr}
+.grid.solo .chart-box{height:420px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
 #content > * + *{margin-top:16px}
 .ph{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -186,7 +189,7 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
 .intro-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .intro-foot small{color:var(--muted);font-size:12px}
 @media (max-width:600px){.cards{grid-template-columns:1fr}.intro-in{padding:22px 18px 18px}.intro h2{font-size:19px}}
-@media (max-width:600px){.wrap{padding:0 16px 48px}.tab{font-size:17px;padding:12px 14px 10px}.chart-box{height:280px}}
+@media (max-width:600px){.wrap{padding:0 16px 48px}.tab{font-size:17px;padding:12px 14px 10px}.chart-box,.grid.solo .chart-box{height:280px}}
 </style>
 </head>
 <body>
@@ -221,7 +224,7 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
         <div class="chart-box"><canvas id="priceChart" role="img" aria-label="주가 추이 차트"></canvas></div>
         <div class="legend" id="legend"></div>
       </section>
-      <section class="panel">
+      <section class="panel" id="secRank">
         <div class="ph"><div><h2 id="rankTitle"></h2><p class="hint" id="rankHint"></p></div></div>
         <ol class="rank" id="rank"></ol>
       </section>
@@ -466,6 +469,8 @@ async function selectGroup(id){
   // 탭 성격에 맞는 섹션만 표시
   const m = g.mode;
   $("secPrice").hidden = m === "business";
+  $("secRank").hidden = m === "market";                 // 시가총액 탭은 순위 박스 없이
+  $("secPrice").classList.toggle("solo", m === "market");
   $("secQuote").hidden = m === "business";
   $("secReport").hidden = m !== "market";
   $("secQuarter").hidden = m !== "business";
@@ -587,6 +592,7 @@ function setFocus(id){
   document.querySelectorAll("#quoteTable tbody tr, #rank li").forEach(r => r.classList.toggle("sel", r.dataset.id === state.focus));
 }
 function renderRank(){
+  if (grp().mode === "market") return;
   const isM = state.view === "mcap";
   renderLegend();
   if (isM){
