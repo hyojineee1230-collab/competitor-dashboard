@@ -150,6 +150,24 @@ select{font:inherit;font-size:13px;padding:5px 8px;border-radius:8px;border:1px 
 .empty{padding:40px;text-align:center;color:var(--muted)}
 footer{margin-top:32px;color:var(--muted);font-size:12px}
 
+/* 주요 활동 */
+.act-co{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden}
+.act-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--page)}
+.act-head .kpi{color:var(--ink-2);font-size:13px}
+.act-cats{display:flex;flex-wrap:wrap;gap:4px}
+.act-list{list-style:none;margin:0;padding:4px 0}
+.act-list li{display:grid;grid-template-columns:62px 136px 1fr;gap:10px;align-items:baseline;padding:7px 14px;border-top:1px solid var(--grid)}
+.act-list li:first-child{border-top:0}
+.act-list .d{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.act-list .c{white-space:nowrap}
+.act-list a{color:var(--ink);text-decoration:none}
+.act-list a:hover{color:var(--brand);text-decoration:underline}
+.act-list .by{color:var(--muted);font-size:12px;margin-left:6px}
+.tag.src-d{background:var(--brand-soft);color:var(--brand)}
+.act-empty{padding:14px;color:var(--muted);font-size:13px}
+.act-more{border:0;background:none;color:var(--brand);font-size:13px;padding:8px 14px;cursor:pointer}
+@media (max-width:600px){.act-list li{grid-template-columns:52px 1fr}.act-list li .c{display:none}}
+
 /* 안내 팝업 */
 .info-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:13px}
 dialog.intro{border:0;padding:0;border-radius:16px;max-width:720px;width:calc(100% - 32px);background:var(--surface);color:var(--ink);
@@ -250,6 +268,24 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
       <p class="note" id="qNote"></p>
     </section>
 
+    <!-- 주요 활동 (business) -->
+    <section class="panel" id="secAct">
+      <div class="ph">
+        <div><h2>주요 활동</h2><p class="hint" id="actHint">공시 · 뉴스 · 원문 링크</p></div>
+        <div class="controls">
+          <div class="seg" id="actPeriod" role="group" aria-label="기간"></div>
+          <select id="actCo" aria-label="회사"></select>
+          <select id="actSrc" aria-label="출처"><option value="">공시+뉴스</option><option value="공시">공시만</option><option value="뉴스">뉴스만</option></select>
+          <select id="actCat" aria-label="분야"></select>
+          <button class="btn primary" id="actCopy">보고서 초안 복사</button>
+          <label class="chk"><input type="checkbox" id="actLinks"> 링크 포함</label>
+          <span class="toast" id="actToast" role="status"></span>
+        </div>
+      </div>
+      <div id="actBody"></div>
+      <p class="note">공시·기사 제목으로 자동 분류한 참고 자료입니다. 분류가 틀릴 수 있으니 원문으로 확인하세요. 지분 변동 신고 등 반복 공시는 제외했습니다.</p>
+    </section>
+
     <!-- 연간 실적 (business, full) -->
     <section class="panel" id="secAnnual">
       <div class="ph">
@@ -309,7 +345,7 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
 <script>
 const PERIODS = [["1M",21],["3M",63],["6M",126],["1Y",252],["2Y",504]];
 const METRICS = [["revenue","매출액"],["operatingIncome","영업이익"],["opm","영업이익률"],["netIncome","순이익"]];
-const EXTRA_METRICS = { ad: ["adr","광고비율"], rnd: ["rndr","연구개발비율"] };
+const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연구비/판관비"] };
 function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
 const MODE_LABEL = { market:"주가 · 시가총액", business:"분기 · 연간 실적", full:"주가 · 연간 실적" };
 const state = { meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", qMetric:"revenue",
@@ -442,6 +478,7 @@ async function selectGroup(id){
   $("secQuote").hidden = m === "business";
   $("secReport").hidden = m !== "market";
   $("secQuarter").hidden = m !== "business";
+  $("secAct").hidden = m !== "business";
   $("secAnnual").hidden = m === "market";
   state.view = m === "market" ? "mcap" : "rel"; syncSeg("views", state.view);
   state.sort = g.sections?.length ? {key:"order", dir:"asc"} : {key:"marketCap", dir:"desc"};
@@ -460,7 +497,7 @@ function renderAll(){
   const m = grp().mode;
   if (m !== "business"){ renderPrice(); renderLegend(); renderRank(); renderQuotes(); }
   if (m === "market") renderReport(true);
-  if (m === "business") renderQuarter();
+  if (m === "business"){ renderQuarter(); renderAct(true); }
   if (m !== "market") renderAnnual();
   renderDisc(true);
 }
@@ -696,6 +733,103 @@ $("repCsv").addEventListener("click", () => {
   a.click(); URL.revokeObjectURL(a.href);
 });
 
+/* ---------- 주요 활동 (사업현황) ---------- */
+const ACT_CATS = [["deal","계약·수주"],["product","제품·마케팅"],["rnd","R&D·임상"],["invest","투자·M&A"],["finance","자금조달"],
+                  ["gov","지배구조"],["ir","IR"],["result","실적"],["etc","기타"]];
+const ACT_NAME = Object.fromEntries(ACT_CATS);
+const PERIODIC_RE = /사업보고서|반기보고서|분기보고서|감사보고서/;      // 초안 복사에서는 정기보고서 제출 자체는 제외
+const act = { period: "6m", co: "", src: "", cat: "" };
+const quarterOf = d => `${d.slice(2,4)}.${Math.ceil(+d.slice(5,7) / 3)}Q`;
+function qRange(q){   // "26.3Q" → ["2026-07-01","2026-09-30"]
+  const y = 2000 + +q.slice(0,2), n = +q.slice(3,4), m0 = (n - 1) * 3 + 1;
+  const end = new Date(Date.UTC(y, m0 + 2, 0)).toISOString().slice(0,10);
+  return [`${y}-${String(m0).padStart(2,"0")}-01`, end];
+}
+function actRange(){
+  if (act.period === "3m" || act.period === "6m"){
+    const d = new Date(); d.setMonth(d.getMonth() - (act.period === "3m" ? 3 : 6));
+    return [d.toISOString().slice(0,10), "9999-12-31"];
+  }
+  return qRange(act.period);
+}
+function actItems(c){
+  const [a, b] = actRange();
+  return (c.activity || []).filter(x => x.date >= a && x.date <= b && (!act.src || x.src === act.src) && (!act.cat || x.cat === act.cat));
+}
+// 실적 한 줄: 분기 선택 시 그 분기(없으면 직전 분기), 비상장은 최근 연간
+function resultLine(c){
+  const f = c.quarterly;
+  if (f?.periods?.length){
+    const want = act.period.endsWith("Q") ? `20${act.period.slice(0,2)}Q${act.period[3]}` : null;
+    let i = want ? f.periods.indexOf(want) : f.periods.length - 1;
+    if (i < 0) i = f.periods.filter(p => !want || p <= want).length - 1;
+    if (i >= 0){
+      const p = f.periods[i], yoy = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
+      const g = (a, b) => a != null && b > 0 ? `${a >= b ? "+" : ""}${((a / b - 1) * 100).toFixed(1)}%` : "–";
+      const rev = f.revenue[i], op = f.operatingIncome[i], m = margin(op, rev);
+      return `${qLabel(p)} 매출 ${fmtBig(rev, "KRW")} (YoY ${yoy < 0 ? "–" : g(rev, f.revenue[yoy])}, QoQ ${i ? g(rev, f.revenue[i-1]) : "–"}), 영업이익 ${fmtBig(op, "KRW")}${m == null ? "" : ` (${m.toFixed(1)}%)`}`;
+    }
+  }
+  const a = c.annual;
+  if (a?.years?.length){
+    const i = a.years.length - 1, m = margin(a.operatingIncome?.[i], a.revenue?.[i]);
+    return `${a.years[i]}년 매출 ${fmtBig(a.revenue?.[i], "KRW")}, 영업이익 ${fmtBig(a.operatingIncome?.[i], "KRW")}${m == null ? "" : ` (${m.toFixed(1)}%)`} · ${c.listed ? "연간" : "감사보고서"}`;
+  }
+  return "실적 데이터 없음";
+}
+const actShown = {};
+function renderAct(reset){
+  const list = comps();
+  if (reset){
+    // 기간 버튼: 최근 3·6개월 + 데이터가 있는 최근 분기 3개
+    const qs = [...new Set(list.flatMap(c => (c.activity || []).map(x => quarterOf(x.date))))].sort().reverse().slice(0, 3);
+    const items = [["3m","최근 3개월"],["6m","최근 6개월"], ...qs.map(q => [q, q])];
+    if (!items.some(x => x[0] === act.period)) act.period = "6m";
+    $("actPeriod").innerHTML = items.map(([k,l]) => `<button data-k="${k}" aria-pressed="${k===act.period}">${l}</button>`).join("");
+    $("actCo").innerHTML = `<option value="">전체 회사</option>` + list.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+    $("actCat").innerHTML = `<option value="">전체 분야</option>` + ACT_CATS.map(([k,l]) => `<option value="${k}">${l}</option>`).join("");
+    $("actCo").value = act.co; $("actSrc").value = act.src; $("actCat").value = act.cat;
+  }
+  const [a, b] = actRange();
+  $("actHint").textContent = `${a.replace(/-/g,".")} ~ ${b.startsWith("9999") ? "현재" : b.replace(/-/g,".")} · 공시 ${list.filter(c => c.activityOk?.["공시"]).length ? "" : "(수집 대기) "}· 뉴스 ${list.some(c => (c.activity || []).some(x => x.src === "뉴스")) ? "" : "(수집 대기) "}· 원문 링크`;
+  $("actBody").innerHTML = list.filter(c => !act.co || c.id === act.co).map(c => {
+    const items = actItems(c), lim = actShown[c.id] || 12;
+    const counts = ACT_CATS.map(([k,l]) => [l, items.filter(x => x.cat === k && !(k === "result" && PERIODIC_RE.test(x.title))).length]).filter(x => x[1]);
+    const li = items.slice(0, lim).map(x => `<li><span class="d">${x.date.slice(2).replace(/-/g,".")}</span>
+        <span class="c"><span class="tag ${x.src === "공시" ? "src-d" : ""}">${x.src}</span> <span class="tag">${ACT_NAME[x.cat] || "기타"}</span></span>
+        <span><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="by">${esc(x.by || "")}</span></span></li>`).join("");
+    return `<div class="act-co"><div class="act-head"><div>${coCell(c, "")}<div class="kpi">${esc(resultLine(c))}</div></div>
+        <div class="act-cats">${counts.map(([l,n]) => `<span class="tag">${l} ${n}</span>`).join("")}</div></div>
+      ${items.length ? `<ul class="act-list">${li}</ul>` : `<div class="act-empty">이 기간에 수집된 공시·기사가 없습니다.</div>`}
+      ${items.length > lim ? `<button class="act-more" data-id="${esc(c.id)}">${items.length - lim}건 더 보기</button>` : ""}</div>`;
+  }).join("");
+}
+function actDraft(){
+  const [a, b] = actRange(), links = $("actLinks").checked;
+  const label = act.period.endsWith("Q") ? act.period : (act.period === "3m" ? "최근 3개월" : "최근 6개월");
+  return comps().filter(c => !act.co || c.id === act.co).map(c => {
+    const items = actItems(c).filter(x => !(x.src === "공시" && PERIODIC_RE.test(x.title)));
+    const lines = [`■ ${c.name} · ${label} (${a.slice(5).replace("-",".")}~${b.startsWith("9999") ? "현재" : b.slice(5).replace("-",".")})`, `  · 실적: ${resultLine(c)}`];
+    ACT_CATS.forEach(([k,l]) => {
+      const xs = items.filter(x => x.cat === k).sort((p,q) => p.date.localeCompare(q.date));
+      if (!xs.length) return;
+      lines.push(`  · ${l}`);
+      xs.forEach(x => lines.push(`     - ${x.date.slice(5).replace("-",".")} ${x.title} (${x.src === "공시" ? "공시" : x.by || "뉴스"})${links ? " " + x.url : ""}`));
+    });
+    if (!items.length) lines.push("  · 이 기간 주요 공시·기사 없음");
+    return lines.join("\n");
+  }).join("\n\n");
+}
+$("actPeriod").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; act.period = b.dataset.k;
+  $("actPeriod").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === act.period)); renderAct(false); });
+["actCo","actSrc","actCat"].forEach(id => $(id).addEventListener("change", e => { act[{actCo:"co",actSrc:"src",actCat:"cat"}[id]] = e.target.value; renderAct(false); }));
+$("actBody").addEventListener("click", e => { const b = e.target.closest(".act-more"); if (!b) return; actShown[b.dataset.id] = (actShown[b.dataset.id] || 12) + 30; renderAct(false); });
+$("actCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(actDraft()); $("actToast").textContent = "복사했습니다"; }
+  catch(e){ $("actToast").textContent = "복사 실패"; }
+  setTimeout(() => $("actToast").textContent = "", 2000);
+});
+
 /* ---------- 최근 공시 (정기보고서 · IR) ---------- */
 const DISC_CATS = [["report","정기보고서"],["ir","IR"]];
 let discCat = "report", discLimit = 15;
@@ -868,11 +1002,11 @@ function renderQuarter(){
 }
 
 /* ---------- 연간 실적 ---------- */
-// 광고비율 = 광고선전비 ÷ 매출액 / 참고 = (광고선전비 + 판매촉진비) ÷ 매출액 (판촉 계정이 따로 있는 회사만)
+// 광고선전비/매출 = 광고선전비 ÷ 매출액 · 연구비/판관비 = 연구개발비(간접비 포함) ÷ 판매비와관리비 합계
 const ratio = (a, r) => (a != null && r) ? a / r * 100 : null;
 function extraSeries(c, m){
   if (m === "adr" && c.ad) return { years: c.ad.years, v: c.ad.years.map((_, i) => ratio(c.ad.ad?.[i], c.ad.revenue?.[i])) };
-  if (m === "rndr" && c.rnd) return { years: c.rnd.years, v: c.rnd.years.map((_, i) => c.rnd.ratio?.[i] ?? ratio(c.rnd.amount?.[i], c.rnd.revenue?.[i])) };
+  if (m === "rndr" && c.rnd) return { years: c.rnd.years, v: c.rnd.years.map((_, i) => ratio(c.rnd.amount?.[i], c.rnd.sga?.[i])) };
   return null;
 }
 const RATIO_CAP = 200;   // 매출이 작은 신약사의 수천 % 비율이 차트를 덮지 않도록 표시 상한
@@ -911,36 +1045,35 @@ function renderExtra(m){
     return l ? `<a href="${esc(l)}" target="_blank" rel="noopener">${esc(d.source)} ↗</a>` : esc(d.source || ""); };
   let head, body;
   if (isAd){
-    head = `<thead><tr><th>종목</th><th>${last ?? ""} 광고선전비</th><th>광고비율</th><th>${prev ?? ""} 광고비율</th><th>(참고) 광고+판촉 비율</th><th>출처</th></tr></thead>`;
+    head = `<thead><tr><th>종목</th><th>${last ?? ""} 광고선전비</th><th>광고선전비/매출</th><th>${prev ?? ""} 광고선전비/매출</th><th>${last ?? ""} 매출액</th><th>출처</th></tr></thead>`;
     body = comps().filter(c => c.ad || c.annual).map(c => {
       const d = c.ad;
       if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">${waitMsg(c, c.country === "KR" ? "광고선전비 계정 미기재" : "해외 기업 · 광고선전비 미공시")}</td></tr>`;
       const i = d.years.indexOf(last), j = d.years.indexOf(prev);
-      const adPromo = i < 0 ? null : (d.promo?.[i] != null && d.ad?.[i] != null ? d.ad[i] + d.promo[i] : d.adPromo?.[i]);
-      const adOnly = i < 0 ? null : d.ad?.[i];
-      return `<tr><td>${coCell(c, "")}</td><td>${adOnly == null ? (d.adPromo?.[i] != null ? "<span class='err'>광고판촉비로 합산</span>" : "–") : fmtBig(adOnly, "KRW")}</td>
-        <td><b>${pct(ratio(adOnly, d.revenue?.[i]))}</b></td><td>${j < 0 ? "–" : pct(ratio(d.ad?.[j], d.revenue?.[j]))}</td>
-        <td>${adPromo == null ? "–" : pct(ratio(adPromo, d.revenue?.[i]))}</td><td class="err">${src(d, last)}</td></tr>`;
+      return `<tr><td>${coCell(c, "")}</td><td>${i < 0 ? "–" : fmtBig(d.ad?.[i], "KRW")}</td>
+        <td><b>${i < 0 ? "–" : pct(ratio(d.ad?.[i], d.revenue?.[i]))}</b></td><td>${j < 0 ? "–" : pct(ratio(d.ad?.[j], d.revenue?.[j]))}</td>
+        <td>${i < 0 ? "–" : fmtBig(d.revenue?.[i], "KRW")}</td><td class="err">${src(d, last)}</td></tr>`;
     }).join("");
   } else {
-    head = `<thead><tr><th>종목</th><th>${last ?? ""} 연구개발비</th><th>연구개발비율</th><th>${prev ?? ""} 비율</th><th>최근 누적 (기준)</th><th>출처</th></tr></thead>`;
+    head = `<thead><tr><th>종목</th><th>${last ?? ""} 연구개발비</th><th>연구비/판관비</th><th>${prev ?? ""} 연구비/판관비</th><th>${last ?? ""} 판관비</th><th>최근 누적 연구개발비</th><th>출처</th></tr></thead>`;
     body = comps().filter(c => c.rnd || c.annual).map(c => {
       const d = c.rnd;
-      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">${waitMsg(c, "연구개발비 공시 없음")}</td></tr>`;
-      const s = extraSeries(c, "rndr"), i = d.years.indexOf(last), j = d.years.indexOf(prev);
-      const cur = c.annual?.currency || "KRW", y = d.ytd;
-      return `<tr><td>${coCell(c, "")}</td><td>${i < 0 ? "–" : fmtBig(d.amount?.[i], d.source?.includes("Yahoo") ? cur : "KRW")}</td>
-        <td><b>${i < 0 ? "–" : pct(s.v[i])}</b></td><td>${j < 0 ? "–" : pct(s.v[j])}</td>
-        <td>${y ? `<a href="${esc(y.url)}" target="_blank" rel="noopener">${fmtBig(y.amount, "KRW")} · ${pct(y.ratio)}</a> <span class="err">(${y.period.slice(2).replace(".", ".")} 누적)</span>` : "–"}</td>
+      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="6" class="err" style="text-align:left">${waitMsg(c, "연구개발비 공시 없음")}</td></tr>`;
+      const i = d.years.indexOf(last), j = d.years.indexOf(prev), cur = d.currency || "KRW", y = d.ytd;
+      const yr = y ? ratio(y.amount, y.sga) : null;
+      return `<tr><td>${coCell(c, "")}</td><td>${i < 0 ? "–" : fmtBig(d.amount?.[i], cur)}</td>
+        <td><b>${i < 0 ? "–" : pct(ratio(d.amount?.[i], d.sga?.[i]))}</b></td><td>${j < 0 ? "–" : pct(ratio(d.amount?.[j], d.sga?.[j]))}</td>
+        <td>${i < 0 ? "–" : fmtBig(d.sga?.[i], cur)}</td>
+        <td>${y ? `<a href="${esc(y.url)}" target="_blank" rel="noopener">${fmtBig(y.amount, "KRW")}${yr == null ? "" : " · " + pct(yr)}</a> <span class="err">(${y.period.slice(2)} 누적)</span>` : "–"}</td>
         <td class="err">${src(d, last)}</td></tr>`;
     }).join("");
   }
-  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="6" class="empty">데이터 없음</td></tr>`}</tbody>`;
+  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`}</tbody>`;
   const notes = isAd
-    ? ["비교 기준: 광고비율 = 광고선전비 ÷ 매출액 (판매비와관리비 주석, 상장사는 연결 기준·비상장사는 감사보고서 기준).",
-       "참고 비율은 판매촉진비를 별도 계정으로 공시한 회사만 표시합니다. 판매수수료(홈쇼핑 등)는 포함하지 않습니다."]
-    : ["비교 기준: 연구개발비율 = 연구개발비용(정부보조금 차감 전) ÷ 매출액, 사업보고서 '연구개발비용' 표의 공시 비율.",
-       "매출이 작은 신약 개발사는 비율이 매우 크게 나오므로 연구개발비 금액을 함께 보세요. 해외 기업은 Yahoo Finance 기준으로 계산합니다."];
+    ? ["비교 기준: 광고선전비/매출 = 판매비와관리비 주석의 광고선전비 ÷ 매출액 (상장사 연결 기준, 비상장사 감사보고서 기준). 판매촉진비·판매수수료는 포함하지 않습니다."]
+    : ["비교 기준: 연구비/판관비 = 연구개발비 ÷ 판매비와관리비 합계(같은 보고서 주석).",
+       "연구개발비는 사업보고서 '연구개발비용' 표의 합계(인건비 등 간접비, 개발비 자산화분 포함)이며, 이 표가 없는 비상장사는 판관비 주석의 경상연구개발비입니다. 자산화·제조원가 처리분이 있으면 100%를 넘을 수 있습니다.",
+       "해외 기업은 Yahoo Finance의 R&D ÷ SG&A입니다."];
   const staleHere = comps().filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
   if (staleHere.length) notes.push(`DART 접속 장애로 직전 수집값 표시 중: ${staleHere.join(", ")}`);
   $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");

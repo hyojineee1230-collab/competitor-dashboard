@@ -74,16 +74,31 @@ def make(cid, c):
     if not listed:
         e["annual"]["links"] = {}
     yrs, rv = e["annual"]["years"], e["annual"]["revenue"]
+    sga = [r * random.uniform(.2, .45) if not bio else max(r, 3e9) * random.uniform(.6, 1.2) for r in rv]
     if kr and not bio:   # 광고선전비 (샘플)
         adr = random.uniform(0.02, 0.15)
-        e["ad"] = {"years": yrs, "ad": [r * adr * random.uniform(.85, 1.15) for r in rv],
-                   "promo": [r * random.uniform(.01, .05) for r in rv] if random.random() < .6 else [None] * 3,
-                   "adPromo": [None] * 3, "revenue": rv, "source": "샘플", "links": {}}
-    if bio or cid in ("hpo",):   # 연구개발비 (샘플)
-        amt = [random.uniform(5e9, 4e10) if kr else random.uniform(2e7, 1.5e8) for _ in rv]
-        e["rnd"] = {"years": yrs, "amount": amt, "ratio": [a / r * 100 if r and kr else None for a, r in zip(amt, rv)],
-                    "revenue": rv, "source": "샘플", "links": {},
-                    "ytd": {"period": f"{y}.06", "amount": amt[-1] * .55, "ratio": 40.0, "url": "#"} if kr else None}
+        e["ad"] = {"years": yrs, "ad": [r * adr * random.uniform(.85, 1.15) for r in rv], "revenue": rv, "source": "샘플", "links": {}}
+    if bio or cid in ("hpo", "ckdhealth", "acebiome", "esther"):   # 연구개발비 (샘플)
+        amt = [g * random.uniform(.05, .9) for g in sga]
+        e["rnd"] = {"years": yrs, "amount": amt if kr else [a / 1350 for a in amt], "sga": sga if kr else [g / 1350 for g in sga],
+                    "currency": None if kr else ("EUR" if c.get("country") == "FR" else "USD"), "source": "샘플", "links": {},
+                    "ytd": {"period": f"{y}.06", "amount": amt[-1] * .55, "sga": sga[-1] * .5, "url": "#"} if listed else None}
+    if cid in ("ckdhealth", "hpo", "acebiome", "esther", "hem"):   # 주요 활동 (샘플)
+        pool = [("deal", "공시", "단일판매ㆍ공급계약체결"), ("product", "뉴스", f"{c['name']}, 신제품 출시로 MZ 공략"),
+                ("rnd", "뉴스", f"{c['name']}, 기능성 원료 개별인정 획득"), ("invest", "공시", "타법인 주식 및 출자증권 취득결정"),
+                ("finance", "공시", "주요사항보고서(유상증자결정)"), ("result", "뉴스", f"[특징주] {c['name']}, 3분기 매출 성장 기대"),
+                ("ir", "공시", "기업설명회(IR)개최(안내공시)"), ("product", "뉴스", f"{c['name']}, 홈쇼핑 완판 행진"),
+                ("gov", "공시", "대표이사변경"), ("deal", "뉴스", f"{c['name']}, 해외 유통사와 독점 계약")]
+        acts = []
+        for _ in range(random.randint(6, 12)):
+            cat, src, t = random.choice(pool)
+            if not listed and src == "공시":
+                continue
+            acts.append({"date": (date.today() - timedelta(days=random.randint(0, 175))).strftime("%Y-%m-%d"), "title": t,
+                         "src": src, "by": c["name"] if src == "공시" else random.choice(["머니투데이", "뉴시스", "한국경제"]),
+                         "cat": cat, "url": "#"})
+        e["activity"] = sorted(acts, key=lambda x: x["date"], reverse=True)
+        e["activityOk"] = {"공시": True, "뉴스": True}
     if kr:
         items = []
         for yy in range(y - 3, y + 1):

@@ -156,18 +156,20 @@ def parse_pct(s):
     return -v if (s.startswith("(") and s.endswith(")")) or s.startswith("△") else v
 
 
-# ---------------------------------------------------------------- 광고선전비 · 판매촉진비 (판관비 주석)
+# ---------------------------------------------------------------- 판매비와관리비 주석 (광고선전비 · 판관비 합계 · 경상연구개발비)
 AD_KEYS = ("광고선전비", "광고비")
 PROMO_KEYS = ("판매촉진비", "판촉비", "판매촉진수수료")
 ADPROMO_KEYS = ("광고판촉비", "광고선전및판매촉진비", "광고선전비및판매촉진비", "광고및판촉비")
+RNDEXP_KEYS = ("경상연구개발비", "연구개발비", "경상개발비", "연구비")
+TOTAL_KEYS = ("합계", "계", "총계", "판매비와관리비합계", "판매비와관리비계", "판매비와관리비")
 EXPENSE_HINT = ("급여", "감가상각비", "지급수수료", "복리후생비")
 
 
 def extract_ad(doc):
     """
-    판매비와관리비(또는 비용의 성격별 분류) 주석 표에서 광고선전비·판매촉진비 (당기, 전기).
+    판매비와관리비 주석 표에서 (당기, 전기):
+      ad 광고선전비 · promo 판매촉진비 · adPromo 합산 계정 · sga 판관비 합계 · rndExp 경상연구개발비
     사업보고서는 연결 주석이 먼저 나오므로 첫 번째로 맞는 표를 쓴다.
-    반환: {"unit", "ad": (당기, 전기)|None, "promo": (..)|None, "adPromo": (..)|None} 또는 None
     """
     for pos, rows in tables(doc):
         labels = [norm_label(r[0]) for r in rows]
@@ -177,16 +179,19 @@ def extract_ad(doc):
         for r, l in zip(rows, labels):
             key = ("adPromo" if l.startswith(ADPROMO_KEYS) else
                    "ad" if l.startswith(AD_KEYS) else
-                   "promo" if l.startswith(PROMO_KEYS) else None)
+                   "promo" if l.startswith(PROMO_KEYS) else
+                   "rndExp" if l.startswith(RNDEXP_KEYS) else
+                   "sga" if l in TOTAL_KEYS or l.startswith("판매비와관리비") else None)
             if key and key not in found:
                 vals = row_values(r)
                 if vals:
                     found[key] = (vals[0], vals[1] if len(vals) > 1 else None)
-        if not found:
+        if not any(k in found for k in ("ad", "adPromo", "rndExp", "sga")):
             continue
-        mult = UNIT_MULT.get(unit_before(doc, pos), 1)
-        out = {"unit": unit_before(doc, pos)}
-        for k in ("ad", "promo", "adPromo"):
+        unit = unit_before(doc, pos)
+        mult = UNIT_MULT.get(unit, 1)
+        out = {"unit": unit}
+        for k in ("ad", "promo", "adPromo", "sga", "rndExp"):
             v = found.get(k)
             out[k] = tuple(x * mult if x is not None else None for x in v) if v else None
         return out

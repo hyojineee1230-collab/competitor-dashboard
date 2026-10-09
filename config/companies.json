@@ -1,11 +1,11 @@
 {
-  "_help": "companies에 회사를 한 번만 등록하고, groups의 members에 id를 나열하면 탭이 만들어집니다. mode: market(주가·시가총액) / business(분기·연간 실적) / full(전체). 비상장사는 ticker 없이 dart_name(DART 법인명)만 적습니다. sections 는 표에서 구분선으로 묶을 회사들입니다(title 은 보고용 표의 기본 소제목). extras: ad(광고선전비 비율) · rnd(연구개발비 비율). 자사 표시·섹션 이름은 공개되지 않도록 화면의 표시 설정에서 브라우저에만 저장합니다.",
+  "_help": "companies에 회사를 한 번만 등록하고, groups의 members에 id를 나열하면 탭이 만들어집니다. mode: market(주가·시가총액) / business(분기·연간 실적) / full(전체). 비상장사는 ticker 없이 dart_name(DART 법인명)만 적습니다. sections 는 표에서 구분선으로 묶을 회사들입니다(title 은 보고용 표의 기본 소제목). extras: ad(광고선전비 비율) · rnd(연구개발비 비율). 사업현황 탭 회사는 주요 활동(공시+뉴스)을 수집하며, news_names(검색어 목록)·news_exclude(제외할 제목 패턴)로 뉴스 검색을 조정합니다. 자사 표시·섹션 이름은 공개되지 않도록 화면의 표시 설정에서 브라우저에만 저장합니다.",
 
   "companies": {
     "hpo":          { "name": "에이치피오",       "ticker": "357230.KQ", "dart": "357230", "country": "KR" },
     "nutri":        { "name": "뉴트리",           "ticker": "270870.KQ", "dart": "270870", "country": "KR" },
     "bioneer":      { "name": "바이오니아",       "ticker": "064550.KQ", "dart": "064550", "country": "KR" },
-    "hem":          { "name": "에이치이엠파마",    "ticker": "376270.KQ", "dart": "376270", "country": "KR" },
+    "hem":          { "name": "에이치이엠파마",    "ticker": "376270.KQ", "dart": "376270", "country": "KR", "news_names": ["에이치이엠파마", "HEM파마"] },
     "kobiolabs":    { "name": "고바이오랩",       "ticker": "348150.KQ", "dart": "348150", "country": "KR" },
     "genome":       { "name": "지놈앤컴퍼니",     "ticker": "314130.KQ", "dart": "314130", "country": "KR" },
     "cjbs":         { "name": "CJ바이오사이언스", "ticker": "311690.KQ", "dart": "311690", "country": "KR" },
