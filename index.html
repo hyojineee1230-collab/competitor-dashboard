@@ -79,16 +79,12 @@ h2{margin:0;font-size:16px;font-weight:600}
 .lg[aria-pressed="false"]{opacity:.35}
 
 .rank{list-style:none;margin:0;padding:0}
-.rank li{display:grid;grid-template-columns:minmax(0,130px) 1fr 76px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--grid);cursor:pointer}
+.rank li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;height:40px;padding:0;border-bottom:1px solid var(--grid);cursor:pointer}
 .rank li:last-child{border-bottom:0}
 .rank .nm{display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
 .rank .nm i{flex:none;width:8px;height:8px;border-radius:50%}
-.rank .rv{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.25}
-.rank .rv small{display:block;font-weight:400;font-size:12px}
-.bar-track{position:relative;height:14px}
-.bar-track.div::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--axis)}
-.bar{position:absolute;top:2px;height:10px;border-radius:0 4px 4px 0}
-.bar.neg{border-radius:4px 0 0 4px}
+.rank .rv{display:flex;gap:12px;align-items:baseline;justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.rank .rv .chg{min-width:62px;font-weight:400;font-size:13px}
 
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -590,29 +586,21 @@ function renderRank(){
   const isM = state.view === "mcap";
   renderLegend();
   if (isM){
-    // 시가총액 크기 순, 막대 = 현재 시총, 아래 숫자 = 기간 변화율
+    // 시가총액 크기 순: 이름 | 현재 시총 | 기간 변화율 (한 줄)
     $("rankTitle").textContent = "시가총액 순위";
     $("rankHint").textContent = `현재 시가총액 · 최근 ${state.period} 변화율`;
     const rows = comps().filter(mcapEligible).map(c => ({c, v: c.quote?.marketCap ?? c.price.mcap.at(-1), r: periodReturn(c)}))
       .sort((a,b) => b.v - a.v);
-    const max = Math.max(...rows.map(x => x.v), 1);
     $("rank").innerHTML = rows.map(({c,v,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
       <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
-      <span class="bar-track"><span class="bar" style="left:0;width:${v/max*100}%;background:${color(c._ci)}"></span></span>
-      <span class="rv">${fmtBig(v,"KRW")}<small>${fmtPct(r)}</small></span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
+      <span class="rv"><span>${fmtBig(v,"KRW")}</span><span class="chg">${fmtPct(r)}</span></span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
   } else {
     $("rankTitle").textContent = "기간 수익률 순위";
     $("rankHint").textContent = `최근 ${state.period} 주가 등락률`;
     const rows = comps().map(c => ({c, r: periodReturn(c)})).filter(x => x.r != null).sort((a,b) => b.r - a.r);
-    const max = Math.max(5, ...rows.map(x => Math.abs(x.r)));
-    $("rank").innerHTML = rows.map(({c,r}) => {
-      const w = Math.abs(r) / max * 50;
-      const pos = r >= 0 ? `left:50%;width:${w}%;background:var(--up)` : `right:50%;width:${w}%;background:var(--down)`;
-      return `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
+    $("rank").innerHTML = rows.map(({c,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
         <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}</span>
-        <span class="bar-track div"><span class="bar ${r<0?"neg":""}" style="${pos}"></span></span>
-        <span class="rv">${fmtPct(r)}</span></li>`;
-    }).join("") || `<li class="empty">데이터 없음</li>`;
+        <span class="rv">${fmtPct(r)}</span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
   }
   $("rank").onclick = e => { const li = e.target.closest("li[data-id]"); if (li) setFocus(li.dataset.id); };
 }
