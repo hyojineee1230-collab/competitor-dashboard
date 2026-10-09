@@ -876,6 +876,9 @@ function extraSeries(c, m){
   return null;
 }
 const RATIO_CAP = 200;   // 매출이 작은 신약사의 수천 % 비율이 차트를 덮지 않도록 표시 상한
+// 국내 기업인데 값이 없으면: DART 장애 중이면 '수집 대기', 아니면 '공시 없음'
+const waitMsg = (c, none) => (c.country === "KR" && (state.meta?.dartStale || []).length)
+  ? "DART 점검 중 · 점검 종료 후 자동 수집" : none;
 function renderExtra(m){
   const tip = chartBase(), isAd = m === "adr";
   const list = comps().map(c => ({c, s: extraSeries(c, m)})).filter(x => x.s && x.s.v.some(v => v != null));
@@ -911,7 +914,7 @@ function renderExtra(m){
     head = `<thead><tr><th>종목</th><th>${last ?? ""} 광고선전비</th><th>광고비율</th><th>${prev ?? ""} 광고비율</th><th>(참고) 광고+판촉 비율</th><th>출처</th></tr></thead>`;
     body = comps().filter(c => c.ad || c.annual).map(c => {
       const d = c.ad;
-      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">광고선전비 공시 없음 (해외 기업 또는 주석 미기재)</td></tr>`;
+      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">${waitMsg(c, c.country === "KR" ? "광고선전비 계정 미기재" : "해외 기업 · 광고선전비 미공시")}</td></tr>`;
       const i = d.years.indexOf(last), j = d.years.indexOf(prev);
       const adPromo = i < 0 ? null : (d.promo?.[i] != null && d.ad?.[i] != null ? d.ad[i] + d.promo[i] : d.adPromo?.[i]);
       const adOnly = i < 0 ? null : d.ad?.[i];
@@ -923,7 +926,7 @@ function renderExtra(m){
     head = `<thead><tr><th>종목</th><th>${last ?? ""} 연구개발비</th><th>연구개발비율</th><th>${prev ?? ""} 비율</th><th>최근 누적 (기준)</th><th>출처</th></tr></thead>`;
     body = comps().filter(c => c.rnd || c.annual).map(c => {
       const d = c.rnd;
-      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">연구개발비 공시 없음</td></tr>`;
+      if (!d) return `<tr><td>${coCell(c, "")}</td><td colspan="5" class="err" style="text-align:left">${waitMsg(c, "연구개발비 공시 없음")}</td></tr>`;
       const s = extraSeries(c, "rndr"), i = d.years.indexOf(last), j = d.years.indexOf(prev);
       const cur = c.annual?.currency || "KRW", y = d.ytd;
       return `<tr><td>${coCell(c, "")}</td><td>${i < 0 ? "–" : fmtBig(d.amount?.[i], d.source?.includes("Yahoo") ? cur : "KRW")}</td>
