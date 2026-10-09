@@ -15,16 +15,20 @@ import requests
 
 # 분류: (키, 표시명, 제목 패턴) — 위에서부터 먼저 맞는 것
 CATEGORIES = [
-    ("result",  "실적",       r"사업보고서|반기보고서|분기보고서|감사보고서|잠정\s*실적|영업\s*실적|매출액\s*또는\s*손익|손익구조|실적|매출"),
-    ("deal",    "계약·수주",  r"공급\s*계약|판매\s*계약|단일판매|수주|기술\s*이전|라이선스|라이센스|업무\s*협약|MOU|협약|파트너|제휴|계약\s*체결|독점"),
-    ("rnd",     "R&D·임상",   r"임상|특허|신약|품목\s*허가|허가|식약처|FDA|기술성|개발\s*성공|연구|논문|학회|인증|기능성\s*원료|개별\s*인정"),
-    ("invest",  "투자·M&A",   r"타법인|출자|주식\s*취득|양수|양도|합병|분할|인수|매각|유형자산|공장|설비|시설\s*투자|증설|신설"),
+    ("result",  "실적",       r"사업보고서|반기보고서|분기보고서|감사보고서|잠정\s*실적|영업\s*실적|매출액\s*또는\s*손익|손익구조|실적|매출|영업이익|흑자|적자|수익성"),
+    ("deal",    "계약·수주",  r"공급\s*계약|판매\s*계약|단일판매|수주|기술\s*이전|라이선스|라이센스|업무\s*협약|MOU|협약|파트너|제휴|계약\s*체결|독점|손잡|맞손|협업|공동\s*개발|실증"),
+    ("rnd",     "R&D·임상",   r"임상|특허|신약|품목\s*허가|허가|식약처|FDA|기술성|개발|연구|논문|학회|인증|인정|기능성|원료|치료제|파이프라인|후보\s*물질|균주|플랫폼\s*기술|복합제|효능|효과"),
+    ("invest",  "투자·M&A",   r"타법인|출자|주식\s*취득|양수|양도|합병|분할|인수|매각|유형자산|공장|설비|시설\s*투자|증설|신설|M&A"),
     ("finance", "자금조달",   r"유상\s*증자|무상\s*증자|전환\s*사채|신주인수권|교환\s*사채|사채|투자\s*유치|시리즈|자금\s*조달|증권신고서|투자설명서|상장|IPO"),
-    ("product", "제품·마케팅", r"출시|신제품|런칭|론칭|브랜드|광고|모델|캠페인|홈쇼핑|판매\s*개시|입점|수출|해외\s*진출|글로벌"),
-    ("gov",     "지배구조",   r"최대주주|대표이사|임원|주주총회|자기주식|이사회|감사|정관|배당|소송|제재|조사"),
+    ("product", "제품·마케팅", r"출시|신제품|런칭|론칭|브랜드|광고|모델|캠페인|홈쇼핑|판매\s*개시|입점|수출|진출|판로|글로벌|판매량|누적\s*판매|판매\s*증가|완판|리뉴얼|업그레이드|팝업|프로모션|할인|박람회|전시|비타푸드|참가|스폰서|올리브영|올영|라인\s*확대"),
+    ("gov",     "지배구조",   r"최대주주|대표이사|대표\s*교체|임원|주주총회|자기주식|자사주|소각|주주환원|이사회|감사|정관|배당|소송|제재|조사|지분"),
+    ("csr",     "사회공헌",   r"기부|기탁|후원|봉사|사회공헌|ESG|상생|협력\s*사업"),
+    ("market",  "증권·시장",  r"리포트|목표가|증권|전망|저평가|재평가|특징주|주가|강세|약세|급등|급락"),
     ("ir",      "IR",         r"기업설명회|IR\b|컨퍼런스|간담회"),
 ]
 NOISE = re.compile(r"특정증권등\s*소유상황보고서|소유상황보고서|대량보유상황보고서|주식등의\s*대량보유|공정공시\s*기타|증권발행실적보고서")
+# 회사 활동과 무관한 반복성 기사 (앱 퀴즈 정답, 자동 생성 시세·투자 분석 등)
+NEWS_NOISE = re.compile(r"캐시워크|돈\s*버는\s*퀴즈|퀴즈\s*정답|토스\s*행운|오퀴즈|투자\s*분석\s*20\d\d|주가\s*분석\s*20\d\d|운세|채용|블로그|카페\s*글")
 _CAT_RE = [(k, n, re.compile(p, re.I)) for k, n, p in CATEGORIES]
 CAT_NAME = {k: n for k, n, _ in CATEGORIES} | {"etc": "기타"}
 
@@ -81,7 +85,7 @@ def news(names, days=183, must=None, exclude=None, timeout=30):
         nt = _norm(title)
         if not any(k in nt for k in keys):
             continue
-        if (must_re and not must_re.search(title)) or (excl_re and excl_re.search(title)):
+        if (must_re and not must_re.search(title)) or (excl_re and excl_re.search(title)) or NEWS_NOISE.search(title):
             continue
         try:
             dt = email.utils.parsedate_to_datetime(it.findtext("pubDate"))
@@ -99,16 +103,48 @@ def news(names, days=183, must=None, exclude=None, timeout=30):
     return out
 
 
-def merge(new_items, old_items, keep_days=270, cap=200):
-    """이번 수집 + 이전 누적분 → 중복 제거, 최근 keep_days일, 최신순"""
+def _bigrams(t, strip=()):
+    t = re.sub(r"\[[^\]]*\]|\s-\s.*$|['\"‘’“”…·,.\-]", " ", t)     # [말머리], ' - 매체명' 꼬리 제거
+    t = _norm(t)
+    for n in strip:                                                  # 회사명은 모든 기사에 들어가므로 비교에서 뺌
+        t = t.replace(_norm(n), "")
+    return {t[i:i + 2] for i in range(len(t) - 1)}
+
+
+def _similar(a, b, strip=(), same_cat=False):
+    A, B = _bigrams(a["title"], strip), _bigrams(b["title"], strip)
+    if not A or not B:
+        return False
+    inter = len(A & B)
+    # 같은 분야로 분류된 같은 날짜 기사는 핵심어가 1/4 이상 겹치면 같은 보도로 봄
+    return inter / len(A | B) >= 0.42 or (same_cat and inter / min(len(A), len(B)) >= 0.25)
+
+
+def merge(new_items, old_items, keep_days=270, cap=200, names=()):
+    """
+    이번 수집 + 이전 누적분 → 최근 keep_days일, 최신순
+    - 누적분도 현재 규칙으로 다시 분류·노이즈 제거 (규칙을 고치면 과거 항목에도 반영)
+    - 공시는 접수번호로, 뉴스는 같은 보도자료(앞뒤 2일 내 제목 유사)를 하나로 묶음
+    """
     since = (datetime.now() - timedelta(days=keep_days)).strftime("%Y-%m-%d")
     out, seen = [], set()
     for it in sorted(new_items + (old_items or []), key=lambda x: x["date"], reverse=True):
         if it["date"] < since:
             continue
-        k = (it["src"], it.get("url") if it["src"] == "공시" else _norm(it["title"])[:40])
-        if k in seen:
+        if it["src"] == "뉴스" and NEWS_NOISE.search(it["title"]):
             continue
-        seen.add(k)
+        it = {**it, "cat": classify(it["title"])}
+        if it["src"] == "공시":
+            if it["url"] in seen:
+                continue
+            seen.add(it["url"])
+        else:
+            d = datetime.strptime(it["date"], "%Y-%m-%d")
+            dup = next((o for o in out if o["src"] == "뉴스"
+                        and abs((datetime.strptime(o["date"], "%Y-%m-%d") - d).days) <= 1
+                        and _similar(o, it, names, same_cat=o["cat"] == it["cat"] != "etc")), None)
+            if dup:
+                dup["n"] = dup.get("n", 1) + 1          # 같은 내용 보도 건수
+                continue
         out.append(it)
     return out[:cap]

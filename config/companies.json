@@ -11,7 +11,7 @@
     "cjbs":         { "name": "CJ바이오사이언스", "ticker": "311690.KQ", "dart": "311690", "country": "KR" },
     "ckdhealth":    { "name": "종근당건강",       "dart_name": "종근당건강",   "country": "KR" },
     "acebiome":     { "name": "에이스바이옴",     "dart_name": "에이스바이옴", "country": "KR" },
-    "esther":       { "name": "에스더포뮬러",     "dart_name": "에스더포뮬러", "country": "KR" },
+    "esther":       { "name": "에스더포뮬러",     "dart_name": "에스더포뮬러", "country": "KR", "news_names": ["에스더포뮬러", "에스더몰"] },
 
     "kolmarbnh":    { "name": "콜마비앤에이치",   "ticker": "200130.KQ", "dart": "200130", "country": "KR" },
     "cosmaxnbt":    { "name": "코스맥스엔비티",   "ticker": "222040.KQ", "dart": "222040", "country": "KR" },

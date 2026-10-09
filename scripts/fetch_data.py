@@ -778,7 +778,7 @@ def main():
                 ok["뉴스"] = True
             except Exception as ex:
                 log_err(f"{c['name']} 활동(뉴스) 실패: {type(ex).__name__}")
-            e["activity"] = activity.merge(new_act, prev_act)
+            e["activity"] = activity.merge(new_act, prev_act, names=c.get("news_names") or [c["name"]])
             e["activityOk"] = ok
 
         if DART_KEY:
