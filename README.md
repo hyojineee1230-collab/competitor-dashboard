@@ -84,15 +84,6 @@ Yahoo Finance의 국내 기업 재무는 비어 있는 경우가 많습니다. O
 - 요약은 자동 생성하지 않고 **요청할 때 갱신**합니다(예: 분기 보고 전 "사업현황 동향 업데이트해줘"). 화면 상단에 정리 날짜가 표시됩니다.
 - 수집기는 이 파일을 건드리지 않습니다.
 
-## 비공개 저장소에서 보기 (토큰 연결)
-저장소가 비공개면 `data/*.json`을 직접 받을 수 없어, 화면이 **GitHub REST API + 개인 토큰**으로 데이터를 읽습니다.
-1. GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate new token
-   - Repository access: *Only select repositories* → `competitor-dashboard`
-   - Permissions: **Contents: Read-only** (그 외 권한 없음), 만료일 지정
-2. 대시보드 첫 화면의 **데이터 연결** 창(또는 상단 🔑 버튼)에 토큰 입력 → 연결
-- 토큰은 코드·저장소에 두지 않고 각 브라우저에만 저장됩니다. '기억' 해제 시 탭을 닫으면 사라집니다.
-- 공개 배포(Pages)로 데이터가 직접 열리면 토큰 없이 그대로 동작합니다.
-
 ## 데이터 출처별 범위
 | 대상 | 주가·시총 | 분기 실적 | 연간 실적 |
 |---|---|---|---|

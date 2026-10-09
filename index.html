@@ -199,7 +199,6 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
     <div class="meta">
       <span id="sampleBadge" class="badge" hidden>샘플 데이터</span>
       <span id="updated"></span>
-      <button class="info-btn" id="tokenBtn" aria-haspopup="dialog" title="비공개 저장소 데이터 연결">🔑 데이터 연결</button>
       <button class="info-btn" id="introBtn" aria-haspopup="dialog">ⓘ 안내</button>
       <button class="theme-btn" id="themeBtn" aria-label="밝은/어두운 테마 전환">◐</button>
     </div>
@@ -312,26 +311,6 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
   </footer>
 </div>
 
-<dialog class="intro" id="tokenDlg" aria-labelledby="tokenTitle">
-  <form class="intro-in" id="tokenForm" method="dialog">
-    <h2 id="tokenTitle">데이터 연결</h2>
-    <p class="lead">데이터가 비공개 GitHub 저장소에 있어 개인 액세스 토큰으로 읽어옵니다. 토큰은 <b>이 브라우저에만</b> 저장되고 다른 곳으로 전송되지 않습니다(GitHub API 제외).</p>
-    <p class="err" id="tokenErr" style="color:var(--up);margin:0 0 10px"></p>
-    <label style="display:block;font-size:13px;margin-bottom:6px" for="tokenIn">GitHub 토큰</label>
-    <input id="tokenIn" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"
-      style="width:100%;font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
-    <label class="chk" style="margin:10px 0 16px"><input type="checkbox" id="tokenRemember" checked> 이 브라우저에 기억 (해제하면 탭을 닫을 때까지만 사용)</label>
-    <div class="tip"><span aria-hidden="true">🔒</span><span><b>읽기 전용 토큰</b>을 만들어 쓰세요:
-      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Fine-grained token 만들기</a> →
-      Repository access: <b>Only select repositories</b> → competitor-dashboard 선택 →
-      Permissions: <b>Contents: Read-only</b> → 만료일 지정. 공용 PC에서는 기억하지 마세요.</span></div>
-    <div class="intro-foot">
-      <button type="button" class="btn" id="tokenClear">저장된 토큰 삭제</button>
-      <span><button type="button" class="btn" id="tokenCancel">닫기</button> <button type="submit" class="btn primary" id="tokenSave">연결</button></span>
-    </div>
-  </form>
-</dialog>
-
 <dialog class="intro" id="intro" aria-labelledby="introTitle">
   <div class="intro-in">
     <h2 id="introTitle">경쟁사 모니터, 이런 대시보드입니다</h2>
@@ -420,42 +399,15 @@ function sectioned(list){
 }
 
 /* ---------- 데이터 로드 ---------- */
-/* 데이터 원본: 공개 배포면 같은 위치의 data/*.json, 비공개 저장소면 GitHub REST API + 개인 토큰
-   토큰은 코드·저장소에 두지 않고 각자 브라우저(localStorage)에만 저장 */
-const REPO = { owner: "hyojineee1230-collab", name: "competitor-dashboard", branch: "main" };
-const TOKEN_KEY = "cm-gh-token-v1";
-let memToken = "";
-const ghToken = () => { if (memToken) return memToken;
-  try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ""; } catch(e){ return ""; } };
-class AuthError extends Error {}
-async function apiJSON(path){
-  const url = `https://api.github.com/repos/${REPO.owner}/${REPO.name}/contents/${path}?ref=${REPO.branch}`;
-  const r = await fetch(url, { cache: "no-store", headers: {
-    "Authorization": `Bearer ${ghToken()}`, "Accept": "application/vnd.github.raw+json", "X-GitHub-Api-Version": "2022-11-28" } });
-  if (r.status === 401) throw new AuthError("토큰이 올바르지 않거나 만료되었습니다.");
-  if (r.status === 403 || r.status === 404) throw new AuthError(r.status === 404
-    ? "저장소에 접근할 수 없습니다. 토큰의 저장소 권한(Contents: Read)을 확인하세요."
-    : "접근이 거부되었습니다. 토큰 권한 또는 API 호출 한도를 확인하세요.");
-  if (!r.ok) throw new Error(`${path} ${r.status}`);
-  return r.json();
-}
-let dataMode = null;   // "direct" | "api"
 async function loadJSON(path){
-  if (dataMode !== "api"){
-    try {
-      const r = await fetch(path, {cache:"no-cache"});
-      if (r.ok){ const j = await r.json(); dataMode = "direct"; return j; }
-    } catch(e){ /* 파일로 열었거나 비공개 → API로 */ }
-    if (dataMode === "direct") throw new Error(path + " 없음");
-  }
-  if (!ghToken()) throw new AuthError("");
-  const j = await apiJSON(path); dataMode = "api"; return j;
+  const r = await fetch(path, {cache:"no-cache"});
+  if (!r.ok) throw new Error(path + " " + r.status);
+  return r.json();
 }
 async function init(){
   try { state.meta = await loadJSON("data/meta.json"); }
   catch(e){
-    if (e instanceof AuthError){ openToken(e.message); return; }
-    $("content").innerHTML = `<div class="panel empty">데이터를 불러오지 못했습니다. (${esc(e.message)})</div>`;
+    $("content").innerHTML = `<div class="panel empty">데이터를 불러오지 못했습니다. GitHub Pages 또는 로컬 웹서버(python -m http.server)로 열어주세요.</div>`;
     return;
   }
   const groups = state.meta.groups || state.meta.industries || [];
@@ -1131,38 +1083,6 @@ function renderAnnual(){
   if (staleHere.length) notes.push(`DART 접속 장애로 이번 갱신에서 DART 값을 받지 못해 직전 수집값을 표시 중: ${staleHere.join(", ")}`);
   $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
 }
-
-/* ---------- 데이터 연결(토큰) ---------- */
-const tokenDlg = $("tokenDlg");
-function openToken(msg){
-  $("tokenErr").textContent = msg || "";
-  $("tokenIn").value = "";
-  if (typeof tokenDlg.showModal === "function") tokenDlg.showModal(); else tokenDlg.setAttribute("open", "");
-  $("tokenIn").focus();
-}
-$("tokenBtn").addEventListener("click", () => openToken(""));
-$("tokenCancel").addEventListener("click", () => tokenDlg.close());
-$("tokenClear").addEventListener("click", () => {
-  try { localStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY); } catch(e){}
-  memToken = ""; $("tokenErr").textContent = "저장된 토큰을 삭제했습니다.";
-});
-$("tokenForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const t = $("tokenIn").value.trim();
-  if (!t){ $("tokenErr").textContent = "토큰을 입력하세요."; return; }
-  memToken = t;
-  $("tokenSave").disabled = true; $("tokenErr").textContent = "확인 중…";
-  try {
-    await apiJSON("data/meta.json");                       // 실제로 읽히는지 확인 후 저장
-    try {
-      if ($("tokenRemember").checked){ localStorage.setItem(TOKEN_KEY, t); sessionStorage.removeItem(TOKEN_KEY); }
-      else { sessionStorage.setItem(TOKEN_KEY, t); localStorage.removeItem(TOKEN_KEY); }
-    } catch(_){}
-    location.reload();
-  } catch(err){
-    memToken = ""; $("tokenErr").textContent = err.message || "연결 실패";
-  } finally { $("tokenSave").disabled = false; }
-});
 
 /* ---------- 안내 팝업 ---------- */
 const INTRO_KEY = "cm-intro-seen-v1";
