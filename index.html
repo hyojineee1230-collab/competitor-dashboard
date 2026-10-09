@@ -151,22 +151,18 @@ select{font:inherit;font-size:13px;padding:5px 8px;border-radius:8px;border:1px 
 footer{margin-top:32px;color:var(--muted);font-size:12px}
 
 /* 주요 활동 */
-.act-co{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden}
-.act-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--page)}
-.act-head .kpi{color:var(--ink-2);font-size:13px}
-.act-cats{display:flex;flex-wrap:wrap;gap:4px}
-.act-list{list-style:none;margin:0;padding:4px 0}
-.act-list li{display:grid;grid-template-columns:62px 136px 1fr;gap:10px;align-items:baseline;padding:7px 14px;border-top:1px solid var(--grid)}
-.act-list li:first-child{border-top:0}
-.act-list .d{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
-.act-list .c{white-space:nowrap}
-.act-list a{color:var(--ink);text-decoration:none}
-.act-list a:hover{color:var(--brand);text-decoration:underline}
-.act-list .by{color:var(--muted);font-size:12px;margin-left:6px}
-.tag.src-d{background:var(--brand-soft);color:var(--brand)}
-.act-empty{padding:14px;color:var(--muted);font-size:13px}
-.act-more{border:0;background:none;color:var(--brand);font-size:13px;padding:8px 14px;cursor:pointer}
-@media (max-width:600px){.act-list li{grid-template-columns:52px 1fr}.act-list li .c{display:none}}
+.act-tabs{display:flex;flex-wrap:wrap;margin-bottom:14px}
+.act-kpi{color:var(--ink-2);font-size:13px;margin:0 0 12px}
+.act-points{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.act-points li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.act-points .n{width:24px;height:24px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px;display:grid;place-items:center}
+.act-points b{display:block;font-size:14px;margin-bottom:3px}
+.act-points p{margin:0;color:var(--ink-2);font-size:13px;line-height:1.55;word-break:keep-all}
+.act-src{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px}
+.act-src a{color:var(--muted);text-decoration:none}
+.act-src a:hover{color:var(--brand);text-decoration:underline}
+.act-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:10px;color:var(--muted);font-size:12px}
+.act-foot button{border:0;background:none;color:var(--brand);cursor:pointer;font-size:12px;padding:0}
 
 /* 안내 팝업 */
 .info-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:13px}
@@ -271,19 +267,14 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
     <!-- 주요 활동 (business) -->
     <section class="panel" id="secAct">
       <div class="ph">
-        <div><h2>주요 활동</h2><p class="hint" id="actHint">공시 · 뉴스 · 원문 링크</p></div>
+        <div><h2>주요 활동</h2><p class="hint" id="actHint"></p></div>
         <div class="controls">
-          <div class="seg" id="actPeriod" role="group" aria-label="기간"></div>
-          <select id="actCo" aria-label="회사"></select>
-          <select id="actSrc" aria-label="출처"><option value="">공시+뉴스</option><option value="공시">공시만</option><option value="뉴스">뉴스만</option></select>
-          <select id="actCat" aria-label="분야"></select>
-          <button class="btn primary" id="actCopy">보고서 초안 복사</button>
-          <label class="chk"><input type="checkbox" id="actLinks"> 링크 포함</label>
+          <button class="btn" id="actCopy">요약 복사</button>
           <span class="toast" id="actToast" role="status"></span>
         </div>
       </div>
+      <div class="seg act-tabs" id="actCo" role="tablist" aria-label="회사"></div>
       <div id="actBody"></div>
-      <p class="note">공시·기사 제목으로 자동 분류한 참고 자료입니다. 분류가 틀릴 수 있으니 원문으로 확인하세요. 지분 변동 신고 등 반복 공시는 제외했습니다.</p>
     </section>
 
     <!-- 연간 실적 (business, full) -->
@@ -302,7 +293,7 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
     <!-- 최근 공시 (모든 탭) -->
     <section class="panel" id="secDisc">
       <div class="ph">
-        <div><h2>최근 공시</h2><p class="hint" id="discHint">DART 접수 기준 · 공시명을 누르면 원문이 열립니다</p></div>
+        <div><h2>최근 공시/기사</h2><p class="hint" id="discHint">DART 접수 기준 · 공시명을 누르면 원문이 열립니다</p></div>
         <div class="controls">
           <div class="seg" id="discCat" role="group" aria-label="공시 종류"></div>
           <select id="discCo" aria-label="회사 선택"></select>
@@ -733,105 +724,59 @@ $("repCsv").addEventListener("click", () => {
   a.click(); URL.revokeObjectURL(a.href);
 });
 
-/* ---------- 주요 활동 (사업현황) ---------- */
-const ACT_CATS = [["deal","계약·수주"],["product","제품·마케팅"],["rnd","R&D·임상"],["invest","투자·M&A"],["finance","자금조달"],
-                  ["gov","지배구조"],["result","실적"],["market","증권·시장"],["csr","사회공헌"],["ir","IR"],["etc","기타"]];
-const ACT_NAME = Object.fromEntries(ACT_CATS);
-const PERIODIC_RE = /사업보고서|반기보고서|분기보고서|감사보고서/;      // 초안 복사에서는 정기보고서 제출 자체는 제외
-const act = { period: "6m", co: "", src: "", cat: "" };
-const quarterOf = d => `${d.slice(2,4)}.${Math.ceil(+d.slice(5,7) / 3)}Q`;
-function qRange(q){   // "26.3Q" → ["2026-07-01","2026-09-30"]
-  const y = 2000 + +q.slice(0,2), n = +q.slice(3,4), m0 = (n - 1) * 3 + 1;
-  const end = new Date(Date.UTC(y, m0 + 2, 0)).toISOString().slice(0,10);
-  return [`${y}-${String(m0).padStart(2,"0")}-01`, end];
+/* ---------- 주요 활동 (사업현황): 회사별 3대 동향 요약 ---------- */
+let summaries = null, actCo = null;
+async function loadSummaries(){
+  if (summaries) return summaries;
+  try { summaries = await loadJSON("data/summaries.json"); } catch(e){ summaries = {companies:{}}; }
+  return summaries;
 }
-function actRange(){
-  if (act.period === "3m" || act.period === "6m"){
-    const d = new Date(); d.setMonth(d.getMonth() - (act.period === "3m" ? 3 : 6));
-    return [d.toISOString().slice(0,10), "9999-12-31"];
-  }
-  return qRange(act.period);
-}
-function actItems(c){
-  const [a, b] = actRange();
-  return (c.activity || []).filter(x => x.date >= a && x.date <= b && (!act.src || x.src === act.src) && (!act.cat || x.cat === act.cat));
-}
-// 실적 한 줄: 분기 선택 시 그 분기(없으면 직전 분기), 비상장은 최근 연간
+// 실적 한 줄: 상장사는 최근 분기, 비상장사는 최근 연간
 function resultLine(c){
   const f = c.quarterly;
   if (f?.periods?.length){
-    const want = act.period.endsWith("Q") ? `20${act.period.slice(0,2)}Q${act.period[3]}` : null;
-    let i = want ? f.periods.indexOf(want) : f.periods.length - 1;
-    if (i < 0) i = f.periods.filter(p => !want || p <= want).length - 1;
-    if (i >= 0){
-      const p = f.periods[i], yoy = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
-      const g = (a, b) => a != null && b > 0 ? `${a >= b ? "+" : ""}${((a / b - 1) * 100).toFixed(1)}%` : "–";
-      const rev = f.revenue[i], op = f.operatingIncome[i], m = margin(op, rev);
-      return `${qLabel(p)} 매출 ${fmtBig(rev, "KRW")} (YoY ${yoy < 0 ? "–" : g(rev, f.revenue[yoy])}, QoQ ${i ? g(rev, f.revenue[i-1]) : "–"}), 영업이익 ${fmtBig(op, "KRW")}${m == null ? "" : ` (${m.toFixed(1)}%)`}`;
-    }
+    const i = f.periods.length - 1, p = f.periods[i], yoy = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
+    const g = (a, b) => a != null && b > 0 ? `${a >= b ? "+" : ""}${((a / b - 1) * 100).toFixed(1)}%` : "–";
+    const rev = f.revenue[i], op = f.operatingIncome[i], m = margin(op, rev);
+    return `${qLabel(p)} 매출 ${fmtBig(rev, "KRW")} (YoY ${yoy < 0 ? "–" : g(rev, f.revenue[yoy])}), 영업이익 ${fmtBig(op, "KRW")}${m == null ? "" : ` (${m.toFixed(1)}%)`}`;
   }
   const a = c.annual;
   if (a?.years?.length){
     const i = a.years.length - 1, m = margin(a.operatingIncome?.[i], a.revenue?.[i]);
-    return `${a.years[i]}년 매출 ${fmtBig(a.revenue?.[i], "KRW")}, 영업이익 ${fmtBig(a.operatingIncome?.[i], "KRW")}${m == null ? "" : ` (${m.toFixed(1)}%)`} · ${c.listed ? "연간" : "감사보고서"}`;
+    return `${a.years[i]}년 매출 ${fmtBig(a.revenue?.[i], "KRW")}, 영업이익 ${fmtBig(a.operatingIncome?.[i], "KRW")}${m == null ? "" : ` (${m.toFixed(1)}%)`} · 감사보고서`;
   }
-  return "실적 데이터 없음";
+  return "";
 }
-const actShown = {};
-function renderAct(reset){
-  const list = comps();
-  if (reset){
-    // 기간 버튼: 최근 3·6개월 + 데이터가 있는 최근 분기 3개
-    const qs = [...new Set(list.flatMap(c => (c.activity || []).map(x => quarterOf(x.date))))].sort().reverse().slice(0, 3);
-    const items = [["3m","최근 3개월"],["6m","최근 6개월"], ...qs.map(q => [q, q])];
-    if (!items.some(x => x[0] === act.period)) act.period = "6m";
-    $("actPeriod").innerHTML = items.map(([k,l]) => `<button data-k="${k}" aria-pressed="${k===act.period}">${l}</button>`).join("");
-    $("actCo").innerHTML = `<option value="">전체 회사</option>` + list.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
-    $("actCat").innerHTML = `<option value="">전체 분야</option>` + ACT_CATS.map(([k,l]) => `<option value="${k}">${l}</option>`).join("");
-    $("actCo").value = act.co; $("actSrc").value = act.src; $("actCat").value = act.cat;
-  }
-  const [a, b] = actRange();
-  $("actHint").textContent = `${a.replace(/-/g,".")} ~ ${b.startsWith("9999") ? "현재" : b.replace(/-/g,".")} · 공시 ${list.filter(c => c.activityOk?.["공시"]).length ? "" : "(수집 대기) "}· 뉴스 ${list.some(c => (c.activity || []).some(x => x.src === "뉴스")) ? "" : "(수집 대기) "}· 원문 링크`;
-  $("actBody").innerHTML = list.filter(c => !act.co || c.id === act.co).map(c => {
-    const items = actItems(c), lim = actShown[c.id] || 12;
-    const counts = ACT_CATS.map(([k,l]) => [l, items.filter(x => x.cat === k && !(k === "result" && PERIODIC_RE.test(x.title))).length]).filter(x => x[1]);
-    const li = items.slice(0, lim).map(x => `<li><span class="d">${x.date.slice(2).replace(/-/g,".")}</span>
-        <span class="c"><span class="tag ${x.src === "공시" ? "src-d" : ""}">${x.src}</span> <span class="tag">${ACT_NAME[x.cat] || "기타"}</span></span>
-        <span><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="by">${esc(x.by || "")}</span></span></li>`).join("");
-    return `<div class="act-co"><div class="act-head"><div>${coCell(c, "")}<div class="kpi">${esc(resultLine(c))}</div></div>
-        <div class="act-cats">${counts.map(([l,n]) => `<span class="tag">${l} ${n}</span>`).join("")}</div></div>
-      ${items.length ? `<ul class="act-list">${li}</ul>` : `<div class="act-empty">이 기간에 수집된 공시·기사가 없습니다.</div>`}
-      ${items.length > lim ? `<button class="act-more" data-id="${esc(c.id)}">${items.length - lim}건 더 보기</button>` : ""}</div>`;
-  }).join("");
+async function renderAct(reset){
+  const S = await loadSummaries(), list = comps();
+  if (reset || !list.some(c => c.id === actCo)) actCo = (list.find(c => S.companies?.[c.id]) || list[0])?.id;
+  $("actCo").innerHTML = list.map(c => `<button role="tab" data-k="${esc(c.id)}" aria-pressed="${c.id === actCo}">${esc(c.name)}</button>`).join("");
+  $("actHint").textContent = `최근 3~6개월 큰 동향 3가지 · ${S.window || ""} 공시·기사 기준 · 정리 ${S.updatedAt || "–"}`;
+  const c = list.find(x => x.id === actCo), pts = S.companies?.[actCo] || [];
+  const news = (c?.activity || []).filter(x => x.src === "뉴스").length;
+  $("actBody").innerHTML = !c ? "" : `
+    <p class="act-kpi">${esc(resultLine(c))}</p>
+    ${pts.length ? `<ol class="act-points">${pts.map((p, i) => `<li><span class="n">${i + 1}</span><div><b>${esc(p.h)}</b><p>${esc(p.d)}</p>
+      ${p.s?.length ? `<div class="act-src">${p.s.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.t)} ↗</a>`).join("")}</div>` : ""}</div></li>`).join("")}</ol>`
+      : `<p class="act-kpi">아직 정리된 동향이 없습니다.</p>`}
+    <div class="act-foot"><span>공개 기사·공시를 바탕으로 정리한 참고 자료입니다. 수치는 출처로 확인하세요.</span>
+      ${news ? `<button id="actToNews">관련 기사 ${news}건 보기 →</button>` : ""}</div>`;
 }
-function actDraft(){
-  const [a, b] = actRange(), links = $("actLinks").checked;
-  const label = act.period.endsWith("Q") ? act.period : (act.period === "3m" ? "최근 3개월" : "최근 6개월");
-  return comps().filter(c => !act.co || c.id === act.co).map(c => {
-    const items = actItems(c).filter(x => !(x.src === "공시" && PERIODIC_RE.test(x.title)));
-    const lines = [`■ ${c.name} · ${label} (${a.slice(5).replace("-",".")}~${b.startsWith("9999") ? "현재" : b.slice(5).replace("-",".")})`, `  · 실적: ${resultLine(c)}`];
-    ACT_CATS.forEach(([k,l]) => {
-      const xs = items.filter(x => x.cat === k).sort((p,q) => p.date.localeCompare(q.date));
-      if (!xs.length) return;
-      lines.push(`  · ${l}`);
-      xs.forEach(x => lines.push(`     - ${x.date.slice(5).replace("-",".")} ${x.title} (${x.src === "공시" ? "공시" : x.by || "뉴스"})${links ? " " + x.url : ""}`));
-    });
-    if (!items.length) lines.push("  · 이 기간 주요 공시·기사 없음");
-    return lines.join("\n");
-  }).join("\n\n");
-}
-$("actPeriod").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; act.period = b.dataset.k;
-  $("actPeriod").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === act.period)); renderAct(false); });
-["actCo","actSrc","actCat"].forEach(id => $(id).addEventListener("change", e => { act[{actCo:"co",actSrc:"src",actCat:"cat"}[id]] = e.target.value; renderAct(false); }));
-$("actBody").addEventListener("click", e => { const b = e.target.closest(".act-more"); if (!b) return; actShown[b.dataset.id] = (actShown[b.dataset.id] || 12) + 30; renderAct(false); });
+$("actCo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; actCo = b.dataset.k; renderAct(false); });
+$("actBody").addEventListener("click", e => {
+  if (!e.target.closest("#actToNews")) return;
+  discCat = "news"; syncSeg("discCat", "news"); $("discCo").value = actCo; renderDisc(false);
+  $("secDisc").scrollIntoView({behavior: "smooth", block: "start"});
+});
 $("actCopy").addEventListener("click", async () => {
-  try { await navigator.clipboard.writeText(actDraft()); $("actToast").textContent = "복사했습니다"; }
-  catch(e){ $("actToast").textContent = "복사 실패"; }
+  const c = comps().find(x => x.id === actCo), pts = summaries?.companies?.[actCo] || [];
+  const txt = [`■ ${c?.name}`, `  · 실적: ${resultLine(c)}`, ...pts.map((p, i) => `  ${i + 1}. ${p.h} — ${p.d}`)].join("\n");
+  try { await navigator.clipboard.writeText(txt); $("actToast").textContent = "복사했습니다"; } catch(e){ $("actToast").textContent = "복사 실패"; }
   setTimeout(() => $("actToast").textContent = "", 2000);
 });
 
 /* ---------- 최근 공시 (정기보고서 · IR) ---------- */
-const DISC_CATS = [["report","정기보고서"],["ir","IR"]];
+const DISC_CATS = [["report","정기보고서"],["ir","IR"],["news","기사"]];
 let discCat = "report", discLimit = 15;
 // 예전 데이터(cat 없음) 호환: 제목으로 분류
 const discCatOf = d => d.cat || (/사업보고서|반기보고서|분기보고서|감사보고서/.test(d.title) ? "report" : /IR|기업설명회/.test(d.title) ? "ir" : null);
@@ -873,7 +818,11 @@ function renderGrid(list, today){
   return byCo.reduce((n, x) => n + Object.keys(x.cells).filter(k => k.startsWith(discYear + "-")).length, 0);
 }
 function renderDisc(reset){
-  const list = comps().filter(c => c.disclosures);
+  const list = comps().filter(c => c.disclosures || c.activity);
+  const hasNews = comps().some(c => (c.activity || []).some(x => x.src === "뉴스"));
+  const newsBtn = $("discCat").querySelector('[data-k="news"]');
+  if (newsBtn) newsBtn.hidden = !hasNews;
+  if (!hasNews && discCat === "news") discCat = "report";
   $("secDisc").hidden = !list.length;
   if (!list.length) return;
   const sel = $("discCo");
@@ -892,22 +841,25 @@ function renderDisc(reset){
     $("discHint").textContent = `${discYear ?? ""}년 정기보고서 ${n}건 · 연간 = 사업보고서 (비상장사는 감사보고서) · 칸을 누르면 DART 원문이 열립니다`;
     return;
   }
-  // IR: 접수일 최근순 목록 (회사 선택 시 그 회사만)
+  // IR·기사: 최근순 목록 (회사 선택 시 그 회사만)
+  const isNews = discCat === "news";
   const rows = list.filter(c => !pick || c.id === pick)
-    .flatMap(c => c.disclosures.filter(d => discCatOf(d) === discCat).map(d => ({...d, c})))
+    .flatMap(c => isNews
+      ? (c.activity || []).filter(x => x.src === "뉴스").map(x => ({...x, c}))
+      : (c.disclosures || []).filter(d => discCatOf(d) === discCat).map(d => ({...d, c})))
     .sort((a,b) => b.date.localeCompare(a.date) || a.c._ci - b.c._ci);
   const body = rows.slice(0, discLimit).map(d => {
     const days = (today - new Date(d.date)) / 864e5;
     return `<tr><td>${d.date.slice(2).replace(/-/g,".")}${days <= 3 ? ' <span class="tag new">NEW</span>' : ""}</td>
       <td>${coCell(d.c, "")}</td>
-      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)} ↗</a></td></tr>`;
+      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a>${isNews ? ` <span class="err">${esc(d.by || "")}</span>` : ""}</td></tr>`;
   }).join("");
-  $("discTable").innerHTML = `<thead><tr><th>접수일</th><th>회사</th><th>공시명</th></tr></thead><tbody>${
-    body || `<tr><td colspan="3" class="empty">최근 3년 ${discCat === "ir" ? "IR" : "정기보고서"} 공시 없음</td></tr>`}</tbody>`;
+  $("discTable").innerHTML = `<thead><tr><th>${isNews ? "보도일" : "접수일"}</th><th>회사</th><th>${isNews ? "기사" : "공시명"}</th></tr></thead><tbody>${
+    body || `<tr><td colspan="3" class="empty">${isNews ? "수집된 기사 없음" : `최근 3년 ${discCat === "ir" ? "IR" : "정기보고서"} 공시 없음`}</td></tr>`}</tbody>`;
   $("discMoreWrap").hidden = rows.length <= discLimit;
-  $("discHint").textContent = (discCat === "ir"
-    ? "기업설명회(IR) 개최 공시"
-    : "사업·반기·분기보고서 (비상장사는 감사보고서)") + ` · 최근 3년 ${rows.length}건 · 공시명을 누르면 DART 원문이 열립니다`;
+  $("discHint").textContent = isNews
+    ? `최근 9개월 기사 ${rows.length}건 · 같은 보도는 하나로 묶음 · 제목을 누르면 기사가 열립니다`
+    : (discCat === "ir" ? "기업설명회(IR) 개최 공시" : "사업·반기·분기보고서 (비상장사는 감사보고서)") + ` · 최근 3년 ${rows.length}건 · 공시명을 누르면 DART 원문이 열립니다`;
 }
 segment("discCat", DISC_CATS, () => discCat, v => { discCat = v; discLimit = 15; renderDisc(false); });
 $("discCo").addEventListener("change", () => { discLimit = 15; renderDisc(false); });

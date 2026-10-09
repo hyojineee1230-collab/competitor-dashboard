@@ -611,7 +611,7 @@ def load_previous():
     """직전 수집 결과 (회사 id → 항목)"""
     prev = {}
     for f in DATA_DIR.glob("*.json"):
-        if f.name in ("meta.json", "krx_cache.json", "dart_codes.json", "dart_docs.json"):
+        if f.name in ("meta.json", "krx_cache.json", "dart_codes.json", "dart_docs.json", "summaries.json"):
             continue
         try:
             for c in json.loads(f.read_text(encoding="utf-8")).get("companies", []):
