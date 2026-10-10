@@ -1140,7 +1140,7 @@ function renderSga(){
   const rows = list.map(c => ({ c, r: sgaRow(c) }));
   const years = [...new Set(rows.filter(x => x.r).map(x => x.r.y))].sort();
   $("sgaHint").textContent = `판관비를 4개 묶음으로 나눠 판관비 내 %와 매출 대비 %로 비교 · 기준 ${years.length ? years.join("·") + "년" : "–"} 사업연도`;
-  const head = `<thead><tr><th rowspan="2" style="text-align:left">종목</th><th rowspan="2">연도</th><th rowspan="2">판관비</th><th rowspan="2">매출 대비 %</th>
+  const head = `<thead><tr><th rowspan="2" style="text-align:left">종목</th><th rowspan="2">연도</th><th rowspan="2">판관비</th><th rowspan="2">판관비율</th>
     ${SGA_GROUPS.map(([, l]) => `<th colspan="2" class="g">${l}</th>`).join("")}<th rowspan="2">출처</th></tr>
     <tr>${SGA_GROUPS.map(() => `<th class="g">판관비 내 %</th><th>매출 대비 %</th>`).join("")}</tr></thead>`;
   const tip = (r, k) => {
@@ -1165,7 +1165,7 @@ function renderSga(){
 
   const notes = [
     "인건비: 급여·상여·퇴직급여·복리후생비·주식보상비용 · 광고판촉: 광고선전비·판매촉진비·견본비(판매수수료·지급수수료·운반·물류비 제외) · 연구개발: 판관비로 처리한 경상연구개발비·경상개발비·연구비 · 기타: 판관비 − 앞의 세 묶음",
-    "판관비 내 % = 묶음 금액 ÷ 판관비 합계, 매출 대비 % = 묶음 금액(판관비 열은 판관비 합계) ÷ 매출액. 판관비 내 % 칸에 마우스를 올리면 포함된 계정과 금액을 볼 수 있습니다.",
+    "판관비 내 % = 묶음 금액 ÷ 판관비 합계, 매출 대비 % = 묶음 금액 ÷ 매출액, 판관비율 = 판관비 합계 ÷ 매출액. 판관비 내 % 칸에 마우스를 올리면 포함된 계정과 금액을 볼 수 있습니다.",
     `경쟁사 평균은 ${labels.self ? "자사를 뺀 " : ""}회사별 비율의 단순 평균입니다(판관비 금액은 평균 금액).`,
     "상장사는 사업보고서 연결 주석, 비상장사는 감사보고서(별도) 기준입니다. 회사마다 계정 구분이 달라(예: 홈쇼핑·플랫폼 수수료를 판매수수료 또는 지급수수료로 처리) 기타 비중 차이가 클 수 있습니다. 연구개발비를 매출원가나 무형자산으로 처리한 금액은 포함되지 않습니다.",
   ];
