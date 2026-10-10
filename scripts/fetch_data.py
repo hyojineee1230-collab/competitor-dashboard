@@ -22,7 +22,7 @@ import requests
 import yfinance as yf
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dart_audit import decode, extract_income, extract_ad, extract_rnd, report_period, fiscal_year  # noqa: E402
+from dart_audit import decode, extract_income, extract_ad, extract_rnd, extract_sga, report_period, fiscal_year  # noqa: E402
 import krx  # noqa: E402
 import activity  # noqa: E402
 
@@ -479,7 +479,7 @@ def dart_recent(corp, listed):
 
 # ---------------------------------------------------------------- 공시 원문 (접수번호별 파싱 결과 캐시)
 DOC_CACHE = DATA_DIR / "dart_docs.json"
-PARSER_V = 3          # 파서를 고치면 올려서 다시 읽게 함
+PARSER_V = 4          # 파서를 고치면 올려서 다시 읽게 함
 try:
     _doc_cache = json.loads(DOC_CACHE.read_text(encoding="utf-8"))
 except Exception:
@@ -491,7 +491,7 @@ def _pack(t):
 
 
 def parse_doc(rcept_no):
-    """공시 원문 → {"income", "ad", "rnd"} (한 번 읽은 원문은 다시 받지 않음)"""
+    """공시 원문 → {"income", "ad", "rnd", "sga"} (한 번 읽은 원문은 다시 받지 않음)"""
     hit = _doc_cache.get(rcept_no)
     if hit and hit.get("v") == PARSER_V:
         return hit
@@ -502,11 +502,12 @@ def parse_doc(rcept_no):
         raise DartError(f"원문 응답 오류: {_dart_status(raw)}")
     texts = [decode(z.read(fn)) for fn in sorted(z.namelist(), key=lambda n: -z.getinfo(n).file_size)]
     first = lambda f: next((r for r in (f(t) for t in texts) if r), None)
-    inc, ad, rnd = first(extract_income), first(extract_ad), first(extract_rnd)
+    inc, ad, rnd, sga = first(extract_income), first(extract_ad), first(extract_rnd), first(extract_sga)
     out = {"v": PARSER_V,
            "income": {k: _pack(inc.get(k)) for k in KEYS + ("costOfSales", "grossProfit")} if inc else None,
            "ad": {k: _pack(ad.get(k)) for k in ("ad", "promo", "adPromo", "sga", "rndExp")} if ad else None,
-           "rnd": rnd}
+           "rnd": rnd,
+           "sga": {k: (_pack(v) if isinstance(v, tuple) else v) for k, v in sga.items()} if sga else None}
     _doc_cache[rcept_no] = out
     return out
 
@@ -590,6 +591,49 @@ def listed_extras(corp, want_ad, want_rnd):
     return res
 
 
+# ---------------------------------------------------------------- 판관비 주요 계정 (인건비·광고판촉·연구개발·기타)
+SGA_KEYS = ("total", "labor", "adpromo", "rnd")
+
+
+def build_sga(docs, src):
+    """[(연도, sga dict, 원문 링크)] 오래된 것부터 → 연도별 묶음 금액 (나중 보고서의 전기 금액이 덮어씀 = 재작성 반영)"""
+    by, items, basis, links = {}, None, None, {}
+    for y, d, link in docs:
+        if not d:
+            continue
+        for k in SGA_KEYS:
+            cur, prev = (list(d.get(k) or []) + [None, None])[:2]
+            if cur is not None:
+                by.setdefault(y, {})[k] = cur
+            if prev is not None:
+                by.setdefault(y - 1, {})[k] = prev
+        items, basis, links[str(y)] = d.get("items"), d.get("basis"), link
+    ys = [y for y in sorted(by) if by[y].get("total")][-3:]
+    if not ys:
+        return None
+    out = {"years": [str(y) for y in ys], **{k: [by[y].get(k) for y in ys] for k in SGA_KEYS},
+           "items": items, "itemsYear": str(max(int(k) for k in links)) if links else None,
+           "basis": basis, "source": src, "links": links}
+    return out
+
+
+def listed_sga(corp):
+    """상장사: 최근 사업보고서 판관비 주석 (정정 보고서에 주석이 없으면 같은 기간의 이전 제출본)"""
+    rows = [x for x in _dart_list(corp, "A") if report_period(x.get("report_nm", ""))[1] == "A"]
+    if not rows:
+        return None
+    rows.sort(key=lambda x: x["rcept_dt"], reverse=True)
+    # 최신 사업보고서가 첨부정정처럼 본문 없이 제출된 경우 직전 사업보고서까지 확인 (최대 2개 기간)
+    periods = list(dict.fromkeys(report_period(r["report_nm"])[0] for r in rows))[:2]
+    for per in periods:
+        for x in [r for r in rows if report_period(r["report_nm"])[0] == per]:
+            d = parse_doc(x["rcept_no"]).get("sga")
+            if d:
+                src = "사업보고서 판관비 주석" if d.get("basis") == "주석" else f"사업보고서 {d.get('basis')}"
+                return build_sga([(int(per[:4]), d, DART_VIEW + x["rcept_no"])], src)
+    return None
+
+
 # ---------------------------------------------------------------- 감사보고서 (비상장)
 def dart_audit(name, corp_code=None):
     corp = corp_code
@@ -618,7 +662,7 @@ def dart_audit(name, corp_code=None):
         if cur is None or (cur["_c"] and not consolidated) or (cur["_c"] == consolidated):
             by_year[fy] = {**x, "_c": consolidated}
 
-    data, links, ad_docs = {}, {}, []
+    data, links, ad_docs, sga_docs = {}, {}, [], []
     for fy in sorted(by_year)[-3:]:
         rep = by_year[fy]
         try:
@@ -628,6 +672,7 @@ def dart_audit(name, corp_code=None):
             continue
         parsed = {k: tuple(v) for k, v in (doc["income"] or {}).items() if v}
         ad_docs.append((fy, doc["ad"]))
+        sga_docs.append((fy, doc.get("sga"), DART_VIEW + rep["rcept_no"]))
         if not parsed:
             log_err(f"{name} {fy}: 감사보고서에서 손익계산서를 찾지 못함 ({DART_VIEW}{rep['rcept_no']})")
             continue
@@ -656,6 +701,7 @@ def dart_audit(name, corp_code=None):
            **{k: [data[y].get(k) for y in years] for k in KEYS + ("costOfSales",)},
            "source": "DART 감사보고서", "links": links}
     out["_notes"] = (_notes_by_year(ad_docs), links)
+    out["_sga"] = build_sga(sga_docs, "감사보고서 판관비 주석")
     return out
 
 
@@ -714,7 +760,7 @@ def carry_over(e, p):
         if is_dart(p.get(k)) and not is_dart(e.get(k)):
             e[k] = p[k]
             kept.append(k)
-    for k in ("disclosures", "ad", "rnd"):
+    for k in ("disclosures", "ad", "rnd", "sga"):
         if not e.get(k) and p.get(k):
             e[k] = p[k]
             kept.append(k)
@@ -822,6 +868,15 @@ def main():
                 log_err(f"{c['name']} 최근 공시 실패: {ex}")
         # 광고선전비 · 연구개발비 (사업보고서·감사보고서 원문)
         want_ad, want_rnd = cid in needs_ad, cid in needs_rnd
+        if e.get("annual") and "_sga" in e["annual"]:
+            e["sga"] = e["annual"].pop("_sga")
+        if cid in needs_fin and e["listed"] and DART_KEY and c.get("dart") and not _corps_failed:
+            try:
+                corp = c.get("corp_code") or corp_code_by_stock(c["dart"])
+                if corp:
+                    e["sga"] = listed_sga(corp)
+            except Exception as ex:
+                log_err(f"{c['name']} 판관비 세부 실패: {ex}")
         if e.get("annual") and "_notes" in e["annual"]:
             notes, links = e["annual"].pop("_notes")
             e.update(build_extras(notes, links, want_ad, want_rnd, None, "감사보고서 판관비 주석"))
@@ -838,6 +893,8 @@ def main():
         rev = dict(zip((e.get("annual") or {}).get("years", []), (e.get("annual") or {}).get("revenue", [])))
         if e.get("ad"):
             e["ad"]["revenue"] = [rev.get(y) for y in e["ad"]["years"]]
+        if e.get("sga"):
+            e["sga"]["revenue"] = [rev.get(y) for y in e["sga"]["years"]]
 
         # 주요 활동 (사업현황 탭 회사): 전체 공시 + 뉴스, 이전 수집분과 누적
         if cid in needs_act:

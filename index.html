@@ -108,6 +108,11 @@ tbody tr.sel, tbody tr.sel td:first-child{background:var(--brand-soft)}
 .co b{font-weight:600}
 .co span{color:var(--muted);font-size:12px}
 .tag.self{background:var(--brand-soft);color:var(--brand)}
+#sgaTable thead tr:first-child th[colspan]{text-align:center;border-bottom:0;color:var(--ink-2)}
+#sgaTable td.g, #sgaTable th.g{border-left:1px solid var(--grid)}
+#sgaTable td[title]{cursor:help}
+tr.avg td{background:var(--page);font-weight:600;border-top:1px solid var(--line)}
+tr.avg td:first-child{text-align:left}
 tr.sec td{background:var(--page);color:var(--ink-2);font-weight:600;font-size:12px;padding:7px 10px}
 tr.sec td:first-child{background:var(--page)}
 tr.sec.gap td{padding:0;height:8px;border-bottom:1px solid var(--grid)}  /* 섹션 이름이 비어 있을 때 구분선 */
@@ -258,6 +263,13 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
       <div id="finNotes"></div>
     </section>
 
+    <!-- 주요 계정 세부 (판관비 묶음) -->
+    <section class="panel" id="secSga">
+      <div class="ph"><div><h2>주요 계정 세부</h2><p class="hint" id="sgaHint"></p></div></div>
+      <div class="tbl-wrap"><table id="sgaTable"></table></div>
+      <div id="sgaNotes"></div>
+    </section>
+
     <section class="panel" id="secAct">
       <div class="ph">
         <div><h2>주요 활동</h2><p class="hint" id="actHint"></p></div>
@@ -375,6 +387,9 @@ const LABELS_KEY = "cm-labels-v2";
 let labels = { self: "", sections: {} };
 try { labels = { ...labels, ...JSON.parse(localStorage.getItem(LABELS_KEY) || "{}") }; } catch(e){}
 const isSelf = c => labels.self && c.id === labels.self;
+// 경쟁사 평균: 자사(표시 설정에서 지정)를 뺀 회사들의 단순 평균, 값이 없는 회사는 빼고 계산
+const mean = a => { const v = a.filter(x => x != null && isFinite(x)); return v.length ? v.reduce((t, x) => t + x, 0) / v.length : null; };
+const avgHead = n => `<td><b>경쟁사 평균</b> <span class="flat" style="font-weight:400;font-size:12px">${n}개사</span></td>`;
 const secKey = (i, gid = state.group) => `${gid}:s${i + 1}`;      // 섹션은 이름 없이 탭·순번으로만 구분
 const secTitle = i => (labels.sections && labels.sections[secKey(i)]) || (grp().sections?.[i]?.title || "");
 const coCell = (c, sub) => `<div class="co"><i style="background:${color(c._ci)}"></i><b>${esc(c.name)}</b>${
@@ -463,6 +478,7 @@ async function selectGroup(id){
   $("secQuote").hidden = m === "business";
   $("secAct").hidden = m !== "business";
   $("secAnnual").hidden = m === "market";
+  $("secSga").hidden = m === "market";
   state.view = m === "market" ? "mcap" : "rel"; syncSeg("views", state.view);
   state.sort = g.sections?.length ? {key:"order", dir:"asc"} : {key:"marketCap", dir:"desc"};
 
@@ -490,7 +506,7 @@ function renderAll(){
   $("capTool").hidden = m !== "market";
   if (m === "market") renderCapTool(true);
   if (m === "business") renderAct(true);
-  if (m !== "market") renderAnnual();
+  if (m !== "market"){ renderAnnual(); renderSga(); }
   renderDisc(true);
 }
 
@@ -933,7 +949,17 @@ function renderQuarter(){
       <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td>
       <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>`;
   }).join("");
-  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="9" class="empty">분기 데이터 없음</td></tr>`}</tbody>`;
+  const peers = shown.filter(c => c.quarterly && !isSelf(c)).map(c => {
+    const f = c.quarterly, i = f.periods.length - 1, p = f.periods[i], y = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
+    const rev = f.revenue[i], gp = gross(f, i), op = f.operatingIncome[i];
+    return { rev, yoy: y < 0 ? null : growth(rev, f.revenue[y]), qoq: i ? growth(rev, f.revenue[i-1]) : null,
+             gp, gpm: margin(gp, rev), op, opm: margin(op, rev), mc: c.quote?.currency === "KRW" ? c.quote?.marketCap : null };
+  });
+  const A = k => mean(peers.map(r => r[k]));
+  const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}<td></td><td>${fmtBig(A("rev"),"KRW")}</td>
+    <td>${fmtPct(A("yoy"))}</td><td>${fmtPct(A("qoq"))}</td><td>${signed(A("gp"),"KRW")}</td><td>${fmtMargin(A("gpm"))}</td>
+    <td>${signed(A("op"),"KRW")}</td><td>${fmtMargin(A("opm"))}</td><td>${fmtBig(A("mc"),"KRW")}</td></tr>`;
+  $("finTable").innerHTML = head + `<tbody>${body ? body + avg : `<tr><td colspan="9" class="empty">분기 데이터 없음</td></tr>`}</tbody>`;
 
   const src = [...new Set(list.map(c => c.quarterly.source))].join(", ");
   const notes = [`출처: ${src || "–"}`];
@@ -1069,9 +1095,20 @@ function renderAnnual(){
       <td>${signed(op, cur)}</td><td>${fmtMargin(margin(op, rev))}</td>
       <td class="err">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(f.source)} ↗</a>` : esc(f.source)}</td></tr>`;
   }).join("");
-  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="8" class="empty">재무 데이터 없음</td></tr>`}</tbody>`;
+  // 금액 평균은 선택한 통화로 보고하는 회사만, 비율 평균은 전체
+  const peers = list.filter(c => !isSelf(c)).map(c => {
+    const f = c.annual, i = f.years.indexOf(last), j = f.years.indexOf(prev), same = f.currency === state.currency;
+    const rev = f.revenue?.[i], gp = gross(f, i), op = f.operatingIncome?.[i];
+    return i < 0 ? {} : { rev: same ? rev : null, gr: j < 0 ? null : growth(rev, f.revenue?.[j]), gp: same ? gp : null,
+             gpm: margin(gp, rev), op: same ? op : null, opm: margin(op, rev) };
+  });
+  const A = k => mean(peers.map(r => r[k]));
+  const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}<td>${fmtBig(A("rev"), state.currency)}</td><td>${fmtPct(A("gr"))}</td>
+    <td>${signed(A("gp"), state.currency)}</td><td>${fmtMargin(A("gpm"))}</td><td>${signed(A("op"), state.currency)}</td><td>${fmtMargin(A("opm"))}</td><td></td></tr>`;
+  $("finTable").innerHTML = head + `<tbody>${body ? body + avg : `<tr><td colspan="8" class="empty">재무 데이터 없음</td></tr>`}</tbody>`;
 
   const notes = [isPct ? "비율 지표(매출이익률·영업이익률)는 통화와 관계없이 전체 종목을 비교합니다." : "금액 지표는 같은 통화로 보고하는 종목끼리만 비교합니다."];
+  notes.push(`경쟁사 평균은 ${labels.self ? "자사를 뺀 " : ""}회사별 값의 단순 평균입니다(값이 없는 회사 제외). 금액 평균은 ${state.currency === "KRW" ? "원화" : state.currency} 보고 회사만 계산합니다.`);
   notes.push("매출이익 = 매출액 − 매출원가. 비용을 성격별로 분류해 매출원가를 표시하지 않는 회사(주로 신약 개발사)는 –로 표시합니다.");
   if (comps().some(c => !c.listed)) notes.push("비상장사 수치는 DART 감사보고서 원문에서 자동 추출합니다. 출처 링크로 원문을 확인할 수 있습니다.");
   comps().filter(c => !c.annual).forEach(c => notes.push(`${c.name}: ${c.error || "재무 데이터 없음"}`));
@@ -1080,6 +1117,60 @@ function renderAnnual(){
   if (noCost.length && (state.meta?.dartStale || []).length) notes.push(`매출원가 수집 대기(DART 점검 종료 후 자동 수집): ${noCost.join(", ")}`);
   if (staleHere.length) notes.push(`DART 접속 장애로 이번 갱신에서 DART 값을 받지 못해 직전 수집값을 표시 중: ${staleHere.join(", ")}`);
   $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
+}
+
+/* ---------- 주요 계정 세부 (판관비) ---------- */
+// 묶음 정의는 scripts/dart_audit.py 의 SGA_GROUPS 와 같음. 기타 = 판관비 합계 − 세 묶음
+const SGA_GROUPS = [["labor","인건비"],["adpromo","광고판촉"],["rnd","연구개발"],["etc","기타"]];
+function sgaRow(c){
+  const d = c.sga;
+  if (!d?.years?.length) return null;
+  const i = d.total.map((v, k) => v ? k : -1).filter(k => k >= 0).at(-1);
+  if (i == null || i < 0) return null;
+  const y = d.years[i], tot = d.total[i], rev = d.revenue?.[i];
+  const amt = { labor: d.labor[i], adpromo: d.adpromo[i], rnd: d.rnd[i] };
+  amt.etc = [amt.labor, amt.adpromo, amt.rnd].some(v => v == null) ? null : tot - amt.labor - amt.adpromo - amt.rnd;
+  const r = { y, tot, sgaRev: margin(tot, rev), link: d.links?.[y], src: d.source, items: d.itemsYear === y ? d.items : null };
+  for (const [k] of SGA_GROUPS){ r[k + "S"] = margin(amt[k], tot); r[k + "R"] = margin(amt[k], rev); r[k] = amt[k]; }
+  return r;
+}
+function renderSga(){
+  const pct = v => v == null ? "–" : `${v.toLocaleString("ko-KR", {minimumFractionDigits: 1, maximumFractionDigits: 1})}%`;
+  const list = comps();
+  const rows = list.map(c => ({ c, r: sgaRow(c) }));
+  const years = [...new Set(rows.filter(x => x.r).map(x => x.r.y))].sort();
+  $("sgaHint").textContent = `판관비를 4개 묶음으로 나눈 비중(판관비 대비)과 매출 대비 비율 · 기준 ${years.length ? years.join("·") + "년" : "–"} 사업연도`;
+  const head = `<thead><tr><th rowspan="2" style="text-align:left">종목</th><th rowspan="2">연도</th><th rowspan="2">판관비</th><th rowspan="2">판관비/매출</th>
+    ${SGA_GROUPS.map(([, l]) => `<th colspan="2" class="g">${l}</th>`).join("")}<th rowspan="2">출처</th></tr>
+    <tr>${SGA_GROUPS.map(() => `<th class="g">판관비 비중</th><th>매출 대비</th>`).join("")}</tr></thead>`;
+  const tip = (r, k) => {
+    if (!r.items) return "";
+    const its = r.items.filter(x => x[2] === k).map(x => `${x[0]} ${fmtBig(x[1], "KRW")}`);
+    return its.length ? ` title="${esc(its.join("\n"))}"` : "";
+  };
+  const body = rows.map(({c, r}) => {
+    if (!r) {
+      const why = c.country !== "KR" ? "해외 기업 · 판관비 세부 계정 미공시" : waitMsg(c, "판관비 세부 주석을 찾지 못함");
+      return `<tr><td>${coCell(c, "")}</td><td colspan="13" class="err" style="text-align:left">${esc(why)}</td></tr>`;
+    }
+    return `<tr><td>${coCell(c, "")}</td><td>${r.y}</td><td>${fmtBig(r.tot, "KRW")}</td><td>${pct(r.sgaRev)}</td>
+      ${SGA_GROUPS.map(([k]) => `<td class="g"${tip(r, k)}><b>${pct(r[k + "S"])}</b></td><td>${pct(r[k + "R"])}</td>`).join("")}
+      <td class="err">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.src)}">원문 ↗</a>` : esc(r.src || "")}</td></tr>`;
+  }).join("");
+  const peers = rows.filter(x => x.r && !isSelf(x.c)).map(x => x.r);
+  const A = k => mean(peers.map(r => r[k]));
+  const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}<td></td><td>${fmtBig(A("tot"), "KRW")}</td><td>${pct(A("sgaRev"))}</td>
+    ${SGA_GROUPS.map(([k]) => `<td class="g">${pct(A(k + "S"))}</td><td>${pct(A(k + "R"))}</td>`).join("")}<td></td></tr>`;
+  $("sgaTable").innerHTML = head + `<tbody>${body ? body + avg : `<tr><td colspan="14" class="empty">데이터 없음</td></tr>`}</tbody>`;
+
+  const notes = [
+    "인건비: 급여·상여·퇴직급여·복리후생비·주식보상비용 · 광고판촉: 광고선전비·판매촉진비·견본비(판매수수료·지급수수료·운반·물류비 제외) · 연구개발: 판관비로 처리한 경상연구개발비·경상개발비·연구비 · 기타: 판관비 − 앞의 세 묶음",
+    "판관비 비중 = 묶음 금액 ÷ 판관비 합계, 매출 대비 = 묶음 금액 ÷ 매출액. 비중 칸에 마우스를 올리면 포함된 계정과 금액을 볼 수 있습니다.",
+    `경쟁사 평균은 ${labels.self ? "자사를 뺀 " : ""}회사별 비율의 단순 평균입니다(판관비 금액은 평균 금액).`,
+    "상장사는 사업보고서 연결 주석, 비상장사는 감사보고서(별도) 기준입니다. 회사마다 계정 구분이 달라(예: 홈쇼핑·플랫폼 수수료를 판매수수료 또는 지급수수료로 처리) 기타 비중 차이가 클 수 있습니다. 연구개발비를 매출원가나 무형자산으로 처리한 금액은 포함되지 않습니다.",
+  ];
+  if (years.length > 1) notes.push("최신 사업보고서에 주석이 없는 회사(정정 제출 등)는 직전 연도 값을 표시합니다. 연도 열을 확인하세요.");
+  $("sgaNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
 }
 
 /* ---------- 안내 팝업 ---------- */
