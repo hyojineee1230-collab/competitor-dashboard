@@ -324,6 +324,34 @@ def _vals_fn(rows):
     return lambda cells: [v for v in (parse_num(c.replace(" ", "")) for c in cells[1:]) if v is not None]
 
 
+def _sga_label(r):
+    """XBRL 양식 표는 첫 칸이 '판매비와관리비'(항목 축)이고 둘째 칸에 실제 계정명이 오는 경우가 있음"""
+    lab = SUFFIX_RE.sub("", norm_label(r[0])) if r else ""
+    if lab.startswith("판매비와관리비") or not lab:
+        for c in r[1:3]:
+            t = SUFFIX_RE.sub("", norm_label(c))
+            if t and parse_num(t) is None and not t.startswith(("판매비와관리비", "당기", "전기")):
+                return t
+    return lab
+
+
+def _sga_from_nature(rows):
+    """성격별 비용 표의 '판매비와관리비' 열 (열: 매출원가 | 판매비와관리비 | 합계, 당기·전기 반복)"""
+    for h, r in enumerate(rows[:4]):
+        idx = [i for i, c in enumerate(r) if norm_label(c).startswith("판매비와관리비")]
+        if idx and any(norm_label(c).startswith("매출원가") for c in r):
+            out = []
+            for row in rows[h + 1:]:
+                lab = SUFFIX_RE.sub("", norm_label(row[0])) if row else ""
+                cells = row[1:]
+                pick = lambda i: (parse_num(cells[i].replace(" ", "")) or 0) if i < len(cells) else None
+                vals = [pick(i) for i in idx[:2]]
+                if lab and vals and vals[0] is not None:
+                    out.append((lab, vals))
+            return out
+    return None
+
+
 def extract_sga(doc):
     """
     판매비와관리비 주석(없으면 손익계산서 본문의 판관비 세부)에서 당기·전기 묶음 금액.
@@ -340,9 +368,17 @@ def extract_sga(doc):
         if not any(k in ctx for k in ("판매비", "판관비")) or "부가가치" in ctx:
             continue
         rv = _vals_fn(rows)
-        got = _sga_from_rows([(l, rv(r)) for l, r in zip(labels, rows)])
+        got = _sga_from_rows([(_sga_label(r), rv(r)) for r in rows])
         if got:
             return _scale(got, _unit_in(rows) or unit_before(doc, pos), "주석")
+    # 판관비 주석이 따로 없고 성격별 비용 표에 판관비 열이 있는 경우
+    for pos, rows in cands:
+        nat = _sga_from_nature(rows)
+        if nat:
+            got = _sga_from_rows([(l, [v for v in vals if v is not None]) for l, vals in nat
+                                  if not l.startswith(NATURE_HINT)])
+            if got:
+                return _scale(got, _unit_in(rows) or unit_before(doc, pos), "성격별 분류 표")
     # 일반기업회계기준 손익계산서: '판매비와관리비' 다음 행부터 '영업이익' 앞까지
     for pos, rows in cands:
         labels = [SUFFIX_RE.sub("", norm_label(r[0])) for r in rows]
