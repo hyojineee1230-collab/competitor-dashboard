@@ -113,7 +113,7 @@ tbody tr.sel, tbody tr.sel td:first-child{background:var(--brand-soft)}
 #sgaTable td[title]{cursor:help}
 #sgaTable .c{text-align:center}
 #sgaTable .v{font-weight:600}
-#sgaTable .pair{display:flex;justify-content:center;gap:10px;font-size:11.5px;color:var(--muted);font-weight:400;margin-top:2px}
+#sgaTable .pair{display:flex;justify-content:center;column-gap:12px;gap:10px;font-size:11.5px;color:var(--muted);font-weight:400;margin-top:2px}
 #sgaTable td.g, #sgaTable th.g{min-width:96px}
 #sgaTable .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:0}
 .stk{display:flex;height:12px;border-radius:3px;overflow:hidden;background:var(--grid);min-width:140px}
@@ -1140,7 +1140,7 @@ function sgaRow(c){
   const y = d.years[i], tot = d.total[i], rev = d.revenue?.[i];
   const amt = { labor: d.labor[i], adpromo: d.adpromo[i], rnd: d.rnd[i] };
   amt.etc = [amt.labor, amt.adpromo, amt.rnd].some(v => v == null) ? null : tot - amt.labor - amt.adpromo - amt.rnd;
-  const r = { y, tot, sgaRev: margin(tot, rev), link: d.links?.[y], src: d.source, items: d.itemsYear === y ? d.items : null };
+  const r = { y, tot, rev, roas: (rev && amt.adpromo > 0) ? rev / amt.adpromo : null, sgaRev: margin(tot, rev), link: d.links?.[y], src: d.source, items: d.itemsYear === y ? d.items : null };
   for (const [k] of SGA_GROUPS){ r[k + "S"] = margin(amt[k], tot); r[k + "R"] = margin(amt[k], rev); r[k] = amt[k]; }
   return r;
 }
@@ -1154,24 +1154,27 @@ function renderSga(){
   $("sgaHint").innerHTML = `${main || "–"}년 사업연도 · 판관비를 4개 묶음으로 비교 &nbsp;` +
     SGA_GROUPS.map(([k, l]) => `<span class="lg"><i style="background:${SGA_COL[k]}"></i>${l}</span>`).join("");
   const head = `<thead><tr><th style="text-align:left">종목</th><th class="g c">판관비<div class="pair"><span>판관비율</span></div></th><th class="c" style="min-width:150px">구성</th>
-    ${SGA_GROUPS.map(([k, l]) => `<th class="g c"><span class="dot" style="background:${SGA_COL[k]}"></span>${l}<div class="pair"><span>판관비 내 %</span></div></th>`).join("")}<th></th></tr></thead>`;
+    ${SGA_GROUPS.map(([k, l]) => `<th class="g c"><span class="dot" style="background:${SGA_COL[k]}"></span>${l}<div class="pair"><span>판관비 내 %</span>${k === "adpromo" ? `<span title="매출액 ÷ 광고판촉비">매출/광고</span>` : ""}</div></th>`).join("")}<th></th></tr></thead>`;
   const tip = (r, k) => { const its = (r.items || []).filter(x => x[2] === k).map(x => `${x[0]} ${fmtBig(x[1], "KRW")}`); return its.length ? ` title="${esc(its.join("\n"))}"` : ""; };
   const bar = r => `<div class="stk">${SGA_GROUPS.map(([k]) => `<i style="width:${Math.max(0, r[k + "S"] || 0)}%;background:${SGA_COL[k]}"></i>`).join("")}</div>`;
+  const xr = v => v == null ? "–" : `${v >= 100 ? Math.round(v).toLocaleString("ko-KR") : v.toFixed(1)}배`;
   const cell = (amt, s1, s2, attr = "") => `<td class="g c"${attr}><div class="v">${amt}</div><div class="pair"><span>${s1}</span>${s2 == null ? "" : `<span>${s2}</span>`}</div></td>`;
   const body = ok.map(({c, r}) => `<tr><td>${coCell(c, "")}${r.y !== main ? `<span class="tag" title="최신 사업보고서에 주석이 없어 직전 연도">${r.y}</span>` : ""}</td>
       ${cell(fmtBig(r.tot, "KRW"), pct(r.sgaRev))}<td>${bar(r)}</td>
-      ${SGA_GROUPS.map(([k]) => cell(signed(r[k], "KRW"), pct(r[k + "S"]), null, tip(r, k))).join("")}
+      ${SGA_GROUPS.map(([k]) => cell(signed(r[k], "KRW"), pct(r[k + "S"]), k === "adpromo" ? xr(r.roas) : null, tip(r, k))).join("")}
       <td class="err">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.src)}">원문 ↗</a>` : ""}</td></tr>`).join("");
   const peers = ok.filter(x => !isSelf(x.c)).map(x => x.r), A = k => mean(peers.map(r => r[k]));
+  const adSum = peers.filter(r => r.rev && r.adpromo > 0).reduce((t, r) => [t[0] + r.rev, t[1] + r.adpromo], [0, 0]);
+  const roasAvg = adSum[1] ? adSum[0] / adSum[1] : null;
   const ar = Object.fromEntries(SGA_GROUPS.map(([k]) => [k + "S", A(k + "S")]));
   const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}${cell(fmtBig(A("tot"), "KRW"), pct(A("sgaRev")))}<td>${bar(ar)}</td>
-    ${SGA_GROUPS.map(([k]) => cell(signed(A(k), "KRW"), pct(A(k + "S")))).join("")}<td></td></tr>`;
+    ${SGA_GROUPS.map(([k]) => cell(signed(A(k), "KRW"), pct(A(k + "S")), k === "adpromo" ? xr(roasAvg) : null)).join("")}<td></td></tr>`;
   $("sgaTable").innerHTML = head + `<tbody>${body + avg}</tbody>`;
   const foreign = miss.filter(x => x.c.country !== "KR").map(x => x.c.name), kr = miss.filter(x => x.c.country === "KR").map(x => x.c.name);
   $("sgaNotes").innerHTML = (foreign.length ? `<p class="note">해외 기업(${esc(foreign.join(", "))})은 판관비 세부 계정을 공시하지 않아 제외했습니다.</p>` : "") +
     (kr.length ? `<p class="note">수집 대기: ${esc(kr.join(", "))}</p>` : "") +
     `<details class="note"><summary>기준·정의</summary><p>인건비: 급여·상여·퇴직급여·복리후생비·주식보상비용 · 광고판촉: 광고선전비·판매촉진비·견본비(수수료·물류비 제외) · 연구개발: 판관비로 처리한 경상연구개발비 등 · 기타: 나머지</p>
-     <p>판관비 내 % = 묶음 금액 ÷ 판관비 합계, 판관비율 = 판관비 합계 ÷ 매출액 · 금액에 마우스를 올리면 포함 계정이 보입니다 · 경쟁사 평균은 단순 평균 · 상장사 연결, 비상장사 별도 기준</p></details>`;
+     <p>판관비 내 % = 묶음 금액 ÷ 판관비 합계, 판관비율 = 판관비 합계 ÷ 매출액, 매출/광고 = 매출액 ÷ 광고판촉비(광고 1원당 매출, 평균은 합계 매출 ÷ 합계 광고판촉비) · 금액에 마우스를 올리면 포함 계정이 보입니다 · 경쟁사 평균은 단순 평균 · 상장사 연결, 비상장사 별도 기준</p></details>`;
 }
 
 /* ---------- 안내 팝업 ---------- */
