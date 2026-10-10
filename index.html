@@ -1140,10 +1140,12 @@ function sgaRow(c){
   const y = d.years[i], tot = d.total[i], rev = d.revenue?.[i];
   const amt = { labor: d.labor[i], adpromo: d.adpromo[i], rnd: d.rnd[i] };
   amt.etc = [amt.labor, amt.adpromo, amt.rnd].some(v => v == null) ? null : tot - amt.labor - amt.adpromo - amt.rnd;
-  const r = { y, tot, rev, roas: (rev && amt.adpromo > 0) ? rev / amt.adpromo : null, sgaRev: margin(tot, rev), link: d.links?.[y], src: d.source, items: d.itemsYear === y ? d.items : null };
+  const r = { y, tot, rev, roas: (rev && amt.adpromo > 0 && amt.adpromo / rev >= ROAS_MIN) ? rev / amt.adpromo : null, sgaRev: margin(tot, rev), link: d.links?.[y], src: d.source, items: d.itemsYear === y ? d.items : null };
   for (const [k] of SGA_GROUPS){ r[k + "S"] = margin(amt[k], tot); r[k + "R"] = margin(amt[k], rev); r[k] = amt[k]; }
   return r;
 }
+// 매출/광고: 광고판촉비가 매출의 1% 미만(ODM 등 광고를 거의 안 하는 회사)이면 의미가 없어 표시·평균에서 제외
+const ROAS_MIN = 0.01;
 const SGA_COL = { labor:"#4a78c2", adpromo:"#e0823d", rnd:"#2f9e8f", etc:"#b9c0c6" };
 function renderSga(){
   const pct = v => v == null ? "–" : `${v.toLocaleString("ko-KR", {minimumFractionDigits: 1, maximumFractionDigits: 1})}%`;
@@ -1164,7 +1166,7 @@ function renderSga(){
       ${SGA_GROUPS.map(([k]) => cell(signed(r[k], "KRW"), pct(r[k + "S"]), k === "adpromo" ? xr(r.roas) : null, tip(r, k))).join("")}
       <td class="err">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.src)}">원문 ↗</a>` : ""}</td></tr>`).join("");
   const peers = ok.filter(x => !isSelf(x.c)).map(x => x.r), A = k => mean(peers.map(r => r[k]));
-  const adSum = peers.filter(r => r.rev && r.adpromo > 0).reduce((t, r) => [t[0] + r.rev, t[1] + r.adpromo], [0, 0]);
+  const adSum = peers.filter(r => r.roas != null).reduce((t, r) => [t[0] + r.rev, t[1] + r.adpromo], [0, 0]);
   const roasAvg = adSum[1] ? adSum[0] / adSum[1] : null;
   const ar = Object.fromEntries(SGA_GROUPS.map(([k]) => [k + "S", A(k + "S")]));
   const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}${cell(fmtBig(A("tot"), "KRW"), pct(A("sgaRev")))}<td>${bar(ar)}</td>
@@ -1174,7 +1176,7 @@ function renderSga(){
   $("sgaNotes").innerHTML = (foreign.length ? `<p class="note">해외 기업(${esc(foreign.join(", "))})은 판관비 세부 계정을 공시하지 않아 제외했습니다.</p>` : "") +
     (kr.length ? `<p class="note">수집 대기: ${esc(kr.join(", "))}</p>` : "") +
     `<details class="note"><summary>기준·정의</summary><p>인건비: 급여·상여·퇴직급여·복리후생비·주식보상비용 · 광고판촉: 광고선전비·판매촉진비·견본비(수수료·물류비 제외) · 연구개발: 판관비로 처리한 경상연구개발비 등 · 기타: 나머지</p>
-     <p>판관비 내 % = 묶음 금액 ÷ 판관비 합계, 판관비율 = 판관비 합계 ÷ 매출액, 매출/광고 = 매출액 ÷ 광고판촉비(광고 1원당 매출, 평균은 합계 매출 ÷ 합계 광고판촉비) · 금액에 마우스를 올리면 포함 계정이 보입니다 · 경쟁사 평균은 단순 평균 · 상장사 연결, 비상장사 별도 기준</p></details>`;
+     <p>판관비 내 % = 묶음 금액 ÷ 판관비 합계, 판관비율 = 판관비 합계 ÷ 매출액, 매출/광고 = 매출액 ÷ 광고판촉비(광고 1원당 매출. 광고판촉비가 매출의 1% 미만인 회사는 –로 두고 평균에서도 제외, 평균은 해당 회사들의 합계 매출 ÷ 합계 광고판촉비) · 금액에 마우스를 올리면 포함 계정이 보입니다 · 경쟁사 평균은 단순 평균 · 상장사 연결, 비상장사 별도 기준</p></details>`;
 }
 
 /* ---------- 안내 팝업 ---------- */
