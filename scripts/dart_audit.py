@@ -293,9 +293,35 @@ def _sga_from_rows(rows):
         cur = [v for l, v, _ in items if sga_group(l) == k]
         prv = [p for l, _, p in items if sga_group(l) == k]
         out[k] = (sum(x for x in cur if x is not None) if cur else 0,
-                  sum(x for x in prv if x is not None) if prv and total[1] is not None else None)
+                  (sum(x for x in prv if x is not None) if prv else 0) if total[1] is not None else None)
     out["items"] = [[l, v, sga_group(l) or "etc"] for l, v, _ in items]
     return out
+
+
+SGA_TYPICAL = ("급여", "퇴직급여", "복리후생비", "감가상각비", "지급수수료", "광고선전비", "세금과공과", "운반비", "여비교통비",
+               "접대비", "보험료", "소모품비", "임차료", "지급임차료", "경상연구개발비", "경상개발비", "무형자산상각비", "통신비",
+               "수도광열비", "차량유지비", "수선비", "도서인쇄비", "교육훈련비", "판매수수료", "대손상각비", "주식보상비용")
+TAG_ONLY_RE = re.compile(r"<[^>]+>")
+
+
+def _typical(labels):
+    return sum(any(l.startswith(t) for l in labels) for t in SGA_TYPICAL)
+
+
+def _unit_in(rows):
+    for r in rows[:3]:
+        m = UNIT_RE.search(" ".join(r))
+        if m:
+            return re.sub(r"\s", "", m.group(1))
+    return None
+
+
+def _vals_fn(rows):
+    """주석 번호 열이 있는 표만 라벨 옆 칸을 건너뜀 (작은 금액을 주석 번호로 오인하지 않도록)"""
+    note_col = any("주석" in c for r in rows[:3] for c in r[1:2])
+    if note_col:
+        return row_values
+    return lambda cells: [v for v in (parse_num(c.replace(" ", "")) for c in cells[1:]) if v is not None]
 
 
 def extract_sga(doc):
@@ -306,13 +332,17 @@ def extract_sga(doc):
     cands = tables(doc)
     for pos, rows in cands:
         labels = [SUFFIX_RE.sub("", norm_label(r[0])) for r in rows]
-        if not any(l.startswith(EXPENSE_HINT) for l in labels):
+        if _typical(labels) < 6:
             continue
         if any(l.startswith(NATURE_HINT) for l in labels) or any(l.startswith(("매출원가", "매출액", "영업이익")) for l in labels):
             continue
-        got = _sga_from_rows([(l, row_values(r)) for l, r in zip(labels, rows)])
+        ctx = re.sub(r"\s+", "", TAG_ONLY_RE.sub(" ", doc[max(0, pos - 1500):pos]))[-300:]
+        if not any(k in ctx for k in ("판매비", "판관비")) or "부가가치" in ctx:
+            continue
+        rv = _vals_fn(rows)
+        got = _sga_from_rows([(l, rv(r)) for l, r in zip(labels, rows)])
         if got:
-            return _scale(got, unit_before(doc, pos), "주석")
+            return _scale(got, _unit_in(rows) or unit_before(doc, pos), "주석")
     # 일반기업회계기준 손익계산서: '판매비와관리비' 다음 행부터 '영업이익' 앞까지
     for pos, rows in cands:
         labels = [SUFFIX_RE.sub("", norm_label(r[0])) for r in rows]
@@ -320,11 +350,12 @@ def extract_sga(doc):
         e = next((i for i, l in enumerate(labels) if l.startswith(("영업이익", "영업손실", "영업손익"))), None)
         if s is None or e is None or e - s < 5:
             continue
-        head = row_values(rows[s])
-        body = [(labels[i], row_values(rows[i])) for i in range(s + 1, e)]
+        rv = _vals_fn(rows)
+        head = rv(rows[s])
+        body = [(labels[i], rv(rows[i])) for i in range(s + 1, e)]
         got = _sga_from_rows(([("판매비와관리비합계", head)] if head else []) + body)
         if got:
-            return _scale(got, unit_before(doc, pos), "본문")
+            return _scale(got, _unit_in(rows) or unit_before(doc, pos), "본문")
     return None
 
 
