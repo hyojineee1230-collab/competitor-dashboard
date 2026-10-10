@@ -326,8 +326,8 @@ dialog.intro::backdrop{background:rgba(10,16,14,.45)}
 
 <script>
 const PERIODS = [["1M",21],["3M",63],["6M",126],["1Y",252],["2Y",504]];
-const METRICS = [["revenue","매출액"],["operatingIncome","영업이익"],["opm","영업이익률"],["netIncome","순이익"]];
-const PCT_METRICS = new Set(["opm"]);   // 비율 지표 (통화와 무관하게 전체 비교)
+const METRICS = [["revenue","매출액"],["grossProfit","매출이익"],["gpm","매출이익률"],["operatingIncome","영업이익"],["opm","영업이익률"]];
+const PCT_METRICS = new Set(["gpm", "opm"]);   // 비율 지표 (통화와 무관하게 전체 비교)
 const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연구비/판관비"] };
 function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
 const MODE_LABEL = { market:"주가 · 시가총액", business:"분기 · 연간 실적", full:"주가 · 연간 실적" };
@@ -365,6 +365,8 @@ function fmtPct(v, digits=1){
 const fmtX = v => v == null ? "–" : v.toFixed(1) + "배";
 const signed = (v, cur) => v == null ? "–" : `<span class="${v < 0 ? "down" : ""}">${fmtBig(v, cur)}</span>`;
 const margin = (op, rev) => (rev && op != null) ? op / rev * 100 : null;
+// 매출이익 = 매출액 − 매출원가 (매출원가를 따로 표시하지 않는 회사는 null → "–")
+const gross = (f, i) => (f?.revenue?.[i] != null && f?.costOfSales?.[i] != null) ? f.revenue[i] - f.costOfSales[i] : null;
 const fmtMargin = m => m == null ? "–" : `<span class="${m < 0 ? "down" : ""}">${m.toFixed(1)}%</span>`;
 const growth = (a, b) => (a != null && b > 0) ? (a / b - 1) * 100 : null;
 const qLabel = p => `${p.slice(2,4)}.${p.slice(5)}Q`;   // 2025Q3 → 25.3Q
@@ -879,6 +881,8 @@ function vals(f, m, n){
   if (!f) return [];
   const len = (f.years || f.periods).length;
   if (m === "opm") return Array.from({length:len}, (_,i) => margin(f.operatingIncome?.[i], f.revenue?.[i]));
+  if (m === "grossProfit") return Array.from({length:len}, (_,i) => gross(f, i));
+  if (m === "gpm") return Array.from({length:len}, (_,i) => margin(gross(f, i), f.revenue?.[i]));
   return f[m] || [];
 }
 function renderQuarter(){
@@ -916,7 +920,7 @@ function renderQuarter(){
   });
 
   // 표: 최근 분기 기준 + YoY, QoQ
-  const head = `<thead><tr><th>종목</th><th>최근 분기</th><th>매출액</th><th>YoY</th><th>QoQ</th><th>영업이익</th><th>영업이익률</th><th>순이익</th><th>시가총액</th></tr></thead>`;
+  const head = `<thead><tr><th>종목</th><th>최근 분기</th><th>매출액</th><th>YoY</th><th>QoQ</th><th>매출이익</th><th>매출이익률</th><th>영업이익</th><th>영업이익률</th><th>시가총액</th></tr></thead>`;
   const body = shown.map(c => {
     const f = c.quarterly;
     if (!f) return `<tr><td>${coCell(c)}</td><td colspan="8" class="err" style="text-align:left">${esc(waitMsg(c, c.error || "분기 데이터 없음"))}</td></tr>`;
@@ -925,7 +929,8 @@ function renderQuarter(){
     const rev = f.revenue[i], op = f.operatingIncome[i];
     return `<tr><td>${coCell(c)}</td><td>${qLabel(p)}</td><td>${fmtBig(rev,"KRW")}</td>
       <td>${fmtPct(yoyIdx < 0 ? null : growth(rev, f.revenue[yoyIdx]))}</td><td>${fmtPct(i ? growth(rev, f.revenue[i-1]) : null)}</td>
-      <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td><td>${signed(f.netIncome[i], f.currency)}</td>
+      <td>${signed(gross(f, i), f.currency)}</td><td>${fmtMargin(margin(gross(f, i), rev))}</td>
+      <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td>
       <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>`;
   }).join("");
   $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="9" class="empty">분기 데이터 없음</td></tr>`}</tbody>`;
@@ -933,7 +938,10 @@ function renderQuarter(){
   const src = [...new Set(list.map(c => c.quarterly.source))].join(", ");
   const notes = [`출처: ${src || "–"}`];
   if (excluded.length) notes.push(`비상장사(${excluded.join(", ")})는 분기 공시 의무가 없어 제외했습니다. 연간 보기에서 감사보고서 기준으로 비교할 수 있습니다.`);
+  notes.push("매출이익 = 매출액 − 매출원가.");
   const staleHere = shown.filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
+  const noCost = comps().filter(c => c.country === "KR" && (c.annual || c.quarterly) && !(c.annual?.costOfSales || c.quarterly?.costOfSales)).map(c => c.name);
+  if (noCost.length && (state.meta?.dartStale || []).length) notes.push(`매출원가 수집 대기(DART 점검 종료 후 자동 수집): ${noCost.join(", ")}`);
   if (staleHere.length) notes.push(`DART 접속 장애로 이번 갱신에서 DART 값을 받지 못해 직전 수집값을 표시 중: ${staleHere.join(", ")}`);
   $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
 }
@@ -1051,21 +1059,25 @@ function renderAnnual(){
   });
 
   const last = years.at(-1), prev = years.at(-2);
-  const head = `<thead><tr><th>종목</th><th>${last ?? ""} 매출액</th><th>매출 성장률</th><th>영업이익</th><th>영업이익률</th><th>순이익</th><th>출처</th></tr></thead>`;
+  const head = `<thead><tr><th>종목</th><th>${last ?? ""} 매출액</th><th>매출 성장률</th><th>매출이익</th><th>매출이익률</th><th>영업이익</th><th>영업이익률</th><th>출처</th></tr></thead>`;
   const body = list.map(c => {
     const f = c.annual, i = f.years.indexOf(last), j = f.years.indexOf(prev), cur = f.currency;
     const rev = f.revenue?.[i], op = f.operatingIncome?.[i];
     const link = f.links?.[last];
     return `<tr><td>${coCell(c, "")}</td><td>${fmtBig(rev, cur)}</td><td>${fmtPct(j < 0 ? null : growth(rev, f.revenue?.[j]))}</td>
-      <td>${signed(op, cur)}</td><td>${fmtMargin(margin(op, rev))}</td><td>${signed(f.netIncome?.[i], cur)}</td>
+      <td>${signed(gross(f, i), cur)}</td><td>${fmtMargin(margin(gross(f, i), rev))}</td>
+      <td>${signed(op, cur)}</td><td>${fmtMargin(margin(op, rev))}</td>
       <td class="err">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(f.source)} ↗</a>` : esc(f.source)}</td></tr>`;
   }).join("");
-  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="7" class="empty">재무 데이터 없음</td></tr>`}</tbody>`;
+  $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="8" class="empty">재무 데이터 없음</td></tr>`}</tbody>`;
 
-  const notes = [isPct ? "비율 지표(영업이익률)는 통화와 관계없이 전체 종목을 비교합니다." : "금액 지표는 같은 통화로 보고하는 종목끼리만 비교합니다."];
+  const notes = [isPct ? "비율 지표(매출이익률·영업이익률)는 통화와 관계없이 전체 종목을 비교합니다." : "금액 지표는 같은 통화로 보고하는 종목끼리만 비교합니다."];
+  notes.push("매출이익 = 매출액 − 매출원가. 비용을 성격별로 분류해 매출원가를 표시하지 않는 회사(주로 신약 개발사)는 –로 표시합니다.");
   if (comps().some(c => !c.listed)) notes.push("비상장사 수치는 DART 감사보고서 원문에서 자동 추출합니다. 출처 링크로 원문을 확인할 수 있습니다.");
   comps().filter(c => !c.annual).forEach(c => notes.push(`${c.name}: ${c.error || "재무 데이터 없음"}`));
   const staleHere = comps().filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
+  const noCost = comps().filter(c => c.country === "KR" && (c.annual || c.quarterly) && !(c.annual?.costOfSales || c.quarterly?.costOfSales)).map(c => c.name);
+  if (noCost.length && (state.meta?.dartStale || []).length) notes.push(`매출원가 수집 대기(DART 점검 종료 후 자동 수집): ${noCost.join(", ")}`);
   if (staleHere.length) notes.push(`DART 접속 장애로 이번 갱신에서 DART 값을 받지 못해 직전 수집값을 표시 중: ${staleHere.join(", ")}`);
   $("finNotes").innerHTML = notes.map(n => `<p class="note">${esc(n)}</p>`).join("");
 }
