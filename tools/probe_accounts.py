@@ -44,10 +44,12 @@ def get(url, **params):
 def nodes(rcp):
     """보고서 목차 노드 [{text, dcmNo, eleId, offset, length, dtd}]"""
     page = get(f"{WEB}/dsaf001/main.do", rcpNo=rcp)
-    found = {}
-    for var, k, v in re.findall(r"(node\d+)\['(\w+)'\]\s*=\s*\"([^\"]*)\"", page):
-        found.setdefault(var, {})[k] = v
-    out = [n for n in found.values() if n.get("dcmNo")]
+    # 목차 노드 변수(node1, node2…)는 재사용되므로 '= {}' 선언 순서대로 끊어 읽는다
+    out = []
+    for chunk in re.split(r"node\d+\s*=\s*\{\}\s*;", page)[1:]:
+        n = dict(re.findall(r"node\d+\['(\w+)'\]\s*=\s*\"([^\"]*)\"", chunk))
+        if n.get("dcmNo"):
+            out.append(n)
     if not out:   # 목차 없는 단일 문서
         m = re.search(r"viewDoc\('(\d+)',\s*'(\d+)',\s*'(\d*)',\s*'(\d*)',\s*'(\d*)',\s*'([^']+)'", page)
         if m:
@@ -68,6 +70,10 @@ def pick_docs(nl):
     sep = [n for n in nl if ("재무제표주석" in t(n) or "재무제표에대한주석" in t(n)) and "연결" not in t(n)]
     body_c = [n for n in nl if t(n).endswith("연결재무제표") and "주석" not in t(n)]
     body_s = [n for n in nl if t(n).endswith("재무제표") and "연결" not in t(n) and "주석" not in t(n) and "요약" not in t(n)]
+    if not cons and not sep:   # 감사보고서: 목차가 '주석' 한 줄인 경우가 많음
+        plain = [n for n in nl if "주석" in t(n)]
+        if plain:
+            sep = plain[:1]
     whole = [n for n in nl if "감사보고서" in t(n) or "(첨부)" in t(n) or t(n) == "(전체)"]
     return {"consNotes": cons[:1], "sepNotes": sep[:1], "consBody": body_c[:1], "sepBody": body_s[:1], "whole": whole}
 
