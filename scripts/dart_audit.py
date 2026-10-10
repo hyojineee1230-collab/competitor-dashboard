@@ -246,3 +246,92 @@ def fiscal_year(report_nm: str):
     """'감사보고서 (2025.12)' → 2025"""
     m = re.search(r"\((\d{4})\.(\d{2})\)", report_nm)
     return int(m.group(1)) if m else None
+
+
+# ---------------------------------------------------------------- 판관비 세부 (주요 계정 묶음)
+# 인건비 · 광고판촉(수수료·물류 제외) · 연구개발 · 기타(= 판관비 합계 − 앞의 세 묶음)
+SGA_GROUPS = (
+    ("labor", ("급여", "직원급여", "임원급여", "상여", "잡급", "임금", "퇴직급여", "퇴직급여충당", "복리후생비",
+               "주식보상", "주식기준보상", "기타장기급여", "기타장기종업원급여", "종업원급여", "인건비")),
+    ("adpromo", ("광고", "판매촉진", "판촉", "견본")),
+    ("rnd", ("경상연구개발", "경상개발", "연구개발", "연구비", "개발비", "상품개발", "조사연구")),
+)
+SGA_EXCLUDE = ("수수료", "물류", "운반", "보관", "포장")      # 광고판촉에서 제외할 성격
+NATURE_HINT = ("재고자산의변동", "원재료", "원재료와", "상품매입", "제품과재공품", "외주가공")   # 성격별 비용·제조원가 표
+SUFFIX_RE = re.compile(r"(,판관비|\(주석[^)]*\)|\(\*\d*\)|\*\d*)$")
+
+
+def sga_group(label):
+    for key, prefixes in SGA_GROUPS:
+        if label.startswith(prefixes):
+            if key == "adpromo" and any(x in label for x in SGA_EXCLUDE):
+                return None
+            if key == "labor" and "수수료" in label:
+                return None
+            return key
+    return None
+
+
+def _sga_from_rows(rows):
+    """[(라벨, [당기, 전기...])] → 묶음 합계. 합계 행이 없으면 세부 합으로 대신"""
+    total, items = None, []
+    for lab, vals in rows:
+        if not vals:
+            continue
+        if lab in TOTAL_KEYS or lab.startswith(("판매비와관리비", "판매비및관리비", "합계")):
+            if total is None:
+                total = (vals[0], vals[1] if len(vals) > 1 else None)
+            continue
+        items.append((lab, vals[0], vals[1] if len(vals) > 1 else None))
+    if len(items) < 4:
+        return None
+    if total is None:
+        total = (sum(v for _, v, _ in items if v is not None),
+                 sum(p for _, _, p in items if p is not None) if any(p is not None for _, _, p in items) else None)
+    out = {"total": total, "items": []}
+    for k in ("labor", "adpromo", "rnd"):
+        cur = [v for l, v, _ in items if sga_group(l) == k]
+        prv = [p for l, _, p in items if sga_group(l) == k]
+        out[k] = (sum(x for x in cur if x is not None) if cur else 0,
+                  sum(x for x in prv if x is not None) if prv and total[1] is not None else None)
+    out["items"] = [[l, v, sga_group(l) or "etc"] for l, v, _ in items]
+    return out
+
+
+def extract_sga(doc):
+    """
+    판매비와관리비 주석(없으면 손익계산서 본문의 판관비 세부)에서 당기·전기 묶음 금액.
+    반환: {"unit", "basis": "주석"|"본문", "total", "labor", "adpromo", "rnd": (당기, 전기), "items": [[계정, 당기, 묶음]]}
+    """
+    cands = tables(doc)
+    for pos, rows in cands:
+        labels = [SUFFIX_RE.sub("", norm_label(r[0])) for r in rows]
+        if not any(l.startswith(EXPENSE_HINT) for l in labels):
+            continue
+        if any(l.startswith(NATURE_HINT) for l in labels) or any(l.startswith(("매출원가", "매출액", "영업이익")) for l in labels):
+            continue
+        got = _sga_from_rows([(l, row_values(r)) for l, r in zip(labels, rows)])
+        if got:
+            return _scale(got, unit_before(doc, pos), "주석")
+    # 일반기업회계기준 손익계산서: '판매비와관리비' 다음 행부터 '영업이익' 앞까지
+    for pos, rows in cands:
+        labels = [SUFFIX_RE.sub("", norm_label(r[0])) for r in rows]
+        s = next((i for i, l in enumerate(labels) if l.startswith(("판매비와관리비", "판매비와일반관리비", "판매비및일반관리비"))), None)
+        e = next((i for i, l in enumerate(labels) if l.startswith(("영업이익", "영업손실", "영업손익"))), None)
+        if s is None or e is None or e - s < 5:
+            continue
+        head = row_values(rows[s])
+        body = [(labels[i], row_values(rows[i])) for i in range(s + 1, e)]
+        got = _sga_from_rows(([("판매비와관리비합계", head)] if head else []) + body)
+        if got:
+            return _scale(got, unit_before(doc, pos), "본문")
+    return None
+
+
+def _scale(got, unit, basis):
+    mult = UNIT_MULT.get(unit, 1)
+    m = lambda v: v * mult if v is not None else None
+    out = {"unit": unit, "basis": basis, "items": [[l, m(v), g] for l, v, g in got["items"]]}
+    for k in ("total", "labor", "adpromo", "rnd"):
+        out[k] = tuple(m(v) for v in got[k])
+    return out
