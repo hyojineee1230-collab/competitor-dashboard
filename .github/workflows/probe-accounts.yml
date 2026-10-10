@@ -8,7 +8,7 @@ on:
       - ".github/workflows/probe-accounts.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   probe:
@@ -22,8 +22,11 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: python tools/probe_accounts.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: probe-out
-          path: probe_out.json
-          retention-days: 3
+      - name: 결과를 임시 브랜치에 저장 (main·data는 건드리지 않음)
+        run: |
+          mkdir /tmp/out && cp probe_out.json /tmp/out/ && cd /tmp/out
+          git init -q -b probe-results
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add probe_out.json && git commit -q -m "probe results"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" probe-results
