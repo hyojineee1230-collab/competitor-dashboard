@@ -1143,7 +1143,7 @@ function renderSga(){
   $("sgaHint").textContent = `판관비를 4개 묶음으로 나눠 판관비 내 %와 매출 대비 %로 비교 · 기준 ${years.length ? years.join("·") + "년" : "–"} 사업연도`;
   const head = `<thead><tr><th rowspan="2" style="text-align:left">종목</th><th rowspan="2">연도</th><th rowspan="2">판관비<br><span style="font-weight:400">(판관비율)</span></th>
     ${SGA_GROUPS.map(([, l]) => `<th colspan="2" class="g">${l}</th>`).join("")}<th rowspan="2">출처</th></tr>
-    <tr>${SGA_GROUPS.map(() => `<th class="g">판관비 내 %</th><th>매출 대비 %</th>`).join("")}</tr></thead>`;
+    <tr>${SGA_GROUPS.map(() => `<th class="g">금액<br><span style="font-weight:400">(판관비 내 %)</span></th><th>매출 대비 %</th>`).join("")}</tr></thead>`;
   const tip = (r, k) => {
     if (!r.items) return "";
     const its = r.items.filter(x => x[2] === k).map(x => `${x[0]} ${fmtBig(x[1], "KRW")}`);
@@ -1155,19 +1155,19 @@ function renderSga(){
       return `<tr><td>${coCell(c, "")}</td><td colspan="12" class="err" style="text-align:left">${esc(why)}</td></tr>`;
     }
     return `<tr><td>${coCell(c, "")}</td><td>${r.y}</td><td>${fmtBig(r.tot, "KRW")}<span class="sub2">(${pct(r.sgaRev)})</span></td>
-      ${SGA_GROUPS.map(([k]) => `<td class="g"${tip(r, k)}><b>${pct(r[k + "S"])}</b></td><td>${pct(r[k + "R"])}</td>`).join("")}
+      ${SGA_GROUPS.map(([k]) => `<td class="g"${tip(r, k)}>${signed(r[k], "KRW")}<span class="sub2">(${pct(r[k + "S"])})</span></td><td>${pct(r[k + "R"])}</td>`).join("")}
       <td class="err">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.src)}">원문 ↗</a>` : esc(r.src || "")}</td></tr>`;
   }).join("");
   const peers = rows.filter(x => x.r && !isSelf(x.c)).map(x => x.r);
   const A = k => mean(peers.map(r => r[k]));
   const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}<td></td><td>${fmtBig(A("tot"), "KRW")}<span class="sub2">(${pct(A("sgaRev"))})</span></td>
-    ${SGA_GROUPS.map(([k]) => `<td class="g">${pct(A(k + "S"))}</td><td>${pct(A(k + "R"))}</td>`).join("")}<td></td></tr>`;
+    ${SGA_GROUPS.map(([k]) => `<td class="g">${signed(A(k), "KRW")}<span class="sub2">(${pct(A(k + "S"))})</span></td><td>${pct(A(k + "R"))}</td>`).join("")}<td></td></tr>`;
   $("sgaTable").innerHTML = head + `<tbody>${body ? body + avg : `<tr><td colspan="13" class="empty">데이터 없음</td></tr>`}</tbody>`;
 
   const notes = [
     "인건비: 급여·상여·퇴직급여·복리후생비·주식보상비용 · 광고판촉: 광고선전비·판매촉진비·견본비(판매수수료·지급수수료·운반·물류비 제외) · 연구개발: 판관비로 처리한 경상연구개발비·경상개발비·연구비 · 기타: 판관비 − 앞의 세 묶음",
-    "판관비 내 % = 묶음 금액 ÷ 판관비 합계, 매출 대비 % = 묶음 금액 ÷ 매출액, 판관비율 = 판관비 합계 ÷ 매출액. 판관비 내 % 칸에 마우스를 올리면 포함된 계정과 금액을 볼 수 있습니다.",
-    `경쟁사 평균은 ${labels.self ? "자사를 뺀 " : ""}회사별 비율의 단순 평균입니다(판관비 금액은 평균 금액).`,
+    "판관비 내 % = 묶음 금액 ÷ 판관비 합계, 매출 대비 % = 묶음 금액 ÷ 매출액, 판관비율 = 판관비 합계 ÷ 매출액. 금액 칸에 마우스를 올리면 포함된 계정과 금액을 볼 수 있습니다.",
+    `경쟁사 평균은 ${labels.self ? "자사를 뺀 " : ""}회사별 금액·비율의 단순 평균입니다.`,
     "상장사는 사업보고서 연결 주석, 비상장사는 감사보고서(별도) 기준입니다. 회사마다 계정 구분이 달라(예: 홈쇼핑·플랫폼 수수료를 판매수수료 또는 지급수수료로 처리) 기타 비중 차이가 클 수 있습니다. 연구개발비를 매출원가나 무형자산으로 처리한 금액은 포함되지 않습니다.",
   ];
   if (years.length > 1) notes.push("최신 사업보고서에 주석이 없는 회사(정정 제출 등)는 직전 연도 값을 표시합니다. 연도 열을 확인하세요.");
