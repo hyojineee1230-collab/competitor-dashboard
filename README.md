@@ -1,118 +1,91 @@
 # 경쟁사 모니터
 
-핵심 경쟁사 요약과 산업별(건강기능식품 · 마이크로바이옴 신약) 시장·경쟁사 비교를 보여주는 정적 대시보드입니다.
-GitHub Pages로 호스팅하고, GitHub Actions가 매 영업일 데이터를 자동으로 갱신합니다.
+경쟁사 주가·보도·공시 흐름과 산업별(건강기능식품 · 마이크로바이옴 신약) 시장·실적을 한 화면에서 보는 정적 대시보드입니다.
+GitHub Pages로 호스팅하고, GitHub Actions가 하루 2회 전체 수집 + 평일 매시 뉴스·장중 시세를 갱신합니다.
 
 ## 화면 구성
-탭은 **요약 · 건강기능식품 · 마이크로바이옴 신약** 3개입니다. URL 해시(`#biz`, `#hff`, `#microbiome`)로 특정 탭을 바로 공유할 수 있습니다.
+URL 해시로 탭을 바로 열 수 있습니다.
 
-| 탭 (`mode`) | 보이는 섹션 |
-|---|---|
-| 요약 `biz` (`business`) | 핵심 요약(`headline`) → 핵심 경쟁사 카드(누르면 회사 상세 팝업, 카드 안 스위치로 강조) → 벤치마킹 포인트(`bench`) → 성장 근거(탭: 성장 vs 마케팅 강도 버블 차트 / 성장 원인 매트릭스 `drivers`) → 실적 비교 표(연간·분기) → 최근 공시/기사(접힘) → 일자별 시가총액 조회(접힘) |
-| 건강기능식품 `hff` (`full`) | 시장 개요(국내·해외) → 경쟁사 보기(브랜드사·ODM·해외·전체) → 기업가치(1년 주가 흐름, 시총·PSR·PER·PBR·수익률, 비상장사 추정치) → 연간 실적 비교 → 주요 계정 세부(매출·판관비·인건비·광고/판촉·판매수수료·연구개발비) → 공시 |
-| 마이크로바이옴 신약 `microbiome` (`full`) | 시장 개요(국내·해외, 허가 제품·파이프라인) → 주가 흐름·시세 → 연간 실적 비교 → 주요 계정 세부 → 공시 |
-
-- 재무 숫자는 **연결 기준이 기본**이고, 탭 아래 **별도** 스위치를 켜면 별도 재무제표 기준으로 바뀝니다(연결 재무제표가 없는 회사는 그대로).
-- 시가총액 추이는 *현재 상장주식수 × 과거 종가*로 근사합니다. 증자·감자가 있었다면 그 이전 구간은 실제와 다를 수 있습니다.
-- 비상장사는 주가·분기 공시가 없어 **연간 실적(감사보고서)** 으로만 비교하며, 출처 링크로 DART 원문을 바로 열 수 있습니다. 기업가치는 같은 묶음 상장사 PSR로 계산한 **추정치**(참고용)입니다.
-
-## 자동 수집과 수동 정리
-| 영역 | 갱신 | 파일 |
+| 탭 | 해시 | 위 → 아래 |
 |---|---|---|
-| 주가·시가총액, 해외 시세·재무, 실적·매출원가·판관비 세부, 공시, 뉴스 목록 | 자동 (Actions) | `data/*.json` |
-| 요약 탭 3대 동향 | 요청 시 AI 정리 | `data/summaries.json` |
-| 시장 개요 (정의·규모·비중·채널·브랜드/파이프라인·동향·출처) | 요청 시 AI 정리 | `data/market.json` |
-| 회사·대표 브랜드·경쟁사 묶음 | 설정 수정 후 자동 수집 | `config/companies.json` |
+| 오늘 | `#biz` | ① 오늘 주가, 시장보다 강했나? → ② 시장과 다르게 움직인 회사, 이유는? → ③ 지금 무엇을 알리고 있나? → ④ 어떤 보도가 주가를 움직이나? → 최근 공시/기사 → 일자별 시가총액 조회 → 핵심 요약 |
+| 경쟁사 분석 | `#biz-x` | 핵심 요약 → 핵심 경쟁사 카드 → 벤치마킹 → 성장 근거(성장 vs 마케팅 강도 / 성장 원인) → 실적 비교 |
+| 건강기능식품 | `#hff` | 경쟁사 보기 → 이번 주 움직임 → 기업가치(상대수익률 / 시가총액) → 공시 → 시장 개요 → 실적 → 판관비 |
+| 마이크로바이옴 신약 | `#microbiome` | 이번 주 움직임 → 주가·시세 → 공시 → 시장 개요 → 실적 → 판관비 |
 
-수집기는 `summaries.json`과 `market.json`을 건드리지 않습니다.
+- '오늘'과 '경쟁사 분석'은 같은 그룹(`biz`) 데이터를 두 탭으로 나눈 것입니다(`-x` 접미사, `#content[data-sub]`). 섹션 순서는 CSS `order`로 정합니다.
+- 오늘 탭 섹션은 **질문 → 데이터로 만든 답 한 줄 → 근거** 순서입니다. 판단 기준은 `index.html`의 `BRIEF`(시장 대비 등락 %, 거래량 배수).
+- 오늘 시장 카드의 회사를 누르면 회사 상세 팝업이 열립니다.
+- 재무 숫자는 **연결 기준이 기본**이고, 오른쪽 위 **별도 재무제표** 스위치로 모든 탭을 별도 기준으로 바꿉니다(연결 재무제표가 없는 회사는 그대로).
+- 시가총액 추이는 *현재 상장주식수 × 과거 종가* 근사입니다. 비상장사 기업가치는 같은 묶음 상장사 PSR로 계산한 **추정치**입니다.
+
+## 데이터 원칙
+- **국내 재무 숫자는 OpenDART API에서만** 받습니다. 상장사는 `fnlttSinglAcnt`·`fnlttSinglAcntAll`(연결 기본, 별도는 `alt`), 비상장사·주석은 공시 원문(`document.xml`, 연결감사보고서가 있으면 연결 기본). Yahoo 재무는 DART가 없는 해외 종목만 씁니다.
+- 국내 PER·PBR = KRX 시가총액 ÷ OpenDART 당기순이익·자본총계.
+- 수동 정리 문장(`data/summaries.json`)에는 뉴스 출처 재무 숫자를 쓰지 않습니다.
+- 인증키는 GitHub Secrets에만 둡니다. 수집 로그에서도 가려집니다.
+
+## 갱신 주기
+| 워크플로 | 시각(KST) | 하는 일 | 결과 |
+|---|---|---|---|
+| `update-data.yml` Update market data | 평일 16:40, 화~토 06:40, `config/**`·`scripts/**` push 시 | KRX 종가·시총·거래량·지수, DART 재무·공시, 해외 시세, 뉴스 아카이브, 보도 반응 분석 | `data/<그룹>.json`, `data/index.json`, `data/newsfx.json` 등 |
+| `news-hourly.yml` Hourly news and quotes | 평일 08:07~20:07 매시 | 뉴스 아카이브, 보도 반응 재계산, 장중 지연 시세·지수(Yahoo) | `data/live.json`, `data/newsfx.json` |
+
+같은 워크플로는 동시에 하나만 돕니다. 연달아 push하면 대기 중 실행이 교체됩니다.
+
+## 뉴스 · 보도 반응
+- `scripts/newsraw.py`: Google News RSS로 회사별 기사 × 매체 원본을 `data/news_raw.jsonl`에 쌓습니다(최근 3일·이번 달은 매 실행, 지난 2년은 달 단위 백필, 진행은 `data/news_state.json`). 기간 검색 결과는 날짜만 오므로 분석에서 시각 미상으로 처리합니다.
+- `scripts/newsfx.py`: 같은 보도를 묶고 → 반응일(15:30 이후·휴장일은 다음 거래일) → 시장조정 누적수익률(0~2일)·거래량 배수 → 시세 기사·공시 겹침·연속 보도 제외 → 유형·매체 등급·시점·요일·매체 수·회사·키워드별 집계(n≥10, p<0.1이면 유의).
+- `config/news_cats.json`: 기사 유형 분류 규칙(화면과 분석이 공유).
+- `config/media.json`: 매체 등급(임시안)과 표기 통일(aliases). 등급에 없는 매체는 `newsfx.json`의 `unknownMedia`에 모입니다.
+- 회사명 오탐은 `config/companies.json`의 `news_must`(필수 패턴)·`news_exclude`(제외 패턴)로 거릅니다.
 
 ## 폴더 구조
 ```
 index.html                     대시보드 (Chart.js, 단일 파일)
-config/companies.json          산업군 · 경쟁사 목록  ← 여기만 고치면 됩니다
-scripts/fetch_data.py          데이터 수집 (Yahoo Finance + OpenDART)
-scripts/dart_audit.py          감사보고서 원문 손익계산서 추출기
-scripts/krx.py                 KRX 일별 시가총액 수집 (캐시: data/krx_cache.json)
-scripts/make_sample.py         화면 확인용 샘플 데이터 생성
-data/*.json                    수집 결과 (Actions가 자동 커밋)
-.github/workflows/update-data.yml   자동 갱신 워크플로
+config/companies.json          회사 · 그룹(탭) 설정
+config/news_cats.json          기사 유형 규칙
+config/media.json              매체 등급 · 표기 통일
+scripts/fetch_data.py          전체 수집 (OpenDART · KRX · Yahoo)
+scripts/dart_audit.py          감사보고서 원문 손익 추출
+scripts/krx.py                 KRX 일별매매·지수 (캐시 data/krx_cache.json)
+scripts/activity.py            기사·공시 목록, 노이즈 필터
+scripts/newsraw.py             뉴스 원본 아카이브
+scripts/newsfx.py              보도 반응 이벤트 스터디
+scripts/live.py                매시 갱신 진입점
+scripts/make_sample.py         화면 확인용 샘플 데이터
+data/                          수집 결과 (Actions 자동 커밋) + 수동 정리 summaries.json · market.json
 ```
+수집기는 `summaries.json`·`market.json`을 건드리지 않습니다.
 
-## 배포 방법
-1. GitHub에 새 저장소를 만들고 이 폴더 전체를 업로드합니다.
-2. **Settings → Pages** → Source: `Deploy from a branch`, Branch: `main` / `(root)` → Save
-3. **Settings → Actions → General → Workflow permissions** → `Read and write permissions` 선택
-4. **Actions 탭 → Update market data → Run workflow** 로 첫 실데이터를 받아옵니다.
-   (처음 들어있는 데이터는 샘플이며, 화면 우측 상단에 "샘플 데이터" 표시가 뜹니다. 실행 후 사라집니다.)
-5. `https://<아이디>.github.io/<저장소명>/` 에서 확인
-
-## KRX 인증키 등록 (공식 시가총액)
-국내 종목의 종가·시가총액은 KRX 정보데이터시스템 OPEN API(일별매매정보)를 기준으로 합니다. 키가 없으면 Yahoo Finance 근사치를 씁니다.
-1. 저장소 **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `KRX_API_KEY`, Secret: KRX OPEN API 인증키
-2. 코스닥은 `코스닥 일별매매정보`, 유가증권 종목(서흥 등)은 `유가증권 일별매매정보` 서비스 이용신청이 각각 필요합니다.
-3. 첫 실행 때 최근 2년치를 날짜별로 받아 `data/krx_cache.json`에 쌓고, 이후에는 새 거래일만 조회합니다. 호출량이 많아 첫 백필은 두 번의 실행에 나눠 채워질 수 있습니다.
-4. **요약** 탭 맨 아래 **일자별 시가총액 조회**에서 기준일을 고르고 *시총 복사*를 누르면 `name(ticker) / market_cap_억원` 두 열로 엑셀에 붙여넣을 수 있습니다. 대상 회사와 순서는 ⚙ 설정에서 지정합니다.
-
-> 인증키는 코드나 저장소 파일에 적지 마세요. 공개 저장소라 누구나 볼 수 있습니다.
-
-## OpenDART 키 등록 (국내 재무·비상장사에 필요)
-국내 기업 재무 숫자는 OpenDART API에서만 받습니다(Yahoo 재무는 해외 종목에만). 상장사는 사업·분기보고서 주요계정(연결 기본, 별도도 함께 저장), 비상장사는 감사보고서 원문(연결감사보고서가 있으면 연결 기본)입니다. 국내 PER·PBR은 KRX 시가총액 ÷ OpenDART 당기순이익·자본총계로 계산합니다. 자회사 사업이 결이 다른 회사는 `config/companies.json`에 `"segment": "부문명"`을 넣으면 사업보고서 영업부문 주석에서 그 부문의 매출·영업이익을 받아 연간 실적 표에 **└ 부문** 행으로 보여 줍니다(현재 에이치피오 `건강기능식품`, 콜마비앤에이치 `식품`). 부문 분리가 어려운 회사는 `"note"`로 한 줄 주석을 답니다(고바이오랩·서흥).
-1. https://opendart.fss.or.kr 에서 인증키 발급 (무료)
-2. 저장소 **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `DART_API_KEY`, Secret: 발급받은 키
-
-## 표시 설정 (공개되지 않는 라벨)
-자사 표시, 섹션 이름, 시총 복사 목록(회사·순서·섹션)은 저장소·사이트에 올리지 않고, 오른쪽 위 **⚙ 설정**에서 지정합니다.
-설정은 그 브라우저에만 저장되므로 PC와 휴대폰에서 각각 한 번씩 지정하면 됩니다.
+## 배포
+1. **Settings → Pages** → `Deploy from a branch`, `main` / `(root)`
+2. **Settings → Actions → General → Workflow permissions** → `Read and write permissions`
+3. **Settings → Secrets and variables → Actions**에 `DART_API_KEY`(opendart.fss.or.kr), `KRX_API_KEY`(KRX OPEN API: 코스닥·유가증권 일별매매정보, 코스닥·코스피 지수 일별시세 이용신청)
+4. **Actions → Update market data → Run workflow**로 첫 수집. KRX·뉴스 백필은 호출 한도 때문에 여러 실행에 나눠 채워집니다.
 
 ## 회사 · 탭 추가
-`config/companies.json`을 수정해 커밋하면 워크플로가 자동으로 다시 돌아 반영됩니다.
-
-1. `companies`에 회사를 한 번만 등록합니다.
+`config/companies.json`을 고쳐 커밋하면 수집이 다시 돕니다.
 ```json
-"bioneer":  { "name": "바이오니아",   "ticker": "064550.KQ", "dart": "064550", "country": "KR" },
-"acebiome": { "name": "에이스바이옴", "dart_name": "에이스바이옴", "country": "KR" }
+"acme":   { "name": "회사명", "ticker": "000000.KQ", "dart": "000000", "country": "KR" },
+"acme2":  { "name": "회사명", "dart_name": "DART 법인명", "country": "KR" }
 ```
-   - 상장사: `ticker`(Yahoo 티커: 코스피 `.KS`, 코스닥 `.KQ`), `dart`(종목코드 6자리)
-   - 비상장사: `ticker` 없이 `dart_name`(DART에 등록된 법인명). 동명 법인이 있어 다른 회사가 잡히면 `"corp_code": "00123456"`(DART 고유번호 8자리)을 추가합니다.
-   - 선택 항목: `brand`(대표 브랜드명, 카드·표에 칩으로 표시), `news_names`(뉴스 검색어), `news_exclude`(제외할 제목 패턴)
-2. `groups`의 `members`에 회사 id를 넣습니다. 새 탭은 `groups`에 `id`, `name`, `mode`, `members`를 가진 객체를 추가하면 생깁니다.
-   - `hidden: true` 탭으로 보이지 않음(수집은 계속) · `segments` 경쟁사 보기 묶음(`key`, `title`, `members`) · `valuation: "table"` 기업가치 표 사용 · `valuationNotes` 비상장사 참고 줄
-3. 차트 색상은 8개까지 구분됩니다. 회사가 많은 탭은 `segments`로 묶어 보세요.
+- 상장사: `ticker`(코스피 `.KS`, 코스닥 `.KQ`), `dart`(종목코드). 비상장사: `dart_name`, 동명 법인은 `corp_code`(8자리).
+- 선택: `brand`(텍스트 칩), `news_names`, `news_must`, `news_exclude`, `segment`(사업보고서 영업부문 주석에서 부문 매출·영업이익), `note`.
+- `groups`: `id`·`name`·`mode`(`business`/`full`)·`members`, 선택 `segments`(경쟁사 보기 묶음), `valuation: "table"`, `valuationNotes`, `growExtra`(성장 근거 차트에만 추가할 회사).
+- 브랜드 로고·이미지는 넣지 않습니다.
 
-## 광고비율 · 연구개발비율 (비교 기준)
-탭 설정의 `extras`(`ad`, `rnd`)로 연간 실적 비교에 지표를 추가할 수 있습니다. 현재는 어느 탭에서도 켜져 있지 않고, 판관비 구성은 **주요 계정 세부**(인건비·연구개발비는 판관비 대비 %, 판관비·광고/판촉·판매수수료는 매출 대비 %)로 봅니다.
-
-| 지표 | 정의 | 출처 | 주기 |
-|---|---|---|---|
-| 광고비율 | 광고선전비 ÷ 매출액 | 판매비와관리비 주석 (상장사 사업보고서 연결 기준 / 비상장사 감사보고서) | 연간 3개년 |
-| (참고) 광고+판촉 비율 | (광고선전비 + 판매촉진비) ÷ 매출액 | 같은 주석, 판매촉진비를 별도 계정으로 공시한 회사만 | 연간 |
-| 연구개발비율 | 연구개발비용(정부보조금 차감 전) ÷ 매출액 | 사업보고서 '연구개발비용' 표의 공시 비율, 해외는 Yahoo Finance로 계산 | 연간 3개년 + 최근 분기 누적 |
-
-공시 원문은 접수번호별로 한 번만 읽고 결과를 `data/dart_docs.json`에 보관합니다. 판매수수료(홈쇼핑 등)는 포함하지 않습니다.
-
-## 요약 탭 주요 활동 (3대 동향)
-- 기사·공시는 매 수집 때 자동으로 쌓이고(최근 공시/기사 → 기사 탭), 회사별 3대 동향 요약은 `data/summaries.json`에 있습니다.
-- 요약은 자동 생성하지 않고 **요청할 때 갱신**합니다(예: "동향 업데이트해줘"). 첫 번째 동향은 핵심 경쟁사 카드에도 표시됩니다.
-- 수집기는 이 파일을 건드리지 않습니다.
-
-## 데이터 출처별 범위
-| 대상 | 주가·시총 | 분기 실적 | 연간 실적 |
-|---|---|---|---|
-| 상장사 | KRX(없으면 Yahoo) | DART 분기·반기·사업보고서 | DART 사업보고서 |
-| 외감 비상장사 | – | – (공시 의무 없음) | DART 감사보고서 원문 자동 추출 (**키 필수**) |
-
-감사보고서는 회사마다 표 양식이 조금씩 달라 자동 추출이 틀릴 수 있습니다. 처음 실행 후 출처 링크로 원문과 한 번 대조해 보세요. 추출에 실패하면 Actions 로그와 화면 하단 안내에 회사명과 원문 링크가 표시됩니다.
+## 표시 설정 (브라우저에만 저장)
+오른쪽 위 **⚙ 설정**에서 회사 강조 표시, 섹션 이름, **시총 복사 목록**(`# 제목` 줄 = 섹션, 그 아래 줄마다 상장사 이름 또는 종목코드)을 지정합니다. 저장소·사이트에는 올라가지 않고 그 브라우저의 localStorage에만 남으므로 기기마다 한 번씩 지정합니다.
 
 ## 로컬에서 보기
-`index.html`을 더블클릭하면 브라우저 보안 정책 때문에 데이터를 못 읽습니다. 폴더에서 아래를 실행 후 http://localhost:8000 접속:
 ```
-python -m http.server 8000
+python -m http.server 8000      # http://localhost:8000
+pip install -r requirements.txt && python scripts/fetch_data.py   # 직접 수집 (환경변수 DART_API_KEY, KRX_API_KEY)
 ```
-데이터를 직접 받으려면 `pip install -r requirements.txt` 후 `python scripts/fetch_data.py` (DART 키는 환경변수 `DART_API_KEY`).
 
 ## 참고
-- 갱신 시각: 평일 16:40 KST(국내 장 마감 후), 화~토 06:40 KST(미국 장 마감 후, 예약은 UTC 월~금 21:40)
-- 시가총액 정렬은 해외 종목을 대략적인 환율로 환산해 비교합니다. 실적 금액 비교는 같은 통화끼리만 합니다.
+- 감사보고서는 표 양식이 회사마다 달라 자동 추출이 틀릴 수 있습니다. 출처 링크로 원문과 대조하세요.
+- 해외 종목 시총 정렬은 대략적인 환율로 환산합니다. 실적 금액 비교는 같은 통화끼리만 합니다.
+- 장중 시세는 약 15~20분 지연이며, 공식 종가·시총은 KRX 값이 기준입니다.
 - 투자 판단의 근거로 사용하지 마십시오.
