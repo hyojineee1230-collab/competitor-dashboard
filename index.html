@@ -825,8 +825,11 @@ td span.err{font-size:13.5px}
     </div>
     <!-- 기업가치 (valuation: table) -->
     <section class="panel" id="secVal" hidden>
-      <div class="ph"><div><h2>기업가치</h2><p class="hint" id="valHint"></p></div></div>
-      <div class="tbl-wrap"><table id="valTable"></table></div>
+      <div class="ph"><div><h2>기업가치</h2><p class="hint" id="valHint"></p></div>
+        <div class="controls"><div class="seg" id="valView" role="group" aria-label="기업가치 보기"><button type="button" data-k="table" aria-pressed="true">표</button><button type="button" data-k="mcap" aria-pressed="false">시가총액 추이</button></div></div></div>
+      <div id="valTablePane"><div class="tbl-wrap"><table id="valTable"></table></div></div>
+      <div id="valChartPane" hidden><div class="chart-box" style="height:300px"><canvas id="valChart" role="img" aria-label="1년 시가총액 추이"></canvas></div>
+        <div class="legend" id="valLegend"></div></div>
       <div id="valNotes"></div>
     </section>
     <!-- 주가 · 시가총액 (market, full) -->
@@ -999,7 +1002,7 @@ const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연�
 function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
 const SUB_ANALYSIS = "-x";   // 요약 그룹의 '경쟁사 분석' 탭 (주소 #biz-x)
 const MODE_LABEL = { market:"주가 · 시가총액", business:"핵심 경쟁사 실적·동향", full:"시장 · 경쟁사 · 기업가치" };
-const state = { ofs:false, valView:"rel", meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", finPeriod:"a", mktRegion:"kr", seg:{},
+const state = { ofs:false, valView:"table", meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", finPeriod:"a", mktRegion:"kr", seg:{},
   currency:"KRW", hidden:new Set(), focus:null, sort:{key:"marketCap",dir:"desc"}, tsort:{fin:null, sga:null} };
 const charts = {};
 
@@ -1834,9 +1837,37 @@ async function renderVal(){
   bindSort("valTable", "val", renderVal);
   const asOf = list.map(c => c.quote?.asOf).filter(Boolean).sort().at(-1);
   $("valHint").textContent = `시가총액 ${asOf ? md(asOf) : "최근 거래일"} 기준 · 매출은 최근 사업연도` + (rows.some(r => r.est) ? " · 비상장사는 같은 묶음 상장사 PSR로 추정" : "");
-  $("valNotes").innerHTML = "";
+  applyValView();
 }
 
+
+// 기업가치: 표 ↔ 1년 시가총액 추이(원화 상장사, 억원). 같은 자리에서 전환
+function renderValChart(){
+  const list = comps().filter(c => c.listed && mcapEligible(c));
+  const ser = list.map(c => { const p = c.price, n = p.dates.length, s0 = Math.max(0, n - 251);
+    return { c, dates: p.dates.slice(s0), v: p.mcap.slice(s0).map(x => x == null ? null : Math.round(x / 1e8)) }; });
+  if (!ser.length){ $("valLegend").innerHTML = `<p class="empty">시가총액 데이터 없음</p>`; return; }
+  const labels = [...new Set(ser.flatMap(x => x.dates))].sort(), tip = chartBase();
+  draw("val", "valChart", { type: "line",
+    data: { labels, datasets: ser.map(x => { const m = new Map(x.dates.map((d, i) => [d, x.v[i]]));
+      return { label: x.c.name, data: labels.map(d => m.get(d) ?? null), borderColor: color(x.c._ci), backgroundColor: color(x.c._ci), borderWidth: 2, pointRadius: 0, tension: .15, spanGaps: true }; }) },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { display: false }, tooltip: { ...tip, itemSort: (a, b) => b.parsed.y - a.parsed.y, callbacks: { label: x => ` ${x.dataset.label}  ${fmtBig(x.parsed.y * 1e8, "KRW")}` } } },
+      scales: { x: { grid: { display: false }, border: { color: css("--axis") }, ticks: { maxTicksLimit: 7, callback(v){ const d = this.getLabelForValue(v); return d ? d.slice(2, 7).replace("-", ".") : ""; } } },
+                y: { grid: { color: css("--grid") }, border: { display: false }, ticks: { maxTicksLimit: 6, callback: v => `${v.toLocaleString("ko-KR")}억` } } } } });
+  $("valLegend").innerHTML = ser.slice().sort((a, b) => (b.v.filter(v => v != null).at(-1) ?? 0) - (a.v.filter(v => v != null).at(-1) ?? 0)).map(x => { const last = x.v.filter(v => v != null).at(-1);
+    return `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b style="font-weight:600">${last == null ? "–" : fmtBig(last * 1e8, "KRW")}</b></span>`; }).join("");
+}
+function applyValView(){
+  const ch = state.valView === "mcap";
+  syncSeg("valView", ch ? "mcap" : "table");
+  $("valTablePane").hidden = ch; $("valChartPane").hidden = !ch;
+  if (ch) renderValChart();
+  const ex = comps().filter(c => c.listed && !mcapEligible(c)).map(c => c.name), un = comps().filter(c => !c.listed).length;
+  const krx = comps().filter(mcapEligible).every(c => c.price.mcapSource === "KRX");
+  $("valNotes").innerHTML = ch ? `<p class="note">${krx ? "KRX 일별 시가총액" : "현재 상장주식수 × 종가 근사"} · 최근 1년${ex.length ? ` · 해외 상장 ${esc(ex.join(", "))} 제외` : ""}${un ? ` · 비상장 ${un}곳 제외` : ""}</p>` : "";
+}
+$("valView").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === state.valView) return; state.valView = b.dataset.k; applyValView(); });
 
 /* ---------- 핵심 경쟁사 카드 (요약 탭): 최근 사업연도 실적 + 대표 동향 한 줄 ---------- */
 async function renderCore(){
