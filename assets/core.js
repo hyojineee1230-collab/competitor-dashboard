@@ -2,7 +2,7 @@
    경로: /summary/#<메뉴>/<분야>  /detail/#<메뉴>/<분야>
    메뉴: insight · quotes · finance · market · news   분야: core(핵심 경쟁사, biz) · hff · microbiome */
 "use strict";
-const VIEW = /\/detail\/?/.test(location.pathname) ? "detail" : "summary";
+const VIEW = "summary";
 const DATA = "../data/", CONF = "../config/";
 const MENUS = [["insight", "인사이트"], ["quotes", "시세"], ["finance", "재무"], ["market", "시장"], ["news", "공시·기사"]];
 const FIELDS = [["core", "핵심 경쟁사", "biz"], ["hff", "건강기능식품", "hff"], ["microbiome", "마이크로바이옴", "microbiome"]];
@@ -225,9 +225,15 @@ function parseHash(){
   if (MENUS.some(x => x[0] === m)) S.menu = m;
   if (FIELDS.some(x => x[0] === f)) S.field = f;
 }
-const href = (menu, field, view = VIEW) => `${view === VIEW ? "" : `../${view}/`}#${menu}/${field}`;
+// 상세 = 기존 대시보드(루트). 메뉴·분야에 맞는 기존 탭으로
+const LEGACY = (menu, field) => field === "core" ? (menu === "quotes" || menu === "news" ? "biz" : "biz-x") : field;
+const href = (menu, field, view = VIEW) => view === "detail" ? `../#${LEGACY(menu, field)}` : `#${menu}/${field}`;
 function header(){
-  const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}>${l}</a>`).join("");
+  const ICON = { insight: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>', quotes: '<path d="M4 19V5M4 19h16M7 15l4-4 3 3 5-6"/>',
+    finance: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/>', market: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/>',
+    news: '<path d="M5 5h11v14H6a2 2 0 0 1-2-2V8h1M16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5"/>' };
+  const SHORT = { insight: "홈", quotes: "주가", finance: "실적", market: "시장", news: "기사" };
+  const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg><span class="nl">${l}</span><span class="ns">${SHORT[k]}</span></a>`).join("");
   const fsw = FIELDS.map(([k, l]) => `<a href="${href(S.menu, k)}"${k === S.field ? ' aria-current="true"' : ""}>${l}</a>`).join("");
   const vw = [["summary", "요약"], ["detail", "상세"]].map(([k, l]) => `<a href="${href(S.menu, S.field, k)}"${k === VIEW ? ' aria-current="true"' : ""} data-view="${k}">${l}</a>`).join("");
   return `<div class="hd"><a class="brand" href="../">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>

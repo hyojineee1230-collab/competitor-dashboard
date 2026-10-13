@@ -17,6 +17,7 @@ header{background:var(--navy);color:#fff;padding:14px 28px}
 .nav{display:flex;gap:2px;background:var(--navy-2);border-radius:999px;padding:4px;margin:0 auto}
 .nav a{padding:8px 18px;border-radius:999px;color:var(--navy-ink);font-size:15px;white-space:nowrap}
 .nav a[aria-current="page"]{background:#fff;color:var(--navy);font-weight:700}
+.nav .ni,.nav .ns{display:none}
 .hd-r{display:flex;gap:8px;align-items:center}
 .sw{display:flex;background:var(--navy-2);border-radius:10px;padding:3px;gap:2px}
 .sw a,.sw button{border:0;background:none;padding:7px 12px;border-radius:8px;color:var(--navy-ink);font-size:14px;white-space:nowrap}
@@ -95,8 +96,12 @@ th[data-k]{cursor:pointer}
   .hd{gap:10px}
   .brand{font-size:18px}
   .hd-r{margin-left:auto}
-  .nav{order:3;width:100%;margin:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-radius:12px}
-  .nav a{padding:8px 0;text-align:center;font-size:13.5px;border-radius:9px}
+  /* 아래 떠 있는 알약 메뉴 */
+  .nav{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;margin:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:var(--navy);border-radius:24px;padding:6px;box-shadow:0 6px 20px rgba(19,35,61,.28)}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0;border-radius:18px;color:#A9B8CF;font-size:11.5px}
+  .nav a[aria-current="page"]{background:#2B3F60;color:#fff}
+  .nav .ni{display:block;width:21px;height:21px}.nav .nl{display:none}.nav .ns{display:block}
+  main{padding-bottom:110px !important}
   .fsw{order:4;width:100%}
   .fsw a,.fsw button{flex:1;text-align:center;font-size:13px;padding:7px 4px}
   .view a{padding:6px 10px;font-size:13px}
