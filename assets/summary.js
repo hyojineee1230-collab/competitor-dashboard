@@ -108,15 +108,21 @@ function coPL(c, F){
     ${row("연구개발비", col => col.sg?.rnd || null, "sub")}
     ${row("영업이익", col => col.op, "key")}${pctRow(col => col.op)}
   </tbody></table>`;
-  // 추이 그래프: 매출 막대 + 영업이익률 (누르면 숫자)
-  const tc = cols.filter(col => col.rev != null), unit = cur === "KRW" ? 1e8 : 1e6;
-  const trend = tc.length >= 2 ? colChart(tc.map(col => +(col.rev / unit).toFixed(cur === "KRW" ? 0 : 1)), tc.map(col => col.y), {
-    W: 920, H: 190, colors: tc.map(col => col.ytd ? "#B9C6DA" : c.color), hi: annualCols.length - 1,
-    fmt: v => cur === "KRW" ? nf(v) : v.toFixed(1),
-    subs: tc.map(col => { const m = margin(col.op, col.rev); return m == null || Math.abs(m) > MCAP ? "" : `이익률 ${m < 0 ? "−" : ""}${Math.abs(m).toFixed(1)}%`; }),
-    tips: tc.map(col => { const k = annualCols.indexOf(col), pv = k > 0 ? annualCols[k - 1].rev : null;
-      return [`${c.name} · ${col.y}`, `매출\t${big(col.rev, cur)}`, !col.ytd && pv ? `매출 성장률\t${sgn(growth(col.rev, pv))}` : null,
-        `매출총이익\t${big(col.gp, cur)}`, `영업이익\t${big(col.op, cur)}`, margin(col.op, col.rev) != null ? `영업이익률\t${margin(col.op, col.rev).toFixed(1)}%` : null, `순이익\t${big(col.ni, cur)}`]; }) }) : "";
+  // 비용 구조: 매출 100원 중 원가·판관비 계정·영업이익 (연도별 한 줄). 영업손실이면 비용이 100을 넘음
+  const CS = [["cogs", "매출원가", "#9AA8BD"], ["labor", "인건비", "#5B7DB1"], ["adpromo", "광고/판촉", "#D08A3C"], ["commission", "판매수수료", "#C46A6A"], ["rnd", "연구개발", "#7A5AD0"], ["etc", "기타 판관비", "#C9D2DE"], ["op", "영업이익", "#1F8A78"]];
+  const costCols = annualCols.filter(col => col.rev > 0 && col.cogs != null && col.op != null).slice(-3);
+  const struct = (() => { if (!costCols.length) return "";
+    const parts = col => { const sg = col.sg, sga = col.rev - col.cogs - col.op, known = sg ? (sg.labor || 0) + (sg.adpromo || 0) + (sg.commission || 0) + (sg.rnd || 0) : 0;
+      const v = { cogs: col.cogs, labor: sg?.labor || 0, adpromo: sg?.adpromo || 0, commission: sg?.commission || 0, rnd: sg?.rnd || 0, etc: sga - known, op: Math.max(col.op, 0) };
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, x / col.rev * 100])); };
+    const P = costCols.map(parts), cost = p => p.cogs + p.labor + p.adpromo + p.commission + p.rnd + p.etc;
+    const scale = Math.min(300, Math.max(100, ...P.map(cost)));
+    const rows = costCols.map((col, j) => { const p = P[j], tot = cost(p), loss = col.op < 0, D = Math.max(scale, tot, 100);
+      const seg = CS.filter(([k]) => p[k] > 0.05).map(([k, l, clr]) => { const w = p[k] / D * 100;
+        return `<i style="width:${w.toFixed(2)}%;background:${clr}"${tipA([`${c.name} · ${col.y}`, `${l}\t${big(k === "op" ? col.op : p[k] * col.rev / 100, cur)}`, `매출 대비\t${p[k].toFixed(1)}%`])}>${w >= 9 ? `${p[k].toFixed(0)}` : ""}</i>`; }).join("");
+      return `<div class="cs-row"><span class="cs-y">${col.y}</span><span class="cs-bar${D > 100.5 ? " over" : ""}" style="--h:${(100 / D * 100).toFixed(2)}%">${seg}</span><b class="${loss ? "dn" : ""}">${loss ? `손실 ${(-col.op / col.rev * 100).toFixed(0)}%` : `이익 ${(col.op / col.rev * 100).toFixed(0)}%`}</b></div>`; }).join("");
+    const used = CS.filter(([k]) => P.some(p => p[k] > 0.05));
+    return `<div class="cs">${rows}<div class="cs-lg">${used.map(([, l, clr]) => `<span><i style="background:${clr}"></i>${l}</span>`).join("")}${scale > 100 ? '<span class="mu">┆ = 매출 100</span>' : ""}</div></div>`; })();
   // 부문(사업보고서 부문 정보가 있을 때)
   const sgm = (() => { const s2 = c.segment; if (!s2?.years) return ""; const k = s2.years.length - 1; if (s2.revenue[k] == null) return "";
     const ai = ys.indexOf(s2.years[k]), tot = ai >= 0 ? a.revenue?.[ai] : null, share = tot ? s2.revenue[k] / tot * 100 : null;
@@ -131,7 +137,7 @@ function coPL(c, F){
     </div><button class="cp-x" type="button" data-close aria-label="닫기">✕</button></div>
     <div class="cp-kpis">${kpis}</div>${sgm}
     ${c.note ? `<p class="note" style="margin:-8px 0 16px">${esc(c.note)}</p>` : ""}
-    ${trend ? `<div class="cp-sec"><h3>매출 추이 <small>${cur === "KRW" ? "억원" : cur + " 백만"} · 이익률 = 영업이익률 · 막대를 누르면 금액</small></h3>${trend}</div>` : ""}
+    ${struct ? `<div class="cp-sec"><h3>매출 100원의 쓰임 <small>매출 대비 % · 판관비 계정은 사업보고서 주석</small></h3>${struct}</div>` : ""}
     <div class="cp-sec"><h3>약식 손익계산서 <small>(%) = 매출 대비 · OpenDART ${(S.ofs && c.alt?.annual) || a.basis === "OFS" || c.fs === "OFS" ? "별도" : "연결"}</small></h3><div class="cp-tw">${pl}</div></div>
     ${news.length ? `<div class="cp-sec"><h3>최근 보도 <small>최근 2주</small></h3>${news.map(e => `<a class="cp-n" href="${esc(e.url)}" target="_blank" rel="noopener"><span class="mu">${md(e.d)}</span><span class="tag">${esc(catName(e.cat))}</span><span>${esc(e.title)}</span></a>`).join("")}</div>` : ""}`;
 }
@@ -169,6 +175,40 @@ function valCard(F){
   return card(`<h2>기업가치<small>PSR = 시가총액 ÷ 매출 · 막대를 누르면 PER·PBR</small></h2>
     ${med != null ? `<div class="big1"><b>${xv(med)}</b><span>상장 ${lst.length}곳 PSR 중앙값</span></div>` : ""}
     ${lst.length ? chart : '<p class="empty">상장사 없음</p>'}${fold("q-val", "숫자 보기 · 시총·PSR·PER·PBR" + (rows.some(r => r.est) ? " · 비상장 추정" : ""), t)}`);
+}
+
+/* ---------- 연구개발 회수 (마이크로바이옴) ----------
+   연구개발비 = 사업보고서 '연구개발비용' 표 합계(원가 처리분 포함, c.rnd), 없으면 판관비 주석 연구개발비(c.sga.rnd)
+   회수율 = 3개년 누적 매출총이익 ÷ 3개년 누적 연구개발비 · 회수기간 = 3개년 누적 연구개발비 ÷ 최근 연간 매출총이익
+   회사 단위 지표 — 파이프라인별 투입·회수는 공시 숫자가 없어 계산하지 않음 */
+function rndOf(c){
+  const a = c.annual; if (!a?.years?.length || (a.currency || "KRW") !== "KRW") return null;
+  const src = c.rnd?.amount?.length ? { ys: c.rnd.years, v: c.rnd.amount, s: "연구개발비용 표", link: c.rnd.links } : c.sga?.rnd?.some(x => x) ? { ys: c.sga.years, v: c.sga.rnd, s: "판관비 주석", link: c.sga.links } : null;
+  if (!src) return null;
+  const rows = src.ys.map((y, k) => { const i = a.years.indexOf(String(y)); if (i < 0 || !src.v[k]) return null;
+    const rv = a.revenue?.[i], gp = rv != null && a.costOfSales?.[i] != null ? rv - a.costOfSales[i] : null;
+    return { y: String(y), rnd: src.v[k], rv, gp, op: a.operatingIncome?.[i] }; }).filter(Boolean).slice(-3);
+  if (!rows.length) return null;
+  const L = rows.at(-1), sum = k => rows.every(r => r[k] != null) ? rows.reduce((t, r) => t + r[k], 0) : null;
+  const cr = sum("rnd"), cg = sum("gp");
+  return { c, rows, L, n: rows.length, cr, cg, ratio: margin(L.rnd, L.rv), rec: cg == null || !cr ? null : cg / cr * 100,
+           pay: L.gp > 0 && cr ? cr / L.gp : null, src: src.s, link: src.link?.[L.y] };
+}
+function rndCard(cos){
+  const R = cos.map(rndOf).filter(Boolean); if (!R.length) return "";
+  const yr = R.map(r => r.L.y).sort().at(-1);
+  const srt = R.slice().sort((a, b) => (b.rec ?? -1e9) - (a.rec ?? -1e9)), best = srt.find(r => r.rec != null);
+  const chart = barChart(R.slice().sort((a, b) => b.cr - a.cr).map(r => ({ label: r.c.name, color: r.c.color, v: r.cr / 1e8,
+    tip: [`${r.c.name} · ${r.rows[0].y}~${r.L.y}`, ...r.rows.map(x => `${x.y} 연구개발비\t${big(x.rnd)}`), `누적 매출총이익\t${big(r.cg)}`, r.rec != null ? `회수율\t${r.rec.toFixed(0)}%` : null] })),
+    { W: 1200, row: 34, lab: 210, valW: 90, fmt: v => `${nf(v)}억` });
+  const payTxt = r => r.pay != null ? `${r.pay < 10 ? r.pay.toFixed(1) : nf(r.pay)}년` : `<span class="dn">${r.L.gp == null ? "–" : "매출총손실"}</span>`;
+  const body = srt.map(r => [coCell(r.c) + (r.L.y !== yr ? `<small>${r.L.y}년</small>` : ""), big(r.L.rnd), r.ratio == null ? "–" : r.ratio > 999 ? "매출 미미" : `${r.ratio.toFixed(0)}%`,
+    `${big(r.cr)}<small>${r.n}개년</small>`, signedB(r.cg), r.rec == null ? "–" : `<b class="${r.rec >= 100 ? "up" : r.rec < 0 ? "dn" : ""}">${r.rec.toFixed(0)}%</b>`, payTxt(r), signedB(r.L.op),
+    r.link ? `<a class="more" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.src)} ↗</a>` : esc(r.src)]);
+  const t = tbl(["회사", `연구개발비<small>최근 연간</small>`, "매출 대비", "누적 연구개발비", "누적 매출총이익", "회수율<small>누적 GP ÷ 누적 R&D</small>", "회수기간<small>누적 R&D ÷ 연간 GP</small>", "영업이익", "출처"], body,
+    `OpenDART ${basisLbl()} · 누적 = 최근 3개 사업연도(자료가 있는 해만) · 연구개발비는 사업보고서 연구개발비용 표(원가 처리분 포함), 없으면 판관비 주석 연구개발비 · 회사 단위 지표이며 파이프라인별 투입·회수는 공시되지 않음`);
+  return card(`<h2>연구개발 회수<small>${yr} 기준 · 막대 = 누적 연구개발비 · 누르면 연도별</small></h2>
+    ${best ? `<div class="big1"><b>${best.rec.toFixed(0)}%</b><span>회수율 1위 ${esc(best.c.name)} · ${R.length}곳 비교</span></div>` : ""}${chart}<div class="sga-t">${t}</div>`);
 }
 
 /* ---------- 판관비 (v1 판관비 표와 같은 계정 묶음) ----------
@@ -396,7 +436,7 @@ const SUM = {
     const when = per === "q" ? `최근 5개 분기${lastQ ? ` (~${lastQ.slice(2, 4)}.${lastQ.slice(5)}Q)` : ""}` : `${yr} 사업연도`;
     return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()} 기준 · OpenDART</span><span class="r">${perBtn}${metBtn}${segBtn}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
-      ${pts.length >= 2 ? card(`<h2>성장 vs 마케팅 강도<small>${yr} · 원 크기 = 매출 · 원을 누르면 숫자</small></h2>${scatter(pts, { xl: "마케팅 강도 (광고·판촉 + 판매수수료) ÷ 매출 →", yl: "↑ 매출 성장률" })}`) : ""}
+      ${F.id === "microbiome" ? rndCard(cos) : pts.length >= 2 ? card(`<h2>성장 vs 마케팅 강도<small>${yr} · 원 크기 = 매출 · 원을 누르면 숫자</small></h2>${scatter(pts, { xl: "마케팅 강도 (광고·판촉 + 판매수수료) ÷ 매출 →", yl: "↑ 매출 성장률" })}`) : ""}
       ${sgaCard(cos)}`;
   },
 

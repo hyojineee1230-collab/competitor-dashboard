@@ -6,7 +6,7 @@ const VIEW = "summary";
 // 사이트 뿌리 = 이 파일(assets/core.js)의 상위 폴더 — 어느 주소에서 열어도 같은 데이터
 const SITE = new URL("..", document.currentScript.src).href;
 const DATA = SITE + "data/", CONF = SITE + "config/";
-const MENUS = [["insight", "인사이트"], ["quotes", "시세"], ["finance", "재무"], ["market", "시장"], ["news", "공시·기사"]];
+const MENUS = [["insight", "홈"], ["quotes", "시세"], ["finance", "재무"], ["market", "시장"], ["news", "공시·기사"]];
 const FIELDS = [["core", "핵심 경쟁사", "biz"], ["hff", "건강기능식품", "hff"], ["microbiome", "마이크로바이옴", "microbiome"]];
 const MARKET_OF = { core: "hff", hff: "hff", microbiome: "microbiome" };
 const LS = { view: "cm2-view", field: "cm2-field", ofs: "cm2-ofs" };
