@@ -4,25 +4,31 @@
 GitHub Pages로 호스팅하고, GitHub Actions가 하루 2회 전체 수집 + 평일 매시 뉴스·장중 시세를 갱신합니다.
 
 ## 화면 구성
-웹 두 개를 둡니다. 서로 오가는 버튼이 있습니다.
-
 | 경로 | 성격 |
 |---|---|
-| `/` (상세) | 기존 대시보드: 경쟁사 분석 · 건강기능식품 · 마이크로바이옴 탭(시장 개요·입체 그래프·실적·기업가치). 헤더 '요약 보기 ›' |
-| `/summary/` (요약) | 그래프 중심·큰 숫자, AI 정리 문장 없음. 휴대폰은 아래 알약 메뉴. 헤더 '상세' = 기존 대시보드의 맞는 탭 |
+| `/` | 메인: 그래프 중심·큰 숫자, AI 정리 문장 없음. 그래프를 누르면 그 지점 숫자, 카드 아래 '숫자 보기' 표, 회사를 누르면 약식 손익계산서. 휴대폰은 아래 알약 메뉴 |
+| `/report/` | 월간 리포트 호 목록 → `report/issue.html?m=YYYY-MM` (기준일 데이터 고정, v1 양식 + 인사이트·섹션 갱신 표시, 인쇄·PDF) |
+| `/v1/` | 2026.10 이전 메인 보관본(입체 그래프·탭형). 데이터는 메인과 같은 파일을 읽어 계속 갱신 |
 
-요약 주소 해시는 `#<메뉴>/<분야>`입니다.
+예전 주소 `/summary/`는 `/`로, `/detail/`은 `/v1/`로, 예전 탭 해시(`#biz`·`#hff` 등)는 같은 분야 인사이트로 이동합니다.
+
+메인 주소 해시는 `#<메뉴>/<분야>`입니다.
 - 메뉴: `insight`(인사이트) · `quotes`(시세) · `finance`(재무) · `market`(시장) · `news`(공시·기사)
-- 분야: `core`(핵심 경쟁사, `biz` 그룹) · `hff` · `microbiome` — 고른 분야와 보기는 브라우저에만 기억
+- 분야: `core`(핵심 경쟁사, `biz` 그룹) · `hff` · `microbiome` — 고른 분야는 브라우저에만 기억
 
-
-- 요약 코드: `assets/core.js`(데이터·라우팅·헤더·갱신 현황·SVG 그래프) · `assets/summary.js` · `assets/app.css`. 외부 라이브러리 없음.
-- 헤더 아래 **갱신 현황 한 줄**: 시세·기사(`live.json`·`newsfx.json`), 공시·종가(`meta.json`), 재무(최근 분기), 시장(최근 연도), 상세는 AI 정리(`summaries.json`)까지.
+- 메인 코드: `assets/core.js`(데이터·라우팅·헤더·갱신 현황·SVG 그래프·숫자 확인) · `assets/summary.js`(메뉴별 화면·약식 손익) · `assets/app.css` · `assets/colors.js`(회사 색, v1·리포트와 공유). 외부 라이브러리 없음.
+- 헤더 아래 **갱신 현황 한 줄**: 시세·기사(`live.json`·`newsfx.json`), 공시·종가(`meta.json`), 재무(최근 분기), 시장(최근 연도).
+- 약식 손익계산서·기업가치(PSR·비상장 추정)·최근 공시/기사 표는 v1과 같은 계산·같은 분류 규칙을 씁니다.
 - 이상 움직임 신호는 `scripts/newsfx.py`의 `signals`: 회사 고유 움직임(시장 조정 후 같은 분야 상장사 중앙값 차감)이 직전 60거래일 변동폭의 2배·최소 3% 이상이거나 거래량 3배일 때. 사유는 전 거래일~당일 DART 공시 → 주가 관련 유형 보도 → 미확인 순. 분야 상장사 70% 이상이 같은 방향인 날은 분야 전체 움직임으로 따로 표시합니다.
 - 주별 보도 수는 `newsfx.json`의 `weekly`(최근 12주, 같은 소식 1건, 시세 기사 제외).
-- 휴대폰(760px 이하): 그래프는 화면 폭에 맞춰 다시 그리고, 상세 표는 회사별 카드로 바뀝니다.
-- 재무 숫자는 **연결 기준이 기본**이고, 오른쪽 위 **별도 재무제표** 스위치로 모든 탭을 별도 기준으로 바꿉니다(연결 재무제표가 없는 회사는 그대로).
+- 휴대폰(760px 이하): 그래프는 화면 폭에 맞춰 다시 그리고, 표는 회사별 카드로 바뀝니다.
+- 재무 숫자는 **연결 기준**입니다. v1·리포트의 **별도 재무제표** 스위치로 별도 기준을 볼 수 있습니다(연결 재무제표가 없는 회사는 그대로).
 - 시가총액 추이는 *현재 상장주식수 × 과거 종가* 근사입니다. 비상장사 기업가치는 같은 묶음 상장사 PSR로 계산한 **추정치**입니다.
+
+## 월간 리포트
+1. `python tools/monthly.py YYYY-MM --as-of YYYY-MM-DD` — 그날 데이터를 `data/reports/YYYY-MM/`에 고정하고, 섹션별 갱신 상태(이번 달 갱신/변동 없음)·기간 중 공시·보도·1개월 주가를 `report.json`에 집계, `data/reports/index.json`(호 목록)에 추가. 기간 = 직전 호 기준일 다음 날 ~ 이번 기준일.
+2. 인사이트는 `report.json`의 `insights.<core|hff|microbiome>.items[{h,d,s}]`에 직접 씁니다(재무 숫자는 OpenDART 수집값만). 1을 다시 돌려도 인사이트는 유지됩니다.
+3. v1 화면을 고쳤으면 `python tools/report_page.py`로 `report/issue.html`을 다시 만듭니다.
 
 ## 데이터 원칙
 - **국내 재무 숫자는 OpenDART API에서만** 받습니다. 상장사는 `fnlttSinglAcnt`·`fnlttSinglAcntAll`(연결 기본, 별도는 `alt`), 비상장사·주석은 공시 원문(`document.xml`, 연결감사보고서가 있으면 연결 기본). Yahoo 재무는 DART가 없는 해외 종목만 씁니다.
@@ -47,8 +53,12 @@ GitHub Pages로 호스팅하고, GitHub Actions가 하루 2회 전체 수집 + �
 
 ## 폴더 구조
 ```
-index.html                     상세(기존 대시보드, Chart.js, 단일 파일)
-summary/ · assets/             요약 화면 (core.js · summary.js · app.css)
+index.html · assets/           메인 (core.js · summary.js · app.css · colors.js)
+v1/index.html                  이전 메인 보관본 (Chart.js, 단일 파일)
+report/                        월간 리포트 (index.html 호 목록, issue.html 호 화면)
+tools/monthly.py               월간 호 데이터 고정·집계
+tools/report_page.py           v1 → report/issue.html 생성
+summary/ · detail/             예전 주소 이동용
 config/companies.json          회사 · 그룹(탭) 설정
 config/news_cats.json          기사 유형 규칙
 config/media.json              매체 등급 · 표기 통일
@@ -61,6 +71,7 @@ scripts/newsfx.py              보도 반응 이벤트 스터디
 scripts/live.py                매시 갱신 진입점
 scripts/make_sample.py         화면 확인용 샘플 데이터
 data/                          수집 결과 (Actions 자동 커밋) + 수동 정리 summaries.json · market.json
+data/reports/                  월간 호 (기준일 고정 데이터 + report.json)
 ```
 수집기는 `summaries.json`·`market.json`을 건드리지 않습니다.
 
@@ -82,7 +93,7 @@ data/                          수집 결과 (Actions 자동 커밋) + 수동 �
 - 브랜드 로고·이미지는 넣지 않습니다.
 
 ## 표시 설정 (브라우저에만 저장)
-오른쪽 위 **⚙ 설정**에서 회사 강조 표시, 섹션 이름, **시총 복사 목록**(`# 제목` 줄 = 섹션, 그 아래 줄마다 상장사 이름 또는 종목코드)을 지정합니다. 저장소·사이트에는 올라가지 않고 그 브라우저의 localStorage에만 남으므로 기기마다 한 번씩 지정합니다.
+v1의 **⚙ 설정**에서 회사 강조 표시, 섹션 이름, **시총 복사 목록**(`# 제목` 줄 = 섹션, 그 아래 줄마다 상장사 이름 또는 종목코드)을 지정합니다. 저장소·사이트에는 올라가지 않고 그 브라우저의 localStorage에만 남으므로 기기마다 한 번씩 지정합니다.
 
 ## 로컬에서 보기
 ```
