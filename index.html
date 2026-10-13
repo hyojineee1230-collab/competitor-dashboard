@@ -1034,6 +1034,7 @@ td span.err{font-size:13.5px}
   <div class="intro-in" id="coPopBody"></div>
 </dialog>
 
+<script src="assets/colors.js"></script>
 <script>
 const PERIODS = [["1M",21],["3M",63],["6M",126],["1Y",252],["2Y",504]];
 const METRICS = [["revenue","매출액"],["grossProfit","매출이익"],["gpm","매출이익률"],["operatingIncome","영업이익"],["opm","영업이익률"]];
@@ -1049,7 +1050,9 @@ const state = { ofs:false, valView:"rel", meta:null, group:null, data:{}, period
 const charts = {};
 
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const color = i => css(`--s${(i % 8) + 1}`);
+// 회사 색: assets/colors.js (Beta와 같은 색). 회사 객체를 받음 — 숫자면 예전처럼 팔레트 순번
+const isDarkUI = () => /dark/.test(getComputedStyle(document.documentElement).colorScheme);
+const color = c => c != null && typeof c === "object" ? coColor(c.id, c._ci ?? 0, isDarkUI()) : css(`--s${((c || 0) % 8) + 1}`);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $ = id => document.getElementById(id);
 const grp = () => state.data[state.group] || {companies:[], mode:"full"};
@@ -1123,7 +1126,7 @@ function bindSort(table, t, render){
 const avgHead = n => `<td><b>경쟁사 평균</b> <span class="flat" style="font-weight:400;font-size:12px">${n}개사</span></td>`;
 const secKey = (i, gid = state.group) => `${gid}:s${i + 1}`;      // 섹션은 이름 없이 탭·순번으로만 구분
 const secTitle = (i, g = grp(), gid = state.group) => (labels.sections && labels.sections[secKey(i, gid)]) || (g.sections?.[i]?.title || "");
-const brandChip = c => c.brand ? `<span class="brand-chip" style="--cc:${color(c._ci)}" title="대표 브랜드">${esc(c.brand)}</span>` : "";
+const brandChip = c => c.brand ? `<span class="brand-chip" style="--cc:${color(c)}" title="대표 브랜드">${esc(c.brand)}</span>` : "";
 // 사업부문(config segment): 최근 연도 부문 매출·영업이익과 연결 매출 대비 비중
 function bizSeg(c, y){
   const s = c.segment, a = c.annual; if (!s?.years) return null;
@@ -1141,7 +1144,7 @@ function segRow(c, y, cur){
 const noteTag = c => c.note ? `<span class="tag" title="${esc(c.note)}">주석</span>` : "";
 // 실적을 별도 재무제표로 보는 회사(config fs: "OFS") 표시
 const ofsTag = c => c.fs === "OFS" ? `<span class="tag" title="실적은 별도 재무제표 기준(자회사 제외) · 시가총액은 회사 전체">별도</span>` : "";
-const coCell = (c, sub) => `<div class="co"><i style="background:${color(c._ci)}"></i><b>${esc(c.name)}</b>${brandChip(c)}${
+const coCell = (c, sub) => `<div class="co"><i style="background:${color(c)}"></i><b>${esc(c.name)}</b>${brandChip(c)}${
   isSelf(c) ? `<span class="tag self">자사</span>` : ""}${ofsTag(c)}${noteTag(c)}${
   c.listed ? `<span>${esc(sub ?? c.ticker)}</span>` : ""}</div>`;
 // 섹션 구조: [{title|null, items:[company]}] — 자사(표시 설정)와 섹션 밖 회사가 맨 위
@@ -1429,7 +1432,7 @@ function dayTicker(rows, kq){
   const ans = `상장 ${rows.length}곳 중 ${up ? `${up}곳 상승` : "상승 없음"}, 평균 <span class="${upDown(avg)}">${arrow(avg)}</span>${verdict ? ` → ${verdict}` : ""}`
     + (best && worst && best !== worst ? `<br><small>시장 대비 가장 강한 곳 <b>${esc(best.c.name)}</b>(${sgn(best.rel)}p) · 가장 약한 곳 <b>${esc(worst.c.name)}</b>(${sgn(worst.rel)}p)</small>` : "");
   return `<div class="dq"><h3>주가, 시장보다 강했나?</h3><p class="ans">${ans}</p><div class="tk-row" style="--cols:${Math.max(rows.length, 6)}">${rows.map(r =>
-    `<button type="button" class="tk" data-id="${esc(r.c.id)}" title="${esc(r.c.name)} 상세"><span class="n"><i style="background:${color(r.c._ci ?? 0)}"></i>${esc(r.c.name)}</span>
+    `<button type="button" class="tk" data-id="${esc(r.c.id)}" title="${esc(r.c.name)} 상세"><span class="n"><i style="background:${color(r.c)}"></i>${esc(r.c.name)}</span>
       <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></button>`).join("")}</div></div>`;
 }
 // ② 평소와 다르게 움직인 곳, 이유는? — data/newsfx.json signals: 분야 중앙값을 뺀 회사 고유 움직임이 평소 변동폭의 2배 이상(또는 거래량 3배)
@@ -1449,7 +1452,7 @@ function daySignals(gid, pool){
   const list = top.length ? `<div class="mv-list">${top.map(r => { const c = pool.get(r.c), w = r.why;
     const reason = !w ? `<span class="unk">사유 미확인</span><small>전 거래일~당일 공시·주가 관련 보도 없음</small>`
       : `<span class="tg">${w.type === "filing" ? "공시" : esc(fx.cats?.[w.cat] || "보도")}</span><a href="${esc(w.url)}" target="_blank" rel="noopener">${esc(w.title)}</a>`;
-    return `<div class="mv-it"><span class="co"><i style="background:${color(c?._ci ?? 0)}"></i>${esc(nm(r.c))}</span><span class="r ${upDown(r.idio)}">${arrow(r.idio)}</span>
+    return `<div class="mv-it"><span class="co"><i style="background:${color(c)}"></i>${esc(nm(r.c))}</span><span class="r ${upDown(r.idio)}">${arrow(r.idio)}</span>
       <span class="why">${reason}<small>${md(r.d)} · 평소의 ${r.z.toFixed(1)}배${r.vr >= 2 ? ` · 거래량 ${r.vr.toFixed(1)}배` : ""}${r.more ? ` · 같은 때 공시·보도 ${r.more + 1}건` : ""}${r.more2 ? ` · 2주간 신호 외 ${r.more2}회` : ""}</small></span></div>`; }).join("")}</div>` : "";
   return `<div class="dq"><h3>평소와 다르게 움직인 곳, 이유는? <span class="hint">최근 2주 · 분야 평균 대비, 회사 평소 변동폭의 2배 이상</span></h3><p class="ans">${ans}</p>${secHtml}${list}</div>`;
 }
@@ -1589,7 +1592,7 @@ function renderGrow(){
   const xmax = nice(Math.max(...xs) + 6, 10, true), xmin = Math.min(...xs) < 4 ? -4 : 0;
   draw("grow", "growChart", {
     type: "bubble",
-    data: { datasets: rows.map(r => ({ label: r.c.name, _row: r, backgroundColor: color(r.c._ci) + (dimG(r) ? "26" : "cc"), borderColor: color(r.c._ci) + (dimG(r) ? "55" : ""), borderWidth: gsel === r.c.id ? 3 : 1.5,
+    data: { datasets: rows.map(r => ({ label: r.c.name, _row: r, backgroundColor: color(r.c) + (dimG(r) ? "26" : "cc"), borderColor: color(r.c) + (dimG(r) ? "55" : ""), borderWidth: gsel === r.c.id ? 3 : 1.5,
       data: [{ x: r.mk, y: r.gr, r: narrow ? 5 + 13 * Math.sqrt(r.rev / maxRev) : 8 + 26 * Math.sqrt(r.rev / maxRev) }] })) },
     plugins: [GUIDES, LABELS],
     options: { responsive: true, maintainAspectRatio: false, animation: false, layout: { padding: { top: 24 } },
@@ -1632,7 +1635,7 @@ function renderPrice(){
   const datasets = series.map(({c, s}) => {
     const base = s.close[0];
     const map = new Map(s.dates.map((d,i) => [d, isM ? s.mcap[i] / 1e8 : s.close[i] / base * 100]));
-    const col = color(c._ci), dim = state.focus != null && state.focus !== c.id;
+    const col = color(c), dim = state.focus != null && state.focus !== c.id;
     return {
       label: c.name, cid: c.id,
       data: all.map(d => map.has(d) ? +map.get(d).toFixed(isM ? 0 : 2) : null),
@@ -1671,7 +1674,7 @@ function renderPrice(){
 function renderLegend(){
   const el = $("legend"), isM = state.view === "mcap";
   el.innerHTML = comps().filter(c => c.price && (!isM || mcapEligible(c))).map(c =>
-    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</button>`).join("");
+    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</button>`).join("");
   el.onclick = e => {
     const b = e.target.closest(".lg"); if (!b) return;
     const id = b.dataset.id;
@@ -1696,14 +1699,14 @@ function renderRank(){
     const rows = comps().filter(mcapEligible).map(c => ({c, v: c.quote?.marketCap ?? c.price.mcap.at(-1), r: periodReturn(c)}))
       .sort((a,b) => b.v - a.v);
     $("rank").innerHTML = rows.map(({c,v,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
-      <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
+      <span class="nm"><i style="background:${color(c)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
       <span class="rv"><span>${fmtBig(v,"KRW")}</span><span class="chg">${fmtPct(r)}</span></span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
   } else {
     $("rankTitle").textContent = "기간 수익률 순위";
     $("rankHint").textContent = `최근 ${state.period} 주가 등락률`;
     const rows = comps().map(c => ({c, r: periodReturn(c)})).filter(x => x.r != null).sort((a,b) => b.r - a.r);
     $("rank").innerHTML = rows.map(({c,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
-        <span class="nm"><i style="background:${color(c._ci)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
+        <span class="nm"><i style="background:${color(c)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
         <span class="rv">${fmtPct(r)}</span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
   }
   $("rank").onclick = e => { const li = e.target.closest("li[data-id]"); if (li) setFocus(li.dataset.id); };
@@ -1868,14 +1871,14 @@ async function renderVal(){
     const tip = chartBase();
     draw("val", "valChart", { type: "line",
       data: { labels, datasets: ser.map(x => { const m = new Map(x.dates.map((d, i) => [d, x.v[i]]));
-        return { label: x.c.name, data: labels.map(d => m.get(d) ?? null), borderColor: color(x.c._ci), backgroundColor: color(x.c._ci), borderWidth: 2, pointRadius: 0, tension: .15, spanGaps: true }; }) },
+        return { label: x.c.name, data: labels.map(d => m.get(d) ?? null), borderColor: color(x.c), backgroundColor: color(x.c), borderWidth: 2, pointRadius: 0, tension: .15, spanGaps: true }; }) },
       options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: "index", intersect: false },
         plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: x => isM ? ` ${x.dataset.label}  ${fmtBig(x.parsed.y * 1e8, "KRW")}` : ` ${x.dataset.label}  ${x.parsed.y > 0 ? "+" : ""}${x.parsed.y}%` } } },
         scales: { x: { grid: { display: false }, border: { color: css("--axis") }, ticks: { maxTicksLimit: 7, callback(v){ const d = this.getLabelForValue(v); return d ? d.slice(2, 7).replace("-", ".") : ""; } } },
                   y: { grid: { color: ctx => !isM && ctx.tick.value === 0 ? css("--axis") : css("--grid") }, border: { display: false }, ticks: { maxTicksLimit: 6, callback: v => isM ? `${v.toLocaleString("ko-KR")}억` : `${v > 0 ? "+" : ""}${v}%` } } } } });
     $("valLegend").innerHTML = ser.map(x => { const last = x.v.filter(v => v != null).at(-1);
-      return isM ? `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b style="font-weight:600">${last == null ? "–" : fmtBig(last * 1e8, "KRW")}</b></span>`
-                 : `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
+      return isM ? `<span class="lg"><i style="background:${color(x.c)}"></i>${esc(x.c.name)} <b style="font-weight:600">${last == null ? "–" : fmtBig(last * 1e8, "KRW")}</b></span>`
+                 : `<span class="lg"><i style="background:${color(x.c)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
   }
   const hasEst = rows.some(r => r.est);
   $("valHint").textContent = `최근 거래일 기준`;
@@ -1895,7 +1898,7 @@ async function renderCore(){
     const rev = i < 0 ? null : a.revenue?.[i], gr = i < 1 ? null : growth(rev, a.revenue?.[i - 1]), opm = i < 0 ? null : margin(a.operatingIncome?.[i], rev);
     const hd = S.companies?.[c.id]?.[0]?.h;
     const on = coreSel === c.id;
-    return `<div class="core-card" role="button" tabindex="0" data-id="${esc(c.id)}" aria-pressed="${on}" aria-haspopup="dialog" style="--cc:${color(c._ci)}" title="누르면 회사 상세 보기"><span class="nm"><i></i><b class="t">${esc(c.name)}</b>${isSelf(c) ? `<span class="tag self">자사</span>` : ""}</span>
+    return `<div class="core-card" role="button" tabindex="0" data-id="${esc(c.id)}" aria-pressed="${on}" aria-haspopup="dialog" style="--cc:${color(c)}" title="누르면 회사 상세 보기"><span class="nm"><i></i><b class="t">${esc(c.name)}</b>${isSelf(c) ? `<span class="tag self">자사</span>` : ""}</span>
       ${c.brand ? `<span class="brand-line">${esc(c.brand)}</span>` : `<span class="brand-line none">&nbsp;</span>`}
       <span class="yr">${i < 0 ? "실적 없음" : `${a.years[i]}년 매출`}${c.fs === "OFS" ? ` · ${ofsTag(c)}` : ""}</span>
       <span class="rev">${fmtBig(rev, a?.currency || "KRW")}</span>
@@ -1909,7 +1912,7 @@ async function renderCore(){
 function applyCoreSel(){
   const c = comps().find(x => x.id === coreSel);
   document.querySelectorAll("#finTable tbody tr[data-id]").forEach(r => r.classList.toggle("sel", r.dataset.id === coreSel));
-  if (c) $("finTable").style.setProperty("--selc", color(c._ci));
+  if (c) $("finTable").style.setProperty("--selc", color(c));
 }
 function setCoreSel(id){
   coreSel = id;
@@ -2047,14 +2050,14 @@ async function openCo(id){
   const mx = top[0]?.[1].length || 1;
   const kw = top.length ? `<div class="cp-kw" id="cpKw">${top.map(([w, v]) => `<button type="button" data-w="${esc(w)}" class="${v.length >= mx * .66 ? "k3" : v.length >= mx * .33 ? "k2" : "k1"}">${esc(w)}<sup>${v.length}</sup></button>`).join("")}</div><ul class="cp-news" id="cpNews"></ul>`
     : `<p class="note">수집된 기사가 적어 키워드를 뽑지 않았습니다.</p>`;
-  $("coPopBody").style.setProperty("--cc", color(c._ci));
+  $("coPopBody").style.setProperty("--cc", color(c));
   $("coPopBody").innerHTML = `
-    <div class="cp-head" style="--cc:${color(c._ci)}"><div>
+    <div class="cp-head" style="--cc:${color(c)}"><div>
       <h2 id="coPopTitle"><i></i>${esc(c.name)}${brandChip(c)}${isSelf(c) ? `<span class="tag self">자사</span>` : ""}${c.listed ? "" : `<span class="tag">비상장</span>`}${ofsTag(c)}</h2>
       <div class="cp-meta">${cap}${lastDisc ? `<span>최근 공시 <a href="${esc(lastDisc.url)}" target="_blank" rel="noopener">${esc(lastDisc.title)}</a> <small>${lastDisc.date.slice(5).replace("-", ".")}</small></span>` : ""}</div>
     </div><button class="cp-x" type="button" id="coPopX" aria-label="닫기">✕</button></div>
     <div class="cp-kpis">${kpis}</div>
-    ${(D => D.length ? `<div class="cp-sec"><h3>성장 원인 <small>AI 정리 · 누르면 근거</small></h3><div class="cp-why" id="cpWhy">${D.map(d => `<button type="button" class="why-cell lv${d.lv}" data-k="${d.k}" style="--cc:${color(c._ci)}"><i aria-hidden="true"></i>${esc(WHY_KEYS.find(x => x[0] === d.k)?.[1] || "")} · ${esc(d.tag)}</button>`).join("")}</div><div class="cp-whyd" id="cpWhyD"></div></div>` : "")((S.drivers?.[id] || []).slice().sort((p, q) => q.lv - p.lv))}
+    ${(D => D.length ? `<div class="cp-sec"><h3>성장 원인 <small>AI 정리 · 누르면 근거</small></h3><div class="cp-why" id="cpWhy">${D.map(d => `<button type="button" class="why-cell lv${d.lv}" data-k="${d.k}" style="--cc:${color(c)}"><i aria-hidden="true"></i>${esc(WHY_KEYS.find(x => x[0] === d.k)?.[1] || "")} · ${esc(d.tag)}</button>`).join("")}</div><div class="cp-whyd" id="cpWhyD"></div></div>` : "")((S.drivers?.[id] || []).slice().sort((p, q) => q.lv - p.lv))}
     ${(g => { if (!g) return "";
       const tot = g.rev / ((g.share || 100) / 100), big = g.others.filter(([, v]) => v / tot >= .02).sort((p, q) => q[1] - p[1]),
             etc = g.others.filter(([, v]) => v / tot < .02).reduce((t, [, v]) => t + (v || 0), 0);
@@ -2076,7 +2079,7 @@ async function openCo(id){
     const d = (S.drivers?.[id] || []).find(x => x.k === b.dataset.k);
     if (!on || !d){ $("cpWhyD").innerHTML = ""; return; }
     b.setAttribute("aria-pressed", "true");
-    $("cpWhyD").innerHTML = `<div class="why-detail" style="--cc:${color(c._ci)}"><p>${esc(d.d)}</p>${srcLinks(d.s)}</div>`; };
+    $("cpWhyD").innerHTML = `<div class="why-detail" style="--cc:${color(c)}"><p>${esc(d.d)}</p>${srcLinks(d.s)}</div>`; };
   if ($("coPopSel")) $("coPopSel").onclick = () => { closeCo(); setCoreSel(id); };
   const kwBox = $("cpKw");
   if (kwBox) kwBox.onclick = e => { const b = e.target.closest("button"); if (!b) return;
@@ -2408,7 +2411,7 @@ function renderQuarter(){
       labels: periods.map(qLabel),
       datasets: list.map(c => {
         const v = vals(c.quarterly, m);
-        return { label: c.name, backgroundColor: color(c._ci), borderRadius: 4, borderSkipped: "start", maxBarThickness: 26,
+        return { label: c.name, backgroundColor: color(c), borderRadius: 4, borderSkipped: "start", maxBarThickness: 26,
           data: periods.map(p => { const i = c.quarterly.periods.indexOf(p); const x = i < 0 ? null : v[i];
             return x == null ? null : isPct ? +x.toFixed(1) : Math.round(x / 1e8); }) };
       }),
@@ -2507,8 +2510,8 @@ function renderFinBars(list, m, years, isPct, unit, scale){
     <p class="fr-key">막대 = ${esc(last)}년${prev ? ` · 세로선 = ${esc(prev)}년` : ""}${clipped ? ` · ${FLOOR}% 아래는 잘라서 표시` : ""}</p>
     <div class="fr-row head"><span></span><span></span><span class="v">${esc(last)}년</span><span class="g">전년 대비</span></div>`
     + rows.map(r => { const a = Math.min(pos(r.cur), z), w = Math.abs(pos(r.cur) - z);
-      return `<div class="fr-row"><span class="nm" title="${esc(r.c.name)}"><i style="background:${color(r.c._ci)}"></i>${esc(r.c.name)}</span>
-        <span class="tr">${lo < 0 ? `<em style="left:${z}%"></em>` : ""}<i class="${r.cur < lo ? "cut" : ""}" style="left:${a}%;width:${Math.max(w, .6)}%;background:${color(r.c._ci)}${r.cur < 0 ? ";opacity:.55" : ""}"></i>${r.pv != null ? `<b style="left:calc(${pos(r.pv)}% - 1px)" title="${esc(prev)}년 ${esc(fv(r.pv))}"></b>` : ""}</span>
+      return `<div class="fr-row"><span class="nm" title="${esc(r.c.name)}"><i style="background:${color(r.c)}"></i>${esc(r.c.name)}</span>
+        <span class="tr">${lo < 0 ? `<em style="left:${z}%"></em>` : ""}<i class="${r.cur < lo ? "cut" : ""}" style="left:${a}%;width:${Math.max(w, .6)}%;background:${color(r.c)}${r.cur < 0 ? ";opacity:.55" : ""}"></i>${r.pv != null ? `<b style="left:calc(${pos(r.pv)}% - 1px)" title="${esc(prev)}년 ${esc(fv(r.pv))}"></b>` : ""}</span>
         <span class="v ${r.cur < 0 ? "down" : ""}">${fv(r.cur)}</span><span class="g">${r.chg == null && r.diff != null ? `<span class="${upDown(r.diff)}" title="전년 대비 금액 차이">${r.diff > 0 ? "+" : ""}${fmtBig(r.diff, state.currency)}</span>` : fc(r.chg)}</span></div>`; }).join("");
 }
 function renderExtra(m){
@@ -2522,7 +2525,7 @@ function renderExtra(m){
   draw("fin", "finChart", {
     type: "bar",
     data: { labels: years.map(y => y + "년"), datasets: list.map(({c, s}) => ({
-      label: c.name, backgroundColor: color(c._ci), borderRadius: 4, borderSkipped: "start", maxBarThickness: 22,
+      label: c.name, backgroundColor: color(c), borderRadius: 4, borderSkipped: "start", maxBarThickness: 22,
       raw: years.map(y => { const i = s.years.indexOf(y); return i < 0 ? null : s.v[i]; }),
       data: years.map(y => { const i = s.years.indexOf(y), v = i < 0 ? null : s.v[i]; return v == null ? null : +Math.min(v, RATIO_CAP).toFixed(1); }) })) },
     options: {
