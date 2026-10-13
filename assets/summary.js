@@ -167,6 +167,70 @@ function valCard(F){
     ${lst.length ? chart : '<p class="empty">상장사 없음</p>'}${fold("q-val", "숫자 보기 · 시총·PSR·PER·PBR·수익률" + (rows.some(r => r.est) ? " · 비상장 추정" : ""), t)}`);
 }
 
+/* ---------- 최근 공시/기사 (기존 화면 '최근 공시/기사'와 같은 구성: 정기보고서 표 · IR · 기사 목록) ---------- */
+let NEWSCLS = null;
+async function newsCls(){
+  if (NEWSCLS) return NEWSCLS;
+  const [nc, mdj] = await Promise.all([getJSON("news_cats", CONF), getJSON("media", CONF)]);
+  const norm = t => String(t || "").replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase();
+  const tierOf = new Map(), alias = mdj?.aliases || {};
+  (mdj?.tiers || []).forEach(t => t.members.forEach(m => tierOf.set(norm(m), t.key)));
+  const cats = (nc?.cats || []).map(c => ({ ...c, re: new RegExp(c.pattern, "i") }));
+  return NEWSCLS = {
+    cats: [...cats.map(c => [c.key, c.name]), ["etc", "기타"]],
+    tiers: [...(mdj?.tiers || []).map(t => [t.key, t.name]), ["etc", "기타(미분류)"]],
+    cat: title => (cats.find(c => c.re.test(title)) || { key: "etc" }).key,
+    tier: by => tierOf.get(norm(alias[by] || by)) || "etc",
+    name: by => alias[by] || by,
+  };
+}
+const discCatOf = d => d.cat || (/사업보고서|반기보고서|분기보고서|감사보고서/.test(d.title) ? "report" : /IR|기업설명회/.test(d.title) ? "ir" : null);
+function periodOf(d){
+  const m = d.title.match(/\((\d{4})\.(\d{2})\)/); if (!m) return null;
+  let q = /반기/.test(d.title) ? 2 : /사업보고서|감사보고서/.test(d.title) ? 4 : Math.ceil(+m[2] / 3);
+  if (/분기/.test(d.title) && (q === 2 || q === 4)) q = +m[2] <= 4 ? 1 : 3;   // 결산월이 다른 회사 보정
+  return { year: +m[1], q };
+}
+async function discPanel(F, ui){
+  const cat = ui.dc || "report", co = ui.co || "", lim = +(ui.lim || 15), today = new Date(todayKST());
+  const pool = F.cos.filter(c => c.disclosures?.length || (c.activity || []).some(x => x.src === "뉴스"));
+  const pick = pool.filter(c => !co || c.id === co);
+  const isNew = d => (today - new Date(d)) / 864e5 <= 3 ? '<span class="tag new-t">NEW</span>' : "";
+  const sel = (k, all, items, cur) => `<select data-uisel="${k}" aria-label="${all}"><option value="">${all}</option>${items.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  const segs = `<span class="seg">${[["report", "정기보고서"], ["ir", "IR"], ["news", "기사"]].map(([k, l]) => `<button data-ui="dc=${k}" aria-pressed="${k === cat}">${l}</button>`).join("")}</span>`;
+  let ctrl = segs + sel("co", "전체 회사", pool.map(c => [c.id, c.name]), co), body = "", hint = "";
+  if (cat === "report"){
+    const Q = { 1: "1Q", 2: "2Q", 3: "3Q", 4: "연간" };
+    const byCo = pick.map(c => { const cells = {};
+      (c.disclosures || []).filter(d => discCatOf(d) === "report").forEach(d => { const p = periodOf(d); if (!p) return; const k = `${p.year}-${p.q}`; if (!cells[k] || cells[k].date < d.date) cells[k] = d; });
+      return { c, cells }; });
+    const years = [...new Set(byCo.flatMap(x => Object.keys(x.cells).map(k => +k.split("-")[0])))].sort((a, b) => b - a).slice(0, 4);
+    const yr = years.includes(+ui.yr) ? +ui.yr : years[0];
+    if (years.length) ctrl += `<span class="seg">${years.map(y => `<button data-ui="yr=${y}" aria-pressed="${y === yr}">${y}년</button>`).join("")}</span>`;
+    body = years.length ? `<div class="tw keep"><table class="dgrid"><thead><tr><th>회사</th>${[1, 2, 3, 4].map(q => `<th>${Q[q]}</th>`).join("")}</tr></thead><tbody>${byCo.map(({ c, cells }) =>
+      `<tr><td>${coCell(c)}</td>${[1, 2, 3, 4].map(q => { const d = cells[`${yr}-${q}`];
+        return d ? `<td><a class="chip" href="${esc(d.url)}" target="_blank" rel="noopener" title="${esc(d.title)} · 접수 ${d.date}">${Q[q]} ↗ <small>${md(d.date)}</small></a>${isNew(d.date)}</td>` : '<td class="dim">–</td>'; }).join("")}</tr>`).join("")}</tbody></table></div>` : '<p class="empty">정기보고서 없음</p>';
+    hint = `${yr ?? ""}년 정기보고서 ${byCo.reduce((n, x) => n + Object.keys(x.cells).filter(k => k.startsWith(yr + "-")).length, 0)}건 · 누르면 DART 원문`;
+  } else {
+    const isNews = cat === "news", K = isNews ? await newsCls() : null, ty = ui.ty || "", tr = ui.tr || "";
+    if (isNews) ctrl += sel("ty", "전체 유형", K.cats, ty) + sel("tr", "전체 매체", K.tiers, tr);
+    const rows = pick.flatMap(c => isNews
+        ? (c.activity || []).filter(x => x.src === "뉴스").map(x => ({ ...x, c, nc: K.cat(x.title), tier: K.tier(x.by) }))
+        : (c.disclosures || []).filter(d => discCatOf(d) === "ir").map(d => ({ ...d, c })))
+      .filter(d => !isNews || ((!ty || d.nc === ty) && (!tr || d.tier === tr)))
+      .sort((a, b) => b.date.localeCompare(a.date) || F.cos.indexOf(a.c) - F.cos.indexOf(b.c));
+    const cn = isNews ? Object.fromEntries(K.cats) : {}, tn = isNews ? Object.fromEntries(K.tiers) : {};
+    body = tbl([isNews ? "보도일" : "접수일", "회사", ...(isNews ? ["매체", "유형"] : []), isNews ? "기사" : "공시명"],
+      rows.slice(0, lim).map(d => [`${d.date.slice(2).replace(/-/g, ".")}${isNew(d.date)}`, coCell(d.c),
+        ...(isNews ? [`<b>${esc(K.name(d.by || ""))}</b><small>${esc(tn[d.tier] || "")}</small>`, `<span class="tag">${esc(cn[d.nc] || "기타")}</span>`] : []),
+        `<a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a>`]));
+    if (!rows.length) body = `<p class="empty">${isNews ? (ty || tr ? "조건에 맞는 기사 없음" : "수집된 기사 없음") : "최근 3년 IR 공시 없음"}</p>`;
+    if (rows.length > lim) body += `<div style="text-align:center;padding:12px 0 2px"><button class="morebtn" data-ui="lim=${lim + 30}">더 보기 (${rows.length - lim}건 남음)</button></div>`;
+    hint = isNews ? `최근 9개월 기사 ${rows.length}건` : `IR · 최근 3년 ${rows.length}건`;
+  }
+  return card(`<h2>최근 공시/기사<small>${hint}</small></h2><div class="flt">${ctrl}</div><div class="wrapcells disc">${body}</div>`, "", ) ;
+}
+
 const SUM = {
   /* ---------- 인사이트 ---------- */
   async insight(F){
@@ -320,31 +384,17 @@ const SUM = {
     const { wk: w7 } = voiceOf(F), byCat = {};
     w7.forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + 1);
     const cats = Object.entries(byCat).sort((a, b) => (a[0] === "etc") - (b[0] === "etc") || b[1] - a[1]);
-    // 기사·공시 찾기: 최근 2주 보도(매시간) + 회사별 최근 기사·공시(하루 2회)를 합쳐 최신순
-    const ACT = { product: "제품·브랜드", ir: "IR", finance: "자금조달" }, cn = k => ACT[k] || catName(k);
-    const seen = new Set(), pool = [];
-    const add = x => { const k = x.url || x.title; if (seen.has(k)) return; seen.add(k); pool.push(x); };
-    (D.newsfx?.recent || []).filter(e => ids.includes(e.c)).forEach(e => add({ c: e.c, d: e.d, title: e.title, url: e.url, src: "기사", cat: e.cat, by: (e.media || [])[0] || "" }));
-    F.cos.forEach(c => (c.activity || []).forEach(a => add({ c: c.id, d: a.date, title: a.title, url: a.url, src: a.src === "공시" ? "공시" : "기사", cat: a.cat, by: a.src === "공시" ? "DART" : a.by || "" })));
-    (F.cos.flatMap(c => (c.disclosures || []).map(d => ({ c: c.id, d: d.date, title: d.title, url: d.url, src: "공시", cat: d.cat, by: "DART" })))).forEach(add);
-    pool.sort((a, b) => b.d.localeCompare(a.d));
-    const src = ui.src || "", co = ui.co || "", ty = ui.ty || "", by = ui.by || "", lim = +(ui.lim || 15);
-    const f1 = pool.filter(x => (!src || x.src === src) && (!co || x.c === co));
-    const types = [...new Set(f1.map(x => x.cat))].map(k => [k, cn(k), f1.filter(x => x.cat === k).length]).sort((a, b) => b[2] - a[2]);
-    const meds = Object.entries(f1.filter(x => x.src === "기사" && x.by).reduce((o, x) => (o[x.by] = (o[x.by] || 0) + 1, o), {})).sort((a, b) => b[1] - a[1]).slice(0, 30);
-    const rows = f1.filter(x => (!ty || x.cat === ty) && (!by || x.by === by));
-    const sel = (k, all, items, cur) => `<select data-uisel="${k}" aria-label="${all}"><option value="">${all}</option>${items.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
-    const ctrl = `<div class="flt"><span class="seg">${[["", "전체"], ["기사", "기사"], ["공시", "공시"]].map(([k, l]) => `<button data-ui="src=${k}" aria-pressed="${k === src}">${l}</button>`).join("")}</span>
-      ${sel("co", "전체 회사", F.cos.map(c => [c.id, c.name]), co)}${sel("ty", "전체 유형", types.map(([k, l, n]) => [k, `${l} ${n}`]), ty)}${src !== "공시" && meds.length ? sel("by", "전체 매체", meds.map(([m, n]) => [m, `${m} ${n}`]), by) : ""}</div>`;
-    const list = rows.slice(0, lim).map(e => { const c = F.cos.find(x => x.id === e.c);
+    const recent = (D.newsfx?.recent || []).filter(e => ids.includes(e.c) && e.cat !== "market").slice(0, 6);
+    const list = recent.map(e => { const c = F.cos.find(x => x.id === e.c);
       return `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="nrow">
-        <span class="mu" style="font-size:15px">${md(e.d)}${(new Date(todayKST()) - new Date(e.d)) / 864e5 <= 2 ? '<span class="new"></span>' : ""}</span><span class="co"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</span>
-        <span><span class="tag${e.src === "공시" ? " tg-d" : ""}" style="margin-right:8px">${e.src === "공시" ? "공시" : esc(cn(e.cat))}</span>${esc(e.title)}${e.by && e.src === "기사" ? ` <small class="mu">· ${esc(e.by)}</small>` : ""}</span></a>`; }).join("");
+        <span class="mu" style="font-size:15px">${md(e.d)}</span><span class="co">${'<i class="dot" style="background:' + c.color + '"></i>' + esc(c.name)}</span>
+        <span><span class="tag" style="margin-right:10px">${esc(catName(e.cat))}</span>${esc(e.title)}</span></a>`; }).join("");
+    const open = ui.disc === "1", dp = open ? await discPanel(F, ui) : "";
     return `<div class="ph"><h1>공시·기사</h1><span class="m">기사 ${D.newsfx?.updatedAt ? mdh(D.newsfx.updatedAt) : "–"} · 공시 ${D.meta?.updatedAt ? mdh(D.meta.updatedAt) : "–"}</span></div>
       <div class="g2">${card(`<h2>주별 보도 수<small>최근 12주 · 같은 소식은 1건 · 막대를 누르면 회사별</small></h2>${wk.length ? colChart(wk, lab, { H: 240, fmt: v => String(v), tips: wTips }) : '<p class="empty">집계 준비 중</p>'}`)}
       ${card(`<h2>최근 7일 보도 유형<small>${w7.length}건</small></h2>${cats.length ? barChart(cats.map(([k, n]) => ({ label: catName(k), color: k === "etc" ? "#C3CEDF" : "#2B5CA8", v: n, tip: [catName(k), `최근 7일\t${n}건`, ...Object.entries(w7.filter(e => e.cat === k).reduce((o, e) => (o[e.c] = (o[e.c] || 0) + 1, o), {})).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, x]) => `${F.cos.find(c => c.id === id).name}\t${x}건`)] })), { row: 40, lab: 130, valW: 60, fmt: v => `${v}건` }) : '<p class="empty">최근 7일 보도 없음</p>'}`)}</div>
-      ${card(`<h2>기사·공시 찾기<small>최신순 · ${rows.length}건 · 같은 링크는 1건</small></h2>${ctrl}${list || '<p class="empty">조건에 맞는 기사·공시 없음</p>'}
-        ${rows.length > lim ? `<div style="text-align:center;padding:12px 0 2px"><button class="morebtn" data-ui="lim=${lim + 30}">30건 더 보기 (${rows.length - lim}건 남음)</button></div>` : ""}`)}`;
+      ${card(`<h2>최근 보도</h2>${list || '<p class="empty">최근 2주 보도 없음</p>'}<div style="text-align:center;padding:12px 0 2px"><button class="more linkbtn" data-ui="disc=${open ? "" : "1"}" aria-expanded="${open}">${open ? "최근 공시·기사 접기 ▴" : "최근 공시·기사 전체 보기 · 정기보고서·IR·기사 ▾"}</button></div>`)}
+      ${dp}`;
   },
 };
 start(SUM);

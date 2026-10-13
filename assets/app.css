@@ -160,12 +160,20 @@ button.co{font-weight:600}
 .cp-n{display:grid;grid-template-columns:48px auto minmax(0,1fr);gap:10px;align-items:baseline;padding:9px 0;border-top:1px solid var(--grid);font-size:15px}
 .cp-n:hover span:last-child{text-decoration:underline}
 
-/* 기사·공시 찾기 */
-.flt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px}
+/* 최근 공시/기사 */
+.flt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
 .flt select{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);max-width:200px}
-.tag.tg-d{background:#E6ECF7;color:var(--accent);font-weight:600}
+.linkbtn{border:0;background:none;padding:4px 6px;font-size:14.5px}
 .morebtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 18px;font-size:14px;color:var(--accent)}
-.nrow .new{margin-left:6px}
+.tag.new-t{background:#FBE7E5;color:var(--up);font-weight:700;font-size:11px;margin-left:6px;padding:1px 6px}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13.5px;color:var(--accent);white-space:nowrap}
+.chip small{color:var(--muted);margin-left:2px}
+.chip:hover{border-color:var(--accent)}
+.dgrid{table-layout:fixed;min-width:560px}
+.dgrid th,.dgrid td{text-align:center}
+.dgrid th:first-child,.dgrid td:first-child{text-align:left;width:30%}
+.disc th,.disc td{text-align:left}.disc .dgrid th:not(:first-child),.disc .dgrid td:not(:first-child){text-align:center}
+.disc td a{color:var(--ink)}.disc td a:hover{text-decoration:underline}
 /* 기업가치 */
 .big1{display:flex;align-items:baseline;gap:10px;margin:-4px 0 10px}.big1 b{font-size:30px;letter-spacing:-.02em}.big1 span{font-size:15px;color:var(--muted)}
 td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-radius:3px;padding:1px 5px;margin:0 4px 0 0}
@@ -215,6 +223,9 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .tw:not(.keep) tbody tr.grp td{background:none}
   .flt select{flex:1 1 40%;max-width:none}
   .flt .seg{width:100%}.flt .seg button{flex:1}
+  .dgrid th:first-child,.dgrid td:first-child{width:104px}
+  .disc .tw:not(.keep) tbody td:last-child{grid-column:1/-1;font-size:15px}.disc .tw:not(.keep) tbody td:last-child::before{display:none}
+  .disc .tw:not(.keep) tbody td small{display:inline;margin-left:6px}
   .rep{padding:7px 11px;font-size:13px}.rep .rl{display:none}.rep .rs{display:inline}
   #coPop{width:100vw;max-width:100vw;max-height:100%;height:100%;border-radius:0;margin:0}
   #coPopBody{padding:16px 14px 40px}
