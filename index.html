@@ -230,6 +230,8 @@ tr.sec td:first-child{background:var(--page)}
 #mktBrands td.dim{color:var(--muted);font-size:12.5px}
 .mk-brands{columns:2;column-gap:32px}
 .mk-brands .mk-brow{break-inside:avoid}
+.val-ch{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.val-ch .mk-h{margin:0}
 .mk-split{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:28px}
 .mk-split > div + div{border-left:1px solid var(--grid);padding-left:28px}
 .mk-split.one{grid-template-columns:1fr}
@@ -701,7 +703,8 @@ td span.err{font-size:13.5px}
     <!-- 기업가치 (valuation: table) -->
     <section class="panel" id="secVal" hidden>
       <div class="ph"><div><h2>기업가치</h2><p class="hint" id="valHint"></p></div></div>
-      <p class="mk-h" id="valChartTitle">1년 주가 흐름 <span class="u">(1년 전 = 0%)</span></p>
+      <div class="val-ch" id="valChartTitle"><p class="mk-h" id="valChartName">1년 주가 흐름 <span class="u">(1년 전 = 0%)</span></p>
+        <div class="seg" id="valView" role="group" aria-label="차트 보기"><button type="button" data-k="rel" aria-pressed="true">상대 수익률</button><button type="button" data-k="mcap" aria-pressed="false">시가총액</button></div></div>
       <div class="chart-box" style="height:260px"><canvas id="valChart" role="img" aria-label="1년 주가 흐름"></canvas></div>
       <div class="legend" id="valLegend" style="margin-bottom:18px"></div>
       <div class="tbl-wrap"><table id="valTable"></table></div>
@@ -880,7 +883,7 @@ const PCT_METRICS = new Set(["gpm", "opm"]);   // 비율 지표 (통화와 무�
 const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연구비/판관비"] };
 function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
 const MODE_LABEL = { market:"주가 · 시가총액", business:"핵심 경쟁사 실적·동향", full:"시장 · 경쟁사 · 기업가치" };
-const state = { ofs:false, meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", finPeriod:"a", mktRegion:"kr", seg:{},
+const state = { ofs:false, valView:"rel", meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", finPeriod:"a", mktRegion:"kr", seg:{},
   currency:"KRW", hidden:new Set(), focus:null, sort:{key:"marketCap",dir:"desc"}, tsort:{fin:null, sga:null} };
 const charts = {};
 
@@ -1542,25 +1545,32 @@ async function renderVal(){
   const lst = list.filter(c => c.listed && c.price?.close?.length);
   $("valChartTitle").hidden = $("valLegend").hidden = !lst.length;
   document.querySelector("#secVal .chart-box").hidden = !lst.length;
+  const isM = state.valView === "mcap";
+  $("valChartName").innerHTML = isM ? `1년 시가총액 <span class="u">(억원 · 원화 상장사)</span>` : `1년 주가 흐름 <span class="u">(1년 전 = 0%)</span>`;
+  $("valView").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === state.valView));
   if (lst.length){
-    const ser = lst.map(c => { const p = c.price, n = p.dates.length, s0 = Math.max(0, n - 251), base = p.close[s0];
-      return { c, dates: p.dates.slice(s0), v: p.close.slice(s0).map(x => x == null || !base ? null : +((x / base - 1) * 100).toFixed(1)) }; });
+    const ser = (isM ? lst.filter(mcapEligible) : lst).map(c => { const p = c.price, n = p.dates.length, s0 = Math.max(0, n - 251), base = p.close[s0];
+      return { c, dates: p.dates.slice(s0), v: isM ? p.mcap.slice(s0).map(x => x == null ? null : Math.round(x / 1e8))
+                                                   : p.close.slice(s0).map(x => x == null || !base ? null : +((x / base - 1) * 100).toFixed(1)) }; });
     const labels = [...new Set(ser.flatMap(x => x.dates))].sort();
     const tip = chartBase();
     draw("val", "valChart", { type: "line",
       data: { labels, datasets: ser.map(x => { const m = new Map(x.dates.map((d, i) => [d, x.v[i]]));
         return { label: x.c.name, data: labels.map(d => m.get(d) ?? null), borderColor: color(x.c._ci), backgroundColor: color(x.c._ci), borderWidth: 2, pointRadius: 0, tension: .15, spanGaps: true }; }) },
       options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: "index", intersect: false },
-        plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: x => ` ${x.dataset.label}  ${x.parsed.y > 0 ? "+" : ""}${x.parsed.y}%` } } },
+        plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: x => isM ? ` ${x.dataset.label}  ${fmtBig(x.parsed.y * 1e8, "KRW")}` : ` ${x.dataset.label}  ${x.parsed.y > 0 ? "+" : ""}${x.parsed.y}%` } } },
         scales: { x: { grid: { display: false }, border: { color: css("--axis") }, ticks: { maxTicksLimit: 7, callback(v){ const d = this.getLabelForValue(v); return d ? d.slice(2, 7).replace("-", ".") : ""; } } },
-                  y: { grid: { color: ctx => ctx.tick.value === 0 ? css("--axis") : css("--grid") }, border: { display: false }, ticks: { maxTicksLimit: 6, callback: v => `${v > 0 ? "+" : ""}${v}%` } } } } });
+                  y: { grid: { color: ctx => !isM && ctx.tick.value === 0 ? css("--axis") : css("--grid") }, border: { display: false }, ticks: { maxTicksLimit: 6, callback: v => isM ? `${v.toLocaleString("ko-KR")}억` : `${v > 0 ? "+" : ""}${v}%` } } } } });
     $("valLegend").innerHTML = ser.map(x => { const last = x.v.filter(v => v != null).at(-1);
-      return `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
+      return isM ? `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b style="font-weight:600">${last == null ? "–" : fmtBig(last * 1e8, "KRW")}</b></span>`
+                 : `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
   }
   const hasEst = rows.some(r => r.est);
   $("valHint").textContent = `최근 거래일 기준`;
   $("valNotes").innerHTML = "";
 }
+
+$("valView").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === state.valView) return; state.valView = b.dataset.k; renderVal(); });
 
 /* ---------- 핵심 경쟁사 카드 (요약 탭): 최근 사업연도 실적 + 대표 동향 한 줄 ---------- */
 async function renderCore(){
