@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dart_audit import decode, extract_income, extract_ad, extract_rnd, extract_sga, extract_segments, norm_label, report_period, fiscal_year  # noqa: E402
 import krx  # noqa: E402
 import activity  # noqa: E402
+import newsraw  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config" / "companies.json"
@@ -794,7 +795,7 @@ def apply_krx(e, s):
     old = e["quote"] or {}
     close, mcap = s["close"], s["mcap"]
     if len(close) >= 200 or not e["price"]:
-        e["price"] = {"dates": s["dates"], "close": close, "mcap": mcap, "mcapSource": "KRX"}
+        e["price"] = {"dates": s["dates"], "close": close, "mcap": mcap, "vol": s.get("vol"), "mcapSource": "KRX"}
     else:
         # KRX 이력이 아직 짧으면(첫 백필 중) 차트는 Yahoo 근사치 그대로, 최신 시세만 KRX로
         e["price"]["mcapSource"] = "approx"
@@ -1044,6 +1045,18 @@ def main():
         if e.get("error"):
             e["error"] = scrub(e["error"])
         results[cid] = e
+
+    # 뉴스 원본 아카이브(보도 반응 분석용): 국내 회사 전부, 2년 백필은 실행마다 나눠 채움
+    try:
+        newsraw.update([{"id": cid, "names": registry[cid].get("news_names") or [registry[cid]["name"]]}
+                        for cid in used if registry[cid].get("country", "KR") == "KR"], log=log_err)
+    except Exception as ex:
+        log_err(f"뉴스 아카이브 실패: {type(ex).__name__}")
+    # 코스닥·코스피 지수(초과수익률 계산용)
+    if krx_data:
+        ix = krx.index_series()
+        if ix:
+            (DATA_DIR / "index.json").write_text(json.dumps(ix, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     if listed_total and price_fail >= listed_total:
         print("모든 종목 주가 수집 실패 — 기존 데이터 유지")
