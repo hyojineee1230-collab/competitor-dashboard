@@ -22,7 +22,7 @@ IDX_BASE = "https://data-dbg.krx.co.kr/svc/apis/idx"
 IDX_ENDPOINT = {"KQ": ("kosdaq_dd_trd", "코스닥"), "KS": ("kospi_dd_trd", "코스피")}
 CACHE = Path(__file__).resolve().parent.parent / "data" / "krx_cache.json"
 WINDOW_DAYS = 365 * 2 + 10
-MAX_CALLS = 1200         # 한 번 실행에서 최대 호출 수 (첫 백필은 여러 번에 나눠 채워짐)
+MAX_CALLS = 400          # 한 번 실행에서 최대 호출 수 (워크플로 제한 시간 안에 끝나도록, 백필은 여러 번에 나눠 채움)
 EMPTY_CONFIRM_DAYS = 4   # 이보다 오래된 날짜가 비어 있으면 휴장일로 확정
 
 
