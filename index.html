@@ -2121,6 +2121,8 @@ function renderDisc(reset){
   const hasNews = comps().some(c => (c.activity || []).some(x => x.src === "뉴스"));
   const newsBtn = $("discCat").querySelector('[data-k="news"]');
   if (newsBtn) newsBtn.hidden = !hasNews;
+  // 탭을 열 때 기본 보기: 오늘 탭은 기사, 그 외는 정기보고서
+  if (reset){ discCat = grp().mode === "business" && state.sub === "today" && hasNews ? "news" : "report"; syncSeg("discCat", discCat); }
   if (!hasNews && discCat === "news") discCat = "report";
   $("secDisc").hidden = !list.length;
   if (!list.length) return;
