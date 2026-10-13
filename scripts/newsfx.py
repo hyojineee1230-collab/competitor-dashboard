@@ -78,6 +78,22 @@ def _groups():
     return mem, {g["id"]: g.get("name", g["id"]) for g in gs}
 
 
+def weekly(events, today, n=12):
+    """최근 n주(월요일 시작) 회사별 보도 수 — 같은 소식 1건, 시세 기사 제외. 화면 요약용"""
+    t = datetime.strptime(today, "%Y-%m-%d")
+    mon = t - timedelta(days=t.weekday())
+    weeks = [(mon - timedelta(weeks=n - 1 - i)).strftime("%Y-%m-%d") for i in range(n)]
+    counts = defaultdict(lambda: [0] * n)
+    for e in events:
+        if e["cat"] == "market":
+            continue
+        d = datetime.strptime(e["d"], "%Y-%m-%d")
+        k = n - 1 - (mon - (d - timedelta(days=d.weekday()))).days // 7
+        if 0 <= k < n:
+            counts[e["c"]][k] += 1
+    return {"weeks": weeks, "counts": dict(counts)}
+
+
 def filings_of(e):
     """수집 결과 한 회사의 공시 목록(주요 활동 공시 + 최근 공시 + 정기보고서·IR) → [{date,title,url}] 중복 제거"""
     seen, out = set(), []
@@ -459,6 +475,7 @@ def build(companies, raw, index, today=None):
         "index": sorted(idx), "method": "CAR(0,2) 시장조정 초과수익률(회사 평소 수준 차감) · 거래량 배수 = D0~D+2 ÷ D-21~D-2, 묶음별 중앙값",
         "cats": CAT_NAME, "tiers": tier_names, "axes": axes, "corr": corr,
         "recent": recent, "movers": movers[:30], "signals": signals(companies, events, idx, today),
+        "weekly": weekly(events, today),
         "unknownMedia": [[k, v] for k, v in unknown.most_common(60)],
         "names": names_c,
     }
