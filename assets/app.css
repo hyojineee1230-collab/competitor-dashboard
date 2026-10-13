@@ -106,7 +106,7 @@ circle.pt{cursor:pointer}circle.pt.on{stroke:var(--ink);stroke-width:2}
 .hint{margin:-6px 0 0;font-size:13.5px;color:var(--faint)}
 /* 카드 아래 펼치는 숫자 표 */
 .fold{margin-top:12px;border-top:1px solid var(--grid);padding-top:8px}
-.fold summary{cursor:pointer;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:6px;padding:2px 0;width:max-content}
+.fold summary{cursor:pointer;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:6px;padding:2px 0;width:fit-content;max-width:100%}
 .fold summary::-webkit-details-marker{display:none}
 .fold summary::before{content:"";width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(-45deg);transition:transform .15s;margin-right:2px}
 .fold[open] summary::before{transform:rotate(45deg)}

@@ -165,7 +165,7 @@ function valCard(F){
     "PSR = 시가총액 ÷ 최근 연간 매출(OpenDART) · PER·PBR = 시가총액 ÷ 최근 연간 순이익·자본총계 · 비상장 = 같은 묶음 상장사 PSR 범위 × 매출");
   return card(`<h2>기업가치<small>PSR = 시가총액 ÷ 매출 · 막대를 누르면 PER·PBR</small></h2>
     ${med != null ? `<div class="big1"><b>${xv(med)}</b><span>상장 ${lst.length}곳 PSR 중앙값</span></div>` : ""}
-    ${lst.length ? chart : '<p class="empty">상장사 없음</p>'}${fold("q-val", "숫자 보기 · 시총·PSR·PER·PBR·수익률" + (rows.some(r => r.est) ? " · 비상장 추정" : ""), t)}`);
+    ${lst.length ? chart : '<p class="empty">상장사 없음</p>'}${fold("q-val", "숫자 보기 · 시총·PSR·PER·PBR" + (rows.some(r => r.est) ? " · 비상장 추정" : ""), t)}`);
 }
 
 /* ---------- 최근 공시/기사 (기존 화면 '최근 공시/기사'와 같은 구성: 정기보고서 표 · IR · 기사 목록) ---------- */
@@ -348,7 +348,7 @@ const SUM = {
     return `<div class="ph"><h1>재무</h1><span class="m">${yr} 사업연도 · 연결 기준 · OpenDART · 카드를 누르면 약식 PL · 막대를 누르면 금액</span><span class="r">${metBtn}${segBtn}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
       ${pts.length >= 2 ? card(`<h2>성장 vs 마케팅 강도<small>${yr} · 원 크기 = 매출 · 원을 누르면 숫자</small></h2>${scatter(pts, { xl: "마케팅 강도 (광고·판촉 + 판매수수료) ÷ 매출 →", yl: "↑ 매출 성장률" })}`) : ""}
-      ${moreLink("finance", "손익·판관비 표로 보기")}`;
+      ${moreLink("finance", "판관비 표는 v1에서 보기")}`;
   },
 
   /* ---------- 시장 ---------- */
@@ -368,7 +368,7 @@ const SUM = {
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;
     return `<div class="ph"><h1>시장</h1><span class="m">${esc(m.label || F.name)} · ${upd}</span><span class="r">${regBtn}</span></div>
       ${kp ? `<div class="g3">${kp}</div>` : ""}${trend || chs ? `<div class="g2">${trend}${chs}</div>` : ""}${sh}${pipe}
-      ${moreLink("market", "대표 브랜드 · 동향 · 출처")}`;
+      ${moreLink("market", "대표 브랜드 · 동향 · 출처는 v1에서 보기")}`;
   },
 
   /* ---------- 공시·기사 ---------- */

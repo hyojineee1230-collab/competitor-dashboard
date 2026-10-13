@@ -1,9 +1,11 @@
-/* 경쟁사 모니터 — 요약·상세 공통: 데이터 읽기, 경로·메뉴·분야 라우팅, 헤더, 갱신 현황, 숫자·그래프 도우미
-   경로: /summary/#<메뉴>/<분야>  /detail/#<메뉴>/<분야>
+/* 경쟁사 모니터(메인): 데이터 읽기, 경로·메뉴·분야 라우팅, 헤더, 갱신 현황, 숫자·그래프 도우미
+   경로: /#<메뉴>/<분야>   보관본 /v1/   월간 리포트 /report/
    메뉴: insight · quotes · finance · market · news   분야: core(핵심 경쟁사, biz) · hff · microbiome */
 "use strict";
 const VIEW = "summary";
-const DATA = "../data/", CONF = "../config/";
+// 사이트 뿌리 = 이 파일(assets/core.js)의 상위 폴더 — 어느 주소에서 열어도 같은 데이터
+const SITE = new URL("..", document.currentScript.src).href;
+const DATA = SITE + "data/", CONF = SITE + "config/";
 const MENUS = [["insight", "인사이트"], ["quotes", "시세"], ["finance", "재무"], ["market", "시장"], ["news", "공시·기사"]];
 const FIELDS = [["core", "핵심 경쟁사", "biz"], ["hff", "건강기능식품", "hff"], ["microbiome", "마이크로바이옴", "microbiome"]];
 const MARKET_OF = { core: "hff", hff: "hff", microbiome: "microbiome" };
@@ -288,14 +290,18 @@ document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.fo
 /* ---------- 라우팅 · 헤더 ---------- */
 const S = { menu: "insight", field: lsGet(LS.field) || "hff", ui: {} };
 function parseHash(){
-  const [m, f] = location.hash.replace(/^#\/?/, "").split("/");
+  const h = location.hash.replace(/^#\/?/, "");
+  // 예전 메인(v1) 탭 주소: #biz · #biz-x · #hff · #microbiome → 같은 분야 인사이트
+  const OLD = { "biz": "core", "biz-x": "core", "hff": "hff", "microbiome": "microbiome" };
+  if (OLD[h]){ S.menu = "insight"; S.field = OLD[h]; history.replaceState(null, "", `#insight/${S.field}`); return; }
+  const [m, f] = h.split("/");
   if (MENUS.some(x => x[0] === m)) S.menu = m;
   if (FIELDS.some(x => x[0] === f)) S.field = f;
 }
-// 상세 = 기존 대시보드(루트). 메뉴·분야에 맞는 기존 탭으로
+// 상세 = v1 보관본의 맞는 탭 (아직 Beta에 없는 표: 판관비, 시장 세부)
 const FIELD_TAB = { core: "biz", hff: "hff", microbiome: "microbiome" };
 const LEGACY = (menu, field) => field === "core" ? (menu === "quotes" || menu === "news" ? "biz" : "biz-x") : field;
-const href = (menu, field, view = VIEW) => view === "detail" ? `../#${LEGACY(menu, field)}` : `#${menu}/${field}`;
+const href = (menu, field, view = VIEW) => view === "detail" ? `${SITE}v1/#${LEGACY(menu, field)}` : `#${menu}/${field}`;
 function header(){
   const ICON = { insight: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>', quotes: '<path d="M4 19V5M4 19h16M7 15l4-4 3 3 5-6"/>',
     finance: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/>', market: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/>',
@@ -304,7 +310,7 @@ function header(){
   const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg><span class="nl">${l}</span><span class="ns">${SHORT[k]}</span></a>`).join("");
   const fsw = FIELDS.map(([k, l]) => `<a href="${href(S.menu, k)}"${k === S.field ? ' aria-current="true"' : ""}>${l}</a>`).join("");
   // 오른쪽: 경쟁사 실적 리포트(기존 보고서 화면, 분야에 맞는 탭)
-  const rep = `<a class="rep" href="../#${FIELD_TAB[S.field] || "hff"}" title="입체 그래프·표 중심의 보고서 화면"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/></svg><span class="rl">경쟁사 실적 리포트</span><span class="rs">리포트</span></a>`;
+  const rep = `<a class="rep" href="${SITE}report/" title="월간 경쟁사 리포트"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/></svg><span class="rl">경쟁사 실적 리포트</span><span class="rs">리포트</span></a>`;
   return `<div class="hd"><a class="brand" href="#insight/${S.field}">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
     <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r">${rep}</div></div>`;
 }
@@ -340,7 +346,7 @@ async function start(pages){
 /* ---------- 관리자 모드: 브랜드명을 길게 누르면 ----------
    일자별 시가총액(이 브라우저에 저장한 '시총 복사 목록' 기준, v1과 같은 계산) · v1 보관본 이동
    회사 목록은 localStorage(cm-labels-v2.cap)에만 — 저장소·사이트에는 올리지 않음 */
-const SITE_ROOT = DATA.replace(/data\/$/, "");
+const SITE_ROOT = SITE;
 const LABELS_KEY = "cm-labels-v2";
 const readLabels = () => { try { return JSON.parse(localStorage.getItem(LABELS_KEY) || "{}") || {}; } catch (e) { return {}; } };
 function allCos(){ const m = new Map(); ["biz", "hff", "microbiome"].forEach(g => (D[g]?.companies || []).forEach(c => { if (!m.has(c.id)) m.set(c.id, c); })); return m; }
