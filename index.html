@@ -129,6 +129,22 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 .vo-row .tr b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink-2);opacity:.55}
 .vo-row .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .vo-row .n small{color:var(--muted);font-weight:400}
+.fin-ans{font-size:16px;font-weight:700;line-height:1.55;margin:0 0 10px}
+.fin-ans small{font-size:14px;font-weight:500;color:var(--ink-2)}
+#finBars{margin-bottom:18px}
+.fr-row{display:grid;grid-template-columns:150px minmax(0,1fr) 84px 76px;gap:12px;align-items:center;padding:5px 0;font-size:14px}
+.fr-row.head{font-size:13px;color:var(--muted);padding:0 0 2px}
+.fr-key{font-size:13px;color:var(--muted);margin:0 0 -18px}
+.fr-row .tr i.cut{border-radius:0 3px 3px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 14px);mask-image:linear-gradient(90deg,transparent,#000 14px)}
+.fr-row .nm{display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-row .nm i{width:8px;height:8px;border-radius:50%;flex:none}
+.fr-row .tr{position:relative;height:16px;background:var(--grid);border-radius:3px}
+.fr-row .tr i{position:absolute;top:0;bottom:0;border-radius:3px}
+.fr-row .tr b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.55}
+.fr-row .tr em{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--axis)}
+.fr-row .v,.fr-row .g{text-align:right;font-variant-numeric:tabular-nums}
+.fr-row .v{font-weight:700}
+@media (max-width:600px){.fr-row{grid-template-columns:96px minmax(0,1fr) 62px 58px;gap:6px;font-size:13px}.fr-key{margin:0 0 4px}}
 .vo-cat{display:flex;flex-wrap:wrap;gap:6px}
 .vo-cat span{font-size:14px;padding:4px 10px;border-radius:999px;background:var(--tag);color:var(--ink-2)}
 .vo-cat span b{color:var(--ink);margin-left:4px}
@@ -889,6 +905,7 @@ td span.err{font-size:13.5px}
         </div>
       </div>
       <div id="finPane">
+      <div id="finBars"></div>
       <div class="chart-box"><canvas id="finChart" role="img" aria-label="연간 실적 차트"></canvas></div>
       <div class="tbl-wrap" style="margin-top:16px"><table id="finTable"></table></div>
       <div id="finNotes"></div>
@@ -2464,7 +2481,39 @@ const RATIO_CAP = 200;   // 매출이 작은 신약사의 수천 % 비율이 차
 // 국내 기업인데 값이 없으면: DART 장애 중이면 '수집 대기', 아니면 '공시 없음'
 const waitMsg = (c, none) => (c.country === "KR" && (state.meta?.dartStale || []).length)
   ? "DART 점검 중 · 점검 종료 후 자동 수집" : none;
+// 손익 지표 비교: 회사별 가로 막대(최근 연도) + 세로선(전년), 값과 전년 대비 변화. 큰 순서
+function renderFinBars(list, m, years, isPct, unit, scale){
+  const box = $("finBars"), full = grp().mode === "full";
+  document.querySelector("#secAnnual .chart-box").hidden = true;
+  box.hidden = !full; if (!full) return;
+  const last = years.at(-1), prev = years.at(-2), lab = METRICS.find(x => x[0] === m)?.[1] || "";
+  const rows = list.map(c => { const v = vals(c.annual, m), i = c.annual.years.indexOf(last), j = c.annual.years.indexOf(prev);
+    const cur = i < 0 ? null : v[i], pv = j < 0 ? null : v[j];
+    // 금액 지표에서 적자가 끼면 %가 의미 없어 금액 차이로 표시
+    return { c, cur, pv, chg: cur == null || pv == null ? null : isPct ? cur - pv : (pv > 0 && cur >= 0 ? (cur / pv - 1) * 100 : null),
+             diff: !isPct && cur != null && pv != null ? cur - pv : null }; })
+    .filter(r => r.cur != null).sort((a, b) => b.cur - a.cur);
+  if (!rows.length){ box.innerHTML = `<p class="empty">${esc(last || "")}년 값 없음</p>`; return; }
+  // 이익률은 -100% 아래를 잘라 보여 줌(매출이 작은 신약사가 축을 덮지 않게). 잘린 막대는 끝을 흐리게, 값은 그대로
+  const FLOOR = -100, all = rows.flatMap(r => [r.cur, r.pv]).filter(v => v != null);
+  const lo = Math.max(isPct ? FLOOR : -Infinity, Math.min(0, ...all)), hi = Math.max(0, ...all), span = hi - lo || 1;
+  const pos = v => (Math.max(v, lo) - lo) / span * 100, z = pos(0), clipped = rows.some(r => r.cur < lo);
+  const fv = v => isPct ? `${v.toFixed(1)}%` : fmtBig(v, state.currency);
+  const fc = v => v == null ? "–" : `<span class="${upDown(v)}">${v > 0 ? "+" : ""}${v.toFixed(1)}${isPct ? "%p" : "%"}</span>`;
+  const top = rows[0], mv = rows.filter(r => r.chg != null && !isSelf(r.c)).sort((a, b) => b.chg - a.chg), avg = mean(rows.filter(r => !isSelf(r.c)).map(r => r.cur));
+  const up = isPct ? ["가장 높은", "가장 많이 개선된", "가장 덜 나빠진"] : ["가장 큰", "가장 많이 늘어난", "가장 덜 줄어든"];
+  box.innerHTML = `<p class="fin-ans">${esc(lab)} ${up[0]} 곳 <b>${esc(top.c.name)}</b> ${fv(top.cur)}`
+    + (mv.length ? ` · 전년보다 ${mv[0].chg >= 0 ? up[1] : up[2]} 곳 <b>${esc(mv[0].c.name)}</b> ${fc(mv[0].chg)}` : "")
+    + (avg != null && rows.length > 2 && !isPct ? ` <small>· 경쟁사 평균 ${fv(avg)}</small>` : "") + `</p>
+    <p class="fr-key">막대 = ${esc(last)}년${prev ? ` · 세로선 = ${esc(prev)}년` : ""}${clipped ? ` · ${FLOOR}% 아래는 잘라서 표시` : ""}</p>
+    <div class="fr-row head"><span></span><span></span><span class="v">${esc(last)}년</span><span class="g">전년 대비</span></div>`
+    + rows.map(r => { const a = Math.min(pos(r.cur), z), w = Math.abs(pos(r.cur) - z);
+      return `<div class="fr-row"><span class="nm" title="${esc(r.c.name)}"><i style="background:${color(r.c._ci)}"></i>${esc(r.c.name)}</span>
+        <span class="tr">${lo < 0 ? `<em style="left:${z}%"></em>` : ""}<i class="${r.cur < lo ? "cut" : ""}" style="left:${a}%;width:${Math.max(w, .6)}%;background:${color(r.c._ci)}${r.cur < 0 ? ";opacity:.55" : ""}"></i>${r.pv != null ? `<b style="left:calc(${pos(r.pv)}% - 1px)" title="${esc(prev)}년 ${esc(fv(r.pv))}"></b>` : ""}</span>
+        <span class="v ${r.cur < 0 ? "down" : ""}">${fv(r.cur)}</span><span class="g">${r.chg == null && r.diff != null ? `<span class="${upDown(r.diff)}" title="전년 대비 금액 차이">${r.diff > 0 ? "+" : ""}${fmtBig(r.diff, state.currency)}</span>` : fc(r.chg)}</span></div>`; }).join("");
+}
 function renderExtra(m){
+  $("finBars").hidden = true; document.querySelector("#secAnnual .chart-box").hidden = false;
   const tip = chartBase(), isAd = m === "adr";
   const list = comps().map(c => ({c, s: extraSeries(c, m)})).filter(x => x.s && x.s.v.some(v => v != null));
   const years = [...new Set(list.flatMap(x => x.s.years))].sort().slice(-3);
@@ -2541,29 +2590,7 @@ function renderAnnual(){
   const scale = v => v == null ? null : isPct ? +v.toFixed(1) : state.currency === "KRW" ? Math.round(v / 1e8) : +(v / 1e6).toFixed(1);
   $("finHint").textContent = `단위: ${unit} · 최근 ${years.length}개 사업연도 · ${fsLabel()}`;
 
-  draw("fin", "finChart", {
-    type: "bar",
-    data: {
-      labels: years.map(y => y + "년"),
-      datasets: list.map(c => {
-        const v = vals(c.annual, m);
-        return { label: c.name, backgroundColor: color(c._ci), borderRadius: 4, borderSkipped: "start", maxBarThickness: 22,
-          data: years.map(y => { const i = c.annual.years.indexOf(y); return i < 0 ? null : scale(v[i]); }) };
-      }),
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: {
-        legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 2, color: css("--ink-2"), padding: 14 } },
-        tooltip: { ...tip, callbacks: { label: x => ` ${x.dataset.label}  ${x.parsed.y == null ? "–" : x.parsed.y.toLocaleString("ko-KR")}${isPct ? "%" : " " + unit}` } },
-      },
-      scales: {
-        x: { grid: { display:false }, border: { color: css("--axis") } },
-        y: { grid: { color: css("--grid") }, border: { display:false }, ticks: { maxTicksLimit: 6, callback: v => v.toLocaleString("ko-KR") + (isPct ? "%" : "") } },
-      },
-    },
-  });
-
+  renderFinBars(list, m, years, isPct, unit, scale);
   const last = years.at(-1), prev = years.at(-2);
   const sa = k => sortAttr("fin", k);
   const head = `<thead><tr><th${sa("name")}>종목</th><th${sa("rev")}>${last ?? ""} 매출액</th><th${sa("gr")}>매출 성장률</th><th${sa("gp")}>매출이익</th><th${sa("gpm")}>매출이익률</th><th${sa("op")}>영업이익</th><th${sa("opm")}>영업이익률</th><th>출처</th></tr></thead>`;
