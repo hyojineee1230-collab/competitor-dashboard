@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-13T09:32:15+00:00",
+  "updatedAt": "2026-10-13T10:24:59+00:00",
   "sample": false,
   "dart": true,
   "krx": true,
@@ -21,7 +21,8 @@
     }
   ],
   "errors": [
-    "KRX: 2회 호출"
+    "KRX 지수 KQ: 호출 한도 도달 — 다음 실행에서 이어서",
+    "KRX: 1200회 호출"
   ],
   "dartStale": []
 }
