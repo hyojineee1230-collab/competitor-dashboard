@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경쟁사 리포트</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../assets/app.css?v=10">
+<style>
+  .rl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .ri{display:flex;flex-direction:column;gap:6px;padding:22px;border-top:4px solid var(--navy)}
+  .ri .k{font-size:13px;font-weight:700;color:var(--accent)}
+  .ri b{font-size:24px;letter-spacing:-.02em}
+  .ri span{font-size:14px;color:var(--muted)}
+  .ri .go{margin-top:8px;font-size:15px;font-weight:600;color:var(--accent)}
+  a.ri:hover{border-color:#B9C6DA}
+  .back{color:var(--navy-ink);font-size:14px;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:7px 12px}
+</style>
+</head>
+<body>
+<header><div class="hd"><a class="brand" href="../">경쟁사 모니터</a><span style="color:var(--navy-ink);font-size:15px">리포트</span><div class="hd-r" style="margin-left:auto"><a class="back" href="../">← 대시보드</a></div></div></header>
+<main id="main">
+  <div class="ph"><h1>경쟁사 리포트</h1><span class="m">매월 1일 발행 · 숫자는 기준일에 고정 · 재무 OpenDART, 주가 KRX·Yahoo</span></div>
+  <div class="rl" id="list"><p class="empty">불러오는 중…</p></div>
+</main>
+<script>
+"use strict";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+fetch("../data/reports/index.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
+  const L = d.issues || [];
+  document.getElementById("list").innerHTML = L.length ? L.map((x, i) => `<a class="card ri" href="issue.html?m=${esc(x.id)}">
+    <span class="k">${i === 0 ? "최신호" : "지난 호"}${x.pilot ? " · 시범호" : ""}</span><b>${esc(x.title)}</b><span>기준일 ${esc(x.asOf.replace(/-/g, "."))}</span><span class="go">보기 ›</span></a>`).join("")
+    : '<p class="empty">발행된 호가 없습니다</p>';
+}).catch(() => { document.getElementById("list").innerHTML = '<p class="empty">목록을 불러오지 못했습니다</p>'; });
+</script>
+</body>
+</html>

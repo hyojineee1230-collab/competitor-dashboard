@@ -1,0 +1,797 @@
+{
+ "id": "2026-10",
+ "title": "2026년 10월호",
+ "asOf": "2026-10-14",
+ "close": "2026-10-12",
+ "pilot": true,
+ "window": [
+  "2026-09-14",
+  "2026-10-14"
+ ],
+ "insights": {
+  "core": {
+   "items": [
+    {
+     "h": "성장·수익성은 에이스바이옴, 규모는 종근당건강",
+     "d": "2025년 매출(연결, 비상장사는 감사보고서) 기준 에이스바이옴 3,071억(+14.3%)·영업이익률 11.2%로 5개사 중 성장률과 이익률이 모두 가장 높다. 종근당건강은 4,892억으로 가장 크지만 −5.1% 줄었고, 에이치피오 2,582억(+6.3%)·에스더포뮬러 2,986억(+6.2%)은 한 자릿수 성장.",
+     "s": [
+      {
+       "t": "에이스바이옴 감사보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260326000284"
+      },
+      {
+       "t": "종근당건강 감사보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260406002596"
+      },
+      {
+       "t": "에이치피오 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260323001535"
+      },
+      {
+       "t": "에스더포뮬러 감사보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260428000351"
+      }
+     ]
+    },
+    {
+     "h": "이번 달 화두: 개별인정 원료 → 완제품",
+     "d": "에이스바이옴은 자체 균주 ACE-01이 피부건강 개별인정형 원료로 인정(10.08)받았고, 종근당건강은 눈 노화·건조 복합기능성 원료를 쓴 '아이클리어 올인원'을 냈다(10.12). 기간 중 두 회사 보도의 대부분이 기능성 원료·신제품 이야기였다.",
+     "s": [
+      {
+       "t": "갤러리 10.08",
+       "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5ZQmgxWE5oeU02VkNmemp2TG4tcXFLSTRjOFZmRTZqV243UGE0M3FJQk42bTFwUFJGU1BXakRsSUxPNEFudzlxVGZoZ1RBdVpidWdBVGVKU1BNWXNPdm1BT0pTUi1RZEl0T0g3V1BpZV9Yc3hz?oc=5"
+      },
+      {
+       "t": "글로벌에픽 10.12",
+       "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1fYkc3MElvaXZoMFd3UDcwYTJCdnhPSFoybWZnUFBGaU5zeDAxYzV2RkkwaW1VRng4bGMzV3A3VHZHOFVRSU41a2ZYMVU2a0lyTTFrNVlxdUZNSk1mdDhzMnJ4WDMtWUVQUFVtbktjdXRXaTZoWTNwWE95TUw?oc=5"
+      }
+     ]
+    },
+    {
+     "h": "상장 2사 주가는 시장보다 약세",
+     "d": "최근 1개월 코스닥이 +3.5%(09.11→10.12)일 때 에이치피오 −4.4%, HEM파마 −19.9%. 상반기 실적은 에이치피오 매출 +8.8%·영업이익 72억(전년과 비슷), HEM파마 매출 +49.8%이나 영업손실이 53억에서 67억으로 커졌다.",
+     "s": [
+      {
+       "t": "에이치피오 반기보고서 2026",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814002386"
+      },
+      {
+       "t": "에이치이엠파마 반기보고서 2026",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821000574"
+      },
+      {
+       "t": "KRX 코스닥 지수",
+       "url": "https://data.krx.co.kr"
+      }
+     ]
+    }
+   ]
+  },
+  "hff": {
+   "items": [
+    {
+     "h": "ODM은 서흥·노바렉스만 성장",
+     "d": "2025년 연결 매출 서흥 7,223억(+10.6%), 노바렉스 4,043억(+35.8%)은 늘고 콜마비앤에이치 5,749억(−6.6%), 코스맥스엔비티 2,875억(−9.6%)은 줄었다. 영업이익률도 노바렉스 10.6%, 서흥 7.0%, 콜마비앤에이치 4.6%, 코스맥스엔비티 1.4% 순으로 성장과 같은 줄 세우기.",
+     "s": [
+      {
+       "t": "서흥 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260319001055"
+      },
+      {
+       "t": "노바렉스 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260319000964"
+      },
+      {
+       "t": "콜마비앤에이치 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260317000761"
+      },
+      {
+       "t": "코스맥스엔비티 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260330000011"
+      }
+     ]
+    },
+    {
+     "h": "브랜드사는 엇갈림",
+     "d": "에이스바이옴(+14.3%)·CJ웰케어(+11.6%)는 두 자릿수 성장했고, CJ웰케어는 영업손실이 71억(2023)에서 5억으로 줄며 흑자 문턱(영업이익률 −0.7%). 뉴트리는 1,011억(−17.1%)으로 2년 연속 감소하며 영업손실 23억으로 적자 전환, 종근당건강도 −5.1%.",
+     "s": [
+      {
+       "t": "CJ웰케어 감사보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260326000478"
+      },
+      {
+       "t": "뉴트리 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260320001416"
+      },
+      {
+       "t": "에이스바이옴 감사보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260326000284"
+      }
+     ]
+    },
+    {
+     "h": "국내 상장 7사 모두 1개월 하락",
+     "d": "코스닥이 +3.5% 오른 기간에 국내 상장 7사가 모두 내렸다. 코스맥스엔비티 −34.3%·바이오니아 −23.3%가 가장 컸고, 코스맥스엔비티는 10.01 하루 −13.4%(시장·분야 영향을 뺀 고유 움직임 −10.5%, 평소 변동폭의 2배)였으나 그 전후 공시·보도로 사유를 확인하지 못했다. 해외 Herbalife는 +13.6%.",
+     "s": [
+      {
+       "t": "KRX 코스닥 지수",
+       "url": "https://data.krx.co.kr"
+      }
+     ]
+    },
+    {
+     "h": "협업·해외 진출 소식",
+     "d": "CJ웰케어와 서흥헬스케어가 글로벌 건기식 시장 공동 공략 업무협약을 맺었고(09.21), 에이스바이옴은 다이어트 유산균 'BNR17 TS'로 대만에 첫 맞춤형 제품을 낸다(09.29 보도).",
+     "s": [
+      {
+       "t": "Daum 09.21",
+       "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE5zX0J4dlBRTG9iYTFyNE8xR2JmQ3JqZG1mMHNEb2ctdmM1NDFtRjByUWRxVjZrUWp3eUVUUGZYOHdNOGRuVFAtT3NBVQ?oc=5"
+      },
+      {
+       "t": "국제뉴스 09.29",
+       "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE1PSHA5dXpLS29JNWUyUTk5QXN6Nnh4LUM4aU1LZ1JFM3FZb1ZJb0VDNnJlUFh2ME5pNkJxVnRoRjRwcFVDSVNkQVplRDBUVFVPcHhvaHN6RWdVVjh0bnNUSkRCQ243X0VoLTVFZF9B?oc=5"
+      }
+     ]
+    }
+   ]
+  },
+  "microbiome": {
+   "items": [
+    {
+     "h": "지놈앤컴퍼니만 강세, 나머지는 약세",
+     "d": "지놈앤컴퍼니는 1개월 +50.1%로, 09.23(+13.1%)·09.30(+12.9%) 두 번 평소 변동폭의 2배를 넘게 올랐다. 같은 기간 섬유화 신약 GENC-116 비임상 데이터를 공개(10.06)했다. 국내 나머지 5사는 −1.7%~−19.9%, 해외 Seres −46.3%·MaaT −66.4%.",
+     "s": [
+      {
+       "t": "더바이오 10.06",
+       "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE1MalFVNFBrZ0k0dXRpcm9wblhKaldKNm52SnRGdjNuaEo4ZWg1T25MOUQ4blNwTTI3enFNZjBwUFZTY3ZTZzAxWkxTRXNsaHJWZkVic0tsaVJjeFR1Rm9ndGhUTkpoRFplMTBWLdIBcEFVX3lxTE94dU5GQkxxazJ1cDN3dWI5Yzh6ejFHNXFqNU9wRHY0WDc1dGMwRHlTZFVzdUJhVGMtbUZNRllDWVBqOEZLRzRTeHhnUTRiZm9iMmtGSUVJc2Jub2djN2w5NlAweTdhbEJMaU8xM1lLZkQ?oc=5"
+      }
+     ]
+    },
+    {
+     "h": "흑자는 쎌바이오텍·비피도뿐",
+     "d": "2025년 연결 기준 영업이익률 쎌바이오텍 14.9%(매출 531억), 비피도 7.1%(197억, +59.3%)만 흑자. 신약 중심인 지놈앤컴퍼니·HEM파마·CJ바이오사이언스·고바이오랩은 영업손실이 이어졌다.",
+     "s": [
+      {
+       "t": "쎌바이오텍 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260318001687"
+      },
+      {
+       "t": "비피도 사업보고서 2025",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260311003760"
+      }
+     ]
+    },
+    {
+     "h": "주가 상승 뒤 메자닌 전환 공시",
+     "d": "기간 중 공시 4건이 모두 지놈앤컴퍼니: 전환우선주의 보통주 전환청구·전환사채 만기 전 취득(10.07), 전환가액 조정(10.13), IR 개최(09.29). 상승 구간에 잠재 주식의 보통주 전환이 이어지고 있어 지분 희석 여부를 지켜볼 구간.",
+     "s": [
+      {
+       "t": "지놈앤컴퍼니 공시 10.07",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261007900598"
+      },
+      {
+       "t": "지놈앤컴퍼니 공시 10.13",
+       "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261013900486"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "sections": {
+  "biz": {
+   "secAnnual": {
+    "st": "same",
+    "t": "변동 없음 · 2026.06 반기보고서까지 반영(마지막 접수 08.21)"
+   },
+   "secGrow": {
+    "st": "same",
+    "t": "변동 없음 · 2026.06 반기보고서까지 반영(마지막 접수 08.21)"
+   },
+   "secVal": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secPrice": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secQuote": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secHead": {
+    "st": "new",
+    "t": "이번 달 갱신 · AI 정리 10.13 · 2026.04 ~ 2026.10"
+   },
+   "secCore": {
+    "st": "new",
+    "t": "이번 달 갱신 · AI 정리 10.13 · 2026.04 ~ 2026.10"
+   },
+   "secBench": {
+    "st": "new",
+    "t": "이번 달 갱신 · AI 정리 10.13 · 2026.04 ~ 2026.10"
+   }
+  },
+  "hff": {
+   "secAnnual": {
+    "st": "same",
+    "t": "변동 없음 · 2026.06 반기보고서까지 반영(마지막 접수 08.14)"
+   },
+   "secGrow": {
+    "st": "same",
+    "t": "변동 없음 · 2026.06 반기보고서까지 반영(마지막 접수 08.14)"
+   },
+   "secVal": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secPrice": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secQuote": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secMkt": {
+    "st": "new",
+    "t": "이번 달 갱신 · 10.13 정리"
+   }
+  },
+  "microbiome": {
+   "secAnnual": {
+    "st": "same",
+    "t": "변동 없음 · 2026.06 반기보고서까지 반영(마지막 접수 08.21)"
+   },
+   "secGrow": {
+    "st": "same",
+    "t": "변동 없음 · 2026.06 반기보고서까지 반영(마지막 접수 08.21)"
+   },
+   "secVal": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secPrice": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secQuote": {
+    "st": "new",
+    "t": "10.12 종가 기준"
+   },
+   "secMkt": {
+    "st": "new",
+    "t": "이번 달 갱신 · 10.13 정리"
+   }
+  }
+ },
+ "digest": {
+  "biz": {
+   "disc": [],
+   "news": {
+    "ckdhealth": 12,
+    "acebiome": 8,
+    "hem": 3,
+    "hpo": 4
+   },
+   "top": {
+    "ckdhealth": [
+     {
+      "d": "2026-10-13",
+      "t": "종근당건강 아이클리어, 국내 최초 ‘눈 노화·눈 건조’ 복합기능성 원료 적용 신제품 출시 - 조선비즈",
+      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNS2g1bGRDbkFPaHFjY3F4T21nWUhXa19nSFd6dWhFWnd2eFE5QzF4cVR2b2RrRWtFMmVoUXZNazVobWZ2UWJhWUJtRUpYTlRQX3UxUElJUWtZZ2lEX1AxYWlBTmFpVWdQbC1FckdvcWpCZElDa25uaFRKMzhoejJwbjI0bWRkZS1RRjVaTNIBoAFBVV95cUxOZG9VRlRoRE9nRGVZY1BMX3FuaUYtdTV2ODlveE1pemM5dFdIbDhuNktiSnNLRTNjUzlvS0RWcWlMMWY1ZlBfa3FnX0RMZjNyR0NPUUVIYmtoY0M2VGQ4U2N2Skp3RUlfbGswb0NBWVZ4OVU2ZFZkeEN4ekpiY0Z1eXAzd080YV94ZXZ0V3R3dEhxNUxXU3ZtU09reWFZS0k2?oc=5",
+      "by": "Chosunbiz",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-13",
+      "t": "종근당건강 아이클리어, ‘아이클리어 올인원’ 론칭… 국내 최초 ‘눈 노화·눈 건조’ 복합기능성 원료 적용",
+      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE9OTDFaT0cxbzctS01ITFFCcy11dFhnVkxrb1otSmVvUmtGemRjeV95dTNWLVpRSVdJdXdaZ09EbnBVMkQ5SGdwYUZFSVJIZ2l3LUNWaUtMMVFoMm0xamJHNzZ2OHlTYkFXVW1aMlBR0gFyQVVfeXFMT29sV3dYZ3lXOWRvdDhoY3dwQ0M5RmlBNTZiRzFPZkg4UlZSdWtsUjFTejVfRDUzc0JvcllHQzh0UGJGVVg5UGFWVnl6YkZ1ZTdSN2xXNFNJb1ptMXFXTDZfWkJrNkQ3WDdqeFVHM1FpNzZn?oc=5",
+      "by": "시선뉴스",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-12",
+      "t": "종근당건강 아이클리어, 국내 최초 ‘눈 노화·눈 건조’ 복합기능성 원료 적용 ‘아이클리어 올인원’ 출시",
+      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1fYkc3MElvaXZoMFd3UDcwYTJCdnhPSFoybWZnUFBGaU5zeDAxYzV2RkkwaW1VRng4bGMzV3A3VHZHOFVRSU41a2ZYMVU2a0lyTTFrNVlxdUZNSk1mdDhzMnJ4WDMtWUVQUFVtbktjdXRXaTZoWTNwWE95TUw?oc=5",
+      "by": "글로벌에픽",
+      "cat": "rnd"
+     }
+    ],
+    "acebiome": [
+     {
+      "d": "2026-10-08",
+      "t": "에이스바이옴, 자체 개발 프로바이오틱스 'ACE-01' 피부건강 기능성 2종 인정",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5ZQmgxWE5oeU02VkNmemp2TG4tcXFLSTRjOFZmRTZqV243UGE0M3FJQk42bTFwUFJGU1BXakRsSUxPNEFudzlxVGZoZ1RBdVpidWdBVGVKU1BNWXNPdm1BT0pTUi1RZEl0T0g3V1BpZV9Yc3hz?oc=5",
+      "by": "갤러리",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-08",
+      "t": "에이스바이옴 프로바이오틱스, 피부 보습·자외선 피부건강 기능성 인정",
+      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBCbGxaZ2J1VXpYYzVsSUNkd3BfYlpPNElibGNJcnN1cTczVEVmSW9kQ3hsem1yV0tlQV9wTklWR0tUZzBqNFR6MHVySFBlenZjOFduY0J3RzBrYUYxcmlQbS1zaGR0aE1HS0JhNTZFNENfN2VSdWfSAWZBVV95cUxPejZzejBoUjJsMTJpSWxGb3RVX1RaN3VOWjJBYVlYeFdqd190OUp5dDBwWWt6RFZPenVlbUZkV1RCbmZaM0R6ZV92N253R2x5NVJzWGgyR0RWTmhsU3dvc05zcWxPNHc?oc=5",
+      "by": "동아일보",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-08",
+      "t": "에이스바이옴, 피부까지 잡는다…식약처 개별인정 획득",
+      "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTFBiZWc0YzhfUnlhcEQ0YU5feHJLblBrYWhma1ZpYjV3QnppUkRqTjhScmotZjZ1UEwzd25ILW56UDFCV25lSmdDdUM1YnB0dTlwdjcwOUJJcy13OWlmb2s1cjh4TmNTYjBLdWtZ0gFvQVVfeXFMUGdzZVJPTHBrTjJ2VWdJTVZYTGFaMlY2S1BPS2w2b2VwMm1Ta3dmb0hNbzdRanRnVUJiTEVaLTRYdGMzM3hnNUxVbk1tNF9Zc3Q3aXVWV2p1Yk9NbnJsVWpNY1pMU2xyb3k3VGVBeTNn?oc=5",
+      "by": "한스경제",
+      "cat": "rnd"
+     }
+    ],
+    "hem": [
+     {
+      "d": "2026-10-08",
+      "t": "[분석_바이오테크 ⑬HEM파마] 부채비율 급락, 재무개선의 착시... 암웨이 매출 의존·CB 희석 리스크 여전",
+      "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE1wVzktMzlBbGhxRW5pOFFTN0Z5LXRKamstU2pIbXJSMERpQ0tXal9nWjUtUHZnY29keU5uZnB6RHRlblY5MVEzaFdBOUJZaXQ1WE1aLTdFVnNUbEs1NTNOTmZodzRUNUxDWHd1dGh1VXfSAXRBVV95cUxPV0RJckdIcXFwMEFiamVXNzNLREZEV09vaHBDdVFNZGRBVTFCbC1QbzZjRk8xVU5MZWk4UDNoMm00NlBnc0EyMjVYeXBDRTJXZFVOa0hwOGpJdTcza2JocDdycU8xX2ZKclNRb0RaVlU5bmhyOA?oc=5",
+      "by": "뉴스워커",
+      "cat": "result"
+     },
+     {
+      "d": "2026-10-04",
+      "t": "HEM파마, ‘HEM20792’로 COPD 생균치료제 개발 속도",
+      "url": "https://news.google.com/rss/articles/CBMiY0FVX3lxTFBVWHZoRlY3dWdyRi1rTVotYUtQVWlleE41Vy1UYXJpUlM2Z3Z5N2p0NTFmR3Y1eWVsWGxCQzhBNUltQzhES2o3VkI5d3dBV1B5dHJLaGM5djBmTmExcnZfSjVsRQ?oc=5",
+      "by": "쿠키뉴스",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-09-30",
+      "t": "12만 데이터를 제품·신약으로…HEM파마, 마이크로바이옴 '수익화' 시험대",
+      "url": "https://news.google.com/rss/articles/CBMiRkFVX3lxTE5Zbk8yWXNKU1g3N29TWHJ4bWFkamRpMUt2clItaXZDS05SRUxCSDJKTjdScEVDbHZYQm92SmVsWE00X29KUEE?oc=5",
+      "by": "Daum",
+      "cat": "rnd"
+     }
+    ],
+    "hpo": [
+     {
+      "d": "2026-09-30",
+      "t": "덴프스 에이치피오 \"비오팜, 글로벌 고객사·제품군 확대\"",
+      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBpOG1YUnRSN2NQN2pLeHQ4ZG5DNl9udDIwUXV4aGttWHFmaUllb0FobEhfbUVSbFdjRm1za1lpOUstWVhvam9jVWVLMVZ6cEtwRE9PUTdSU1dyVHZJ?oc=5",
+      "by": "뉴스핌",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-21",
+      "t": "'덴프스' 에이치피오, 자회사 '아른' 글로벌 플랫폼으로 도약",
+      "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE9CSjNKa1ZlV0xkeE5nT1BWRW5RVWVjaG4zY18xc1BJa1VRNXNYeGZVMnJEYWZRcExvbFo4U19oTklJVmc2b0l6aUJnNVBYblhpUlZWbVZyUFFWdG9lcXVxNjlJVENXb0RBYmtTVHlOQTlqTjA?oc=5",
+      "by": "마켓인",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-18",
+      "t": "에이치피오 \"덴프스, 국내 생산 프리미엄 라인 확대로 성장 가속\"",
+      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBpWlB0X1dvcks2N2ZvYTlIZGxocTVXQmw5aDBRT08tdjhEUDhOb1BxeXNWMUpaQlVqY3ctMFp2LU0tLVpoVlhnQ3BseGJqcDJNUUJqZ19iNm13U0l0?oc=5",
+      "by": "뉴스핌",
+      "cat": "product"
+     }
+    ]
+   },
+   "moves": [
+    {
+     "c": "hpo",
+     "m1": -4.43
+    },
+    {
+     "c": "hem",
+     "m1": -19.95
+    }
+   ]
+  },
+  "hff": {
+   "disc": [],
+   "news": {
+    "ckdhealth": 12,
+    "kolmarbnh": 15,
+    "nutri": 21,
+    "acebiome": 8,
+    "bioneer": 7,
+    "suheung": 5,
+    "cjwellcare": 13,
+    "hpo": 4,
+    "novarex": 3
+   },
+   "top": {
+    "ckdhealth": [
+     {
+      "d": "2026-10-13",
+      "t": "종근당건강 아이클리어, 국내 최초 ‘눈 노화·눈 건조’ 복합기능성 원료 적용 신제품 출시 - 조선비즈",
+      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNS2g1bGRDbkFPaHFjY3F4T21nWUhXa19nSFd6dWhFWnd2eFE5QzF4cVR2b2RrRWtFMmVoUXZNazVobWZ2UWJhWUJtRUpYTlRQX3UxUElJUWtZZ2lEX1AxYWlBTmFpVWdQbC1FckdvcWpCZElDa25uaFRKMzhoejJwbjI0bWRkZS1RRjVaTNIBoAFBVV95cUxOZG9VRlRoRE9nRGVZY1BMX3FuaUYtdTV2ODlveE1pemM5dFdIbDhuNktiSnNLRTNjUzlvS0RWcWlMMWY1ZlBfa3FnX0RMZjNyR0NPUUVIYmtoY0M2VGQ4U2N2Skp3RUlfbGswb0NBWVZ4OVU2ZFZkeEN4ekpiY0Z1eXAzd080YV94ZXZ0V3R3dEhxNUxXU3ZtU09reWFZS0k2?oc=5",
+      "by": "Chosunbiz",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-13",
+      "t": "종근당건강 아이클리어, ‘아이클리어 올인원’ 론칭… 국내 최초 ‘눈 노화·눈 건조’ 복합기능성 원료 적용",
+      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE9OTDFaT0cxbzctS01ITFFCcy11dFhnVkxrb1otSmVvUmtGemRjeV95dTNWLVpRSVdJdXdaZ09EbnBVMkQ5SGdwYUZFSVJIZ2l3LUNWaUtMMVFoMm0xamJHNzZ2OHlTYkFXVW1aMlBR0gFyQVVfeXFMT29sV3dYZ3lXOWRvdDhoY3dwQ0M5RmlBNTZiRzFPZkg4UlZSdWtsUjFTejVfRDUzc0JvcllHQzh0UGJGVVg5UGFWVnl6YkZ1ZTdSN2xXNFNJb1ptMXFXTDZfWkJrNkQ3WDdqeFVHM1FpNzZn?oc=5",
+      "by": "시선뉴스",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-12",
+      "t": "종근당건강 아이클리어, 국내 최초 ‘눈 노화·눈 건조’ 복합기능성 원료 적용 ‘아이클리어 올인원’ 출시",
+      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1fYkc3MElvaXZoMFd3UDcwYTJCdnhPSFoybWZnUFBGaU5zeDAxYzV2RkkwaW1VRng4bGMzV3A3VHZHOFVRSU41a2ZYMVU2a0lyTTFrNVlxdUZNSk1mdDhzMnJ4WDMtWUVQUFVtbktjdXRXaTZoWTNwWE95TUw?oc=5",
+      "by": "글로벌에픽",
+      "cat": "rnd"
+     }
+    ],
+    "kolmarbnh": [
+     {
+      "d": "2026-10-13",
+      "t": "콜마비앤에이치, 계룡산국립공원서 생물다양성 보전 활동 전개",
+      "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE9ieHlaMng4QTBLZGF2bkpaMVNpZDRXU1d4MWYyblFxYnd0bWktbFozcGJFdkRnZW44MU41OXQ4Nlc2ZEl4WmhLVFhzZTNpLWdhZFhUY2xqY1lCNmlKVGpvU3Z6UWxKN1NzUG1hM2F2Mk8?oc=5",
+      "by": "데일리메디팜",
+      "cat": "etc"
+     },
+     {
+      "d": "2026-10-11",
+      "t": "콜마비앤에이치, 계룡산에 자생식물 식재...\"자연 살리고 탄소 줄인다\"",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTFBXVnZXc1NkamJZc2o0Z05DVXFYMi1IQ05kNzVfS2NwZVFJUXRuVmNMNUw0VDRmWGdmRXF6TmNkenpfcTlnaTB2eHFZZGYyc1p0OS1BWklZVXJNWjF5SVl4dg?oc=5",
+      "by": "메트로신문",
+      "cat": "etc"
+     },
+     {
+      "d": "2026-10-08",
+      "t": "콜마비앤에이치, 계룡산국립공원서 생태계 복원 활동 전개",
+      "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE5ROXhsejZaZGx1TUNRVWFkV291UkhBTTNOcGNvV29DR3B6d01pVWk4Q2QtWkFjVzlvcW5mRHQ0ejgxVlJXREpQeWdqeVhJOEY4UG1xakV0MWIyVENzUHUwZlRfdXdvMTR2b0HSAW5BVV95cUxOYUIyNXJsUXNYNE1LYlFwdFpvV2g3WXdUSGdSeTIzM040c3d6UVRycnlURWlGSGRTZnctenFGS191VnVaMG91Z09fSGZqUEVwbG9mMWdRd3R4S280eUpBbTBiRTZUUjVhM2JLQV85dw?oc=5",
+      "by": "파이낸셜투데이",
+      "cat": "etc"
+     }
+    ],
+    "nutri": [
+     {
+      "d": "2026-10-13",
+      "t": "뉴케어 스포식스, 구미형 '에너지 츄'→뉴트리원라이프, '전해질 밸런스' 출시",
+      "url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE5HWHlmSVBOQWg1VWV0Ymh1eExjX0xZbEhzdXhKaTRySXBuZldyWEE3bzR0QVk4TlMwNVdjUzgzUjBNazlmVGUyenZWUktEWXhwSHFvWkpkTGIydEY2TUU5bTRpcVlLUQ?oc=5",
+      "by": "싱글리스트",
+      "cat": "product"
+     },
+     {
+      "d": "2026-10-13",
+      "t": "뉴트리원, 고객 의견 귀담아 제품에 반영",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE1PTXJSV3FpQXRUWnBaX3hSbHFmX3hldUJOdFU1MUdyQlZfZzlUZ2RkX2d0UklPcXdiR2ZONHg4NG9saWlNYktQcm92azVPYXN3RkxpTHVVWXEtQQ?oc=5",
+      "by": "한국경제",
+      "cat": "etc"
+     },
+     {
+      "d": "2026-10-12",
+      "t": "뉴트리 에버콜라겐, 리포좀 제형 적용한 프라임 제품 2종 선봬",
+      "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE5RaGJQZ2RKSmxvUjFUdGlSTTBlcmlmTTQ2TFdKMmJsWGdDZ3lzVy1QSHpReVg3bFNxOENUSDJfbjVvRkI2anJuR0EyMFBkby1lSmh3YXJyLVJSRlkxQ1g3MVFjdy1Ocnc?oc=5",
+      "by": "한국섬유신문",
+      "cat": "etc"
+     }
+    ],
+    "acebiome": [
+     {
+      "d": "2026-10-08",
+      "t": "에이스바이옴, 자체 개발 프로바이오틱스 'ACE-01' 피부건강 기능성 2종 인정",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5ZQmgxWE5oeU02VkNmemp2TG4tcXFLSTRjOFZmRTZqV243UGE0M3FJQk42bTFwUFJGU1BXakRsSUxPNEFudzlxVGZoZ1RBdVpidWdBVGVKU1BNWXNPdm1BT0pTUi1RZEl0T0g3V1BpZV9Yc3hz?oc=5",
+      "by": "갤러리",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-08",
+      "t": "에이스바이옴 프로바이오틱스, 피부 보습·자외선 피부건강 기능성 인정",
+      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBCbGxaZ2J1VXpYYzVsSUNkd3BfYlpPNElibGNJcnN1cTczVEVmSW9kQ3hsem1yV0tlQV9wTklWR0tUZzBqNFR6MHVySFBlenZjOFduY0J3RzBrYUYxcmlQbS1zaGR0aE1HS0JhNTZFNENfN2VSdWfSAWZBVV95cUxPejZzejBoUjJsMTJpSWxGb3RVX1RaN3VOWjJBYVlYeFdqd190OUp5dDBwWWt6RFZPenVlbUZkV1RCbmZaM0R6ZV92N253R2x5NVJzWGgyR0RWTmhsU3dvc05zcWxPNHc?oc=5",
+      "by": "동아일보",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-08",
+      "t": "에이스바이옴, 피부까지 잡는다…식약처 개별인정 획득",
+      "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTFBiZWc0YzhfUnlhcEQ0YU5feHJLblBrYWhma1ZpYjV3QnppUkRqTjhScmotZjZ1UEwzd25ILW56UDFCV25lSmdDdUM1YnB0dTlwdjcwOUJJcy13OWlmb2s1cjh4TmNTYjBLdWtZ0gFvQVVfeXFMUGdzZVJPTHBrTjJ2VWdJTVZYTGFaMlY2S1BPS2w2b2VwMm1Ta3dmb0hNbzdRanRnVUJiTEVaLTRYdGMzM3hnNUxVbk1tNF9Zc3Q3aXVWV2p1Yk9NbnJsVWpNY1pMU2xyb3k3VGVBeTNn?oc=5",
+      "by": "한스경제",
+      "cat": "rnd"
+     }
+    ],
+    "bioneer": [
+     {
+      "d": "2026-10-08",
+      "t": "바이오니아 자회사 에이스바이옴, 피부건강 유산균주 ACE-01’ 식약처 개별인정형 기능성 원료 인정 획득",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5JYmJKTVFHNFZQLXdvR2o1Njdya2lHUEhfNndNUDNHQUZUaTVlYjlJQ1ItOUhXY1FBUzJ4M1BFbUpSRU5uQl9Rc1VEYXF3enRDYlNZcXQ0VTBhUQ?oc=5",
+      "by": "한국경제",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-09-30",
+      "t": "바이오니아 자회사 에이스바이옴, '다이어트 유산균' 10월 대만 맞춤형 첫 출시",
+      "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9JZnFWZGwyV3RXSElDUDd1OG1CeUYwdklJS0ZUNjZQbkZMSlFPUGtkdnlMTUl6TDBqbVI1ck16VlZqOWxNXzlEYW8wWm4tTkFfSTBGVU5KdHI2M2R4Y2FTVXJXZUszS1FiZlE?oc=5",
+      "by": "헬로디디",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-29",
+      "t": "바이오니아 자회사 에이스바이옴, 다이어트 유산균 ‘BNR17 TS’로 대만 수출 박차",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5HSnhFWVBpMlVieU9Xay1sWjZSa0tSMm5OVjJEdmFsYlZCVGhDbElLWG1wWG1zVThrbTloRGU3RUt6Rkx6czl4YzlqVm5NTVp2aTA4UHNBQkJiQQ?oc=5",
+      "by": "한국경제",
+      "cat": "product"
+     }
+    ],
+    "suheung": [
+     {
+      "d": "2026-10-06",
+      "t": "제물포구자원봉사센터, 서흥초 학부모·학생과 자원 순환 시설 견학",
+      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTFBwejJDUlJhREtKaVZSVVJTME43cldhUFdYMl9vQXZPUkhWUnFqV2VGX3NoMzVFVUZEcS0tVUcwSnExMFdhdUItN1h6OUpXTG1lU0hCT1JaOHViQTIzWThKdWtwczlFUGxCYnBzVEpn?oc=5",
+      "by": "대한뉴스방송",
+      "cat": "csr"
+     },
+     {
+      "d": "2026-09-28",
+      "t": "\"건기식 수출 증가…네오크레마·노바렉스·서흥 주목\"",
+      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xNUNnM3U0STRsa18tOTNXaTZiWnJGbnpMMm9PeXE2amo1b1BtR1E3NTBQQ0lSRUZSRHZZUGFybzljY19GNUtpUmZPQ1dfQ0E?oc=5",
+      "by": "Daum",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-22",
+      "t": "CJ웰케어·서흥 글로벌협력 MOU",
+      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE9vd3FhWmxmTGdXMXAtakN0emVDZUEwTEN0Y0FBRV9kOXJMTXk3N0FyQmtKM0xUZlRlZG5sY3lQOUQwVlpBOFBJcmdpcmRqLVFG?oc=5",
+      "by": "문화일보",
+      "cat": "deal"
+     }
+    ],
+    "cjwellcare": [
+     {
+      "d": "2026-10-03",
+      "t": "쎌바이오텍, '듀오락 얌얌 팝핑 유산균'→CJ웰케어, '맥플랜 뉴트리션 드링크' 3종 출시",
+      "url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE1idjBWUXRMci1MSHBxemMzVE9BSk94YmlsTlhfcXNGVDFNYzJZYWV4eUphRWxKTmphYW1RWVpla0p4YzJoVnhfb2VEUVBpMXd5MmR2X28yZXNGaC1TQkswNHdBeFhpZw?oc=5",
+      "by": "싱글리스트",
+      "cat": "product"
+     },
+     {
+      "d": "2026-10-01",
+      "t": "CJ웰케어, 마이크로바이옴 연구 접목한 ‘맥플랜 뉴트리션 드링크’ 3종 출시",
+      "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE9XSjlnSnI2bk9EQjZuc1RJSjBqMXpJbm1ZNmM3ZUVyOTE4VVZGRDg4ZzRFSnNabVZvZXBuNGNtd3dCMFBKdUJXS1pHMVlOdVJ6UDVkWA?oc=5",
+      "by": "주간현대",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-09-30",
+      "t": "CJ웰케어, 단백질 20g 담은 ‘맥플랜 뉴트리션 드링크’ 3종 출시",
+      "url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE01UjNMck9faW05ZzVUQ3E4UEZZQXYxSHk4ajZaUEVuLTZDZzVjSGpNY2Q5Q1htRVpIaG5TaVNnT2Z1RXdSQTd6RU1HdDVzWm9zVkt0WEkzOVlaSkNYcm9TMzFPbnU3dw?oc=5",
+      "by": "PRESS9",
+      "cat": "product"
+     }
+    ],
+    "hpo": [
+     {
+      "d": "2026-09-30",
+      "t": "덴프스 에이치피오 \"비오팜, 글로벌 고객사·제품군 확대\"",
+      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBpOG1YUnRSN2NQN2pLeHQ4ZG5DNl9udDIwUXV4aGttWHFmaUllb0FobEhfbUVSbFdjRm1za1lpOUstWVhvam9jVWVLMVZ6cEtwRE9PUTdSU1dyVHZJ?oc=5",
+      "by": "뉴스핌",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-21",
+      "t": "'덴프스' 에이치피오, 자회사 '아른' 글로벌 플랫폼으로 도약",
+      "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE9CSjNKa1ZlV0xkeE5nT1BWRW5RVWVjaG4zY18xc1BJa1VRNXNYeGZVMnJEYWZRcExvbFo4U19oTklJVmc2b0l6aUJnNVBYblhpUlZWbVZyUFFWdG9lcXVxNjlJVENXb0RBYmtTVHlOQTlqTjA?oc=5",
+      "by": "마켓인",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-18",
+      "t": "에이치피오 \"덴프스, 국내 생산 프리미엄 라인 확대로 성장 가속\"",
+      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBpWlB0X1dvcks2N2ZvYTlIZGxocTVXQmw5aDBRT08tdjhEUDhOb1BxeXNWMUpaQlVqY3ctMFp2LU0tLVpoVlhnQ3BseGJqcDJNUUJqZ19iNm13U0l0?oc=5",
+      "by": "뉴스핌",
+      "cat": "product"
+     }
+    ],
+    "novarex": [
+     {
+      "d": "2026-09-28",
+      "t": "\"건기식 수출 증가…네오크레마·노바렉스·서흥 주목\"",
+      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xNUNnM3U0STRsa18tOTNXaTZiWnJGbnpMMm9PeXE2amo1b1BtR1E3NTBQQ0lSRUZSRHZZUGFybzljY19GNUtpUmZPQ1dfQ0E?oc=5",
+      "by": "Daum",
+      "cat": "product"
+     },
+     {
+      "d": "2026-09-14",
+      "t": "권석형 노바렉스 회장, 4년 연속 고향사랑기부 … 누적 2천만원",
+      "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9MUkUyZ09TYWl5OE9kN1AwcldkMGZrZVhfUm9WZm03Tmk1YlVHSjNnOHYtRnhCeWo3ZnNPdnM0MVdxWC1NM3lBU1dta05CYjBYdjBBZU90czZfTzJBRU85N0x4LVZiUXhQN3c?oc=5",
+      "by": "도민연합뉴스",
+      "cat": "csr"
+     },
+     {
+      "d": "2026-09-14",
+      "t": "권석형 노바렉스 회장, 봉화군에 4년 연속 고향사랑기부금 전달 - 머니투데이",
+      "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE42XzEzdTQ0MHpaRkpISWVCaXpBaFgwRkMtV2QtQTF4NDBGZ09DMjgtT2ZxR3VWMHJDZC1fLU9hSkRwZDBsdmxrVExQMTVKa0ktUjEybXJ2UDFmWk1qdXJDeFRVRFhrZ2JOVkHSAW9BVV95cUxOZG9mM0lyeVBob0JnZTZvbXJOdVAyVEhvYnJMU0dhNGF0cHJseWVnTzV0THhHR1hlSGlUX1pFc0lOSHF4ZjdNWDRSS1pwbFlyOWhVdnk3SnJzSEFCX0RaZ1ZaUWVLNGVVTTdka3RUdUE?oc=5",
+      "by": "머니투데이",
+      "cat": "csr"
+     }
+    ]
+   },
+   "moves": [
+    {
+     "c": "herbalife",
+     "m1": 13.61
+    },
+    {
+     "c": "usana",
+     "m1": -1.11
+    },
+    {
+     "c": "novarex",
+     "m1": -1.14
+    },
+    {
+     "c": "nutri",
+     "m1": -3.0
+    },
+    {
+     "c": "hpo",
+     "m1": -4.43
+    },
+    {
+     "c": "kolmarbnh",
+     "m1": -6.1
+    },
+    {
+     "c": "suheung",
+     "m1": -6.71
+    },
+    {
+     "c": "bioneer",
+     "m1": -23.3
+    },
+    {
+     "c": "cosmaxnbt",
+     "m1": -34.26
+    }
+   ]
+  },
+  "microbiome": {
+   "disc": [
+    {
+     "d": "2026-10-13",
+     "c": "genome",
+     "t": "전환가액의조정",
+     "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261013900486",
+     "cat": "etc"
+    },
+    {
+     "d": "2026-10-07",
+     "c": "genome",
+     "t": "기타경영사항(자율공시) (전환우선주의 보통주 전환청구)",
+     "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261007900598",
+     "cat": "etc"
+    },
+    {
+     "d": "2026-10-07",
+     "c": "genome",
+     "t": "전환사채(해외전환사채포함)발행후만기전사채취득",
+     "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261007900356",
+     "cat": "finance"
+    },
+    {
+     "d": "2026-09-29",
+     "c": "genome",
+     "t": "기업설명회(IR)개최",
+     "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260929900432",
+     "cat": "ir"
+    }
+   ],
+   "news": {
+    "genome": 18,
+    "hem": 3,
+    "cellbiotech": 18,
+    "bifido": 1
+   },
+   "top": {
+    "genome": [
+     {
+      "d": "2026-10-13",
+      "t": "지놈앤컴퍼니, 제4회 CB 전환가액 5240원으로 하향 조정",
+      "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE1zS3p0a1pCNjNrWG5TTzhZdlZNdFdSQkF0dzVBTGV0N0JPalgweDFoQWFxdnJtdjk4NlhrbXJweXoydXRJRnhFZG5nM2c4MmFsVnBVakF1NUZ2VC1aU3VvZ2dNZGhNOFF6QnM3cDFlaFZFZ2c?oc=5",
+      "by": "데이터투자",
+      "cat": "etc"
+     },
+     {
+      "d": "2026-10-06",
+      "t": "지놈앤컴퍼니, NUAK1 키나아제 표적 ‘GENC-116’ 비임상 최신 데이터 공개",
+      "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE1MalFVNFBrZ0k0dXRpcm9wblhKaldKNm52SnRGdjNuaEo4ZWg1T25MOUQ4blNwTTI3enFNZjBwUFZTY3ZTZzAxWkxTRXNsaHJWZkVic0tsaVJjeFR1Rm9ndGhUTkpoRFplMTBWLdIBcEFVX3lxTE94dU5GQkxxazJ1cDN3dWI5Yzh6ejFHNXFqNU9wRHY0WDc1dGMwRHlTZFVzdUJhVGMtbUZNRllDWVBqOEZLRzRTeHhnUTRiZm9iMmtGSUVJc2Jub2djN2w5NlAweTdhbEJMaU8xM1lLZkQ?oc=5",
+      "by": "더바이오",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-10-06",
+      "t": "지놈앤컴퍼니, 퍼스트인클래스 섬유화 신약…신장서 효능 확인",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE9DcnRxa252SldDUy11anQ4YXNsZFllbnl2d0xYYlMxakFOUFdfclppNWsxODhBeFNRamhSX2htd0RtUGFwQVptSlVBNGc4TnNsaHRFNzlR?oc=5",
+      "by": "데일리팜",
+      "cat": "rnd"
+     }
+    ],
+    "hem": [
+     {
+      "d": "2026-10-08",
+      "t": "[분석_바이오테크 ⑬HEM파마] 부채비율 급락, 재무개선의 착시... 암웨이 매출 의존·CB 희석 리스크 여전",
+      "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE1wVzktMzlBbGhxRW5pOFFTN0Z5LXRKamstU2pIbXJSMERpQ0tXal9nWjUtUHZnY29keU5uZnB6RHRlblY5MVEzaFdBOUJZaXQ1WE1aLTdFVnNUbEs1NTNOTmZodzRUNUxDWHd1dGh1VXfSAXRBVV95cUxPV0RJckdIcXFwMEFiamVXNzNLREZEV09vaHBDdVFNZGRBVTFCbC1QbzZjRk8xVU5MZWk4UDNoMm00NlBnc0EyMjVYeXBDRTJXZFVOa0hwOGpJdTcza2JocDdycU8xX2ZKclNRb0RaVlU5bmhyOA?oc=5",
+      "by": "뉴스워커",
+      "cat": "result"
+     },
+     {
+      "d": "2026-10-04",
+      "t": "HEM파마, ‘HEM20792’로 COPD 생균치료제 개발 속도",
+      "url": "https://news.google.com/rss/articles/CBMiY0FVX3lxTFBVWHZoRlY3dWdyRi1rTVotYUtQVWlleE41Vy1UYXJpUlM2Z3Z5N2p0NTFmR3Y1eWVsWGxCQzhBNUltQzhES2o3VkI5d3dBV1B5dHJLaGM5djBmTmExcnZfSjVsRQ?oc=5",
+      "by": "쿠키뉴스",
+      "cat": "rnd"
+     },
+     {
+      "d": "2026-09-30",
+      "t": "12만 데이터를 제품·신약으로…HEM파마, 마이크로바이옴 '수익화' 시험대",
+      "url": "https://news.google.com/rss/articles/CBMiRkFVX3lxTE5Zbk8yWXNKU1g3N29TWHJ4bWFkamRpMUt2clItaXZDS05SRUxCSDJKTjdScEVDbHZYQm92SmVsWE00X29KUEE?oc=5",
+      "by": "Daum",
+      "cat": "rnd"
+     }
+    ],
+    "cellbiotech": [
+     {
+      "d": "2026-10-07",
+      "t": "쎌바이오텍, '듀오락 얌얌' 포켓몬 에디션 3종 출시",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE1aOVc5d2pmd0JXUnlYR0E4VmJtS1g1U1g3UGlCaUQ5SkxLbFlKQXVoaFVWVGdTamx0ZTNWX0JYM1RhZFI1R2VrZWJGY19LUlZObk5EMkhOY1ZNb3Rrb1Exbw?oc=5",
+      "by": "뉴스1",
+      "cat": "product"
+     },
+     {
+      "d": "2026-10-07",
+      "t": "쎌바이오텍, 포켓몬 협업 '듀오락 얌얌 기획세트' 3종 출시",
+      "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTFBiaU0tcEpCT0JwdWhBWHpvZTR6bjY0b1RFS2dYVmMtWUZmY19tS1R2NWV6RlNGSGZRTUJndDQ3UENWam5EdHB2RzUzNTk1MjZ5VGxJZ1VFUFptTW9aN2NkSVNjVXdBdzJzcVg3Nw?oc=5",
+      "by": "팜뉴스",
+      "cat": "deal"
+     },
+     {
+      "d": "2026-10-07",
+      "t": "쎌바이오텍, 어린이 유산균 ‘듀오락 얌얌 포켓몬 기획세트’ 3종 출시",
+      "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTFBZUk54c0ZPdTlmTi1vZGVVTmd0cm9CbFA4dXVwVDVDZ3ZyeTQ0OWN0QXpEdXozRFVHQ2xvdkZBRDBMNlFPcEkzYUxGMWQtUUs0LXNEZHBEaUJzeFpuVmlIdHFWVE1TQUk4WWfSAW5BVV95cUxQOUY4MS0wY3BHOXVXMXBxcnNVd1lCWTd5aXBwMmJPUzRxdENTRkRtWXdjbDNZTU1kdkd6a09jNmZ6YUtjaWNKWk1pUXdjcEZTTU1YM2dZZldvV3gxZkZFMUpKOHlWdGlEekljQi1XZw?oc=5",
+      "by": "더임팩트",
+      "cat": "product"
+     }
+    ],
+    "bifido": [
+     {
+      "d": "2026-10-01",
+      "t": "\"태국·인니로 확대\"…비피도, 아·태시장 공략 속도",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE5xcVlaNnAwRmV3S3BwVjk1UC1YZUFVaWpoajMyV0piaEZ0eEM2NEZZaVV3ZTJEanlYMDVQSTZEUFdpN1hfdEpTODZOTlFmV1huUERLZVBlalppVHpUaDlfb9IBeEFVX3lxTE8yTWQtdkZuZXMzZ2NPUWRjU3E0LW9PWndCXzZWSEd4b2w2YUJXRWJRZ29pLWxtR09YaEtTZXgyN25GemlVM0NXbGdjd0c2aGw3Q0xyeWhkeTlhRWpPcDZsMElpWDhnZVphdERfeE8zYnNUZmw5dGdnVw?oc=5",
+      "by": "뉴시스",
+      "cat": "etc"
+     }
+    ]
+   },
+   "moves": [
+    {
+     "c": "genome",
+     "m1": 50.07
+    },
+    {
+     "c": "bifido",
+     "m1": -1.68
+    },
+    {
+     "c": "kobiolabs",
+     "m1": -2.75
+    },
+    {
+     "c": "cellbiotech",
+     "m1": -4.07
+    },
+    {
+     "c": "cjbs",
+     "m1": -8.08
+    },
+    {
+     "c": "hem",
+     "m1": -19.95
+    },
+    {
+     "c": "seres",
+     "m1": -46.3
+    },
+    {
+     "c": "maat",
+     "m1": -66.36
+    }
+   ]
+  }
+ }
+}
