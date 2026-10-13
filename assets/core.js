@@ -336,3 +336,87 @@ async function start(pages){
   let ph = PHONE(); addEventListener("resize", () => { if (PHONE() !== ph){ ph = PHONE(); render(); } });
   render();
 }
+
+/* ---------- 관리자 모드: 브랜드명을 길게 누르면 ----------
+   일자별 시가총액(이 브라우저에 저장한 '시총 복사 목록' 기준, v1과 같은 계산) · v1 보관본 이동
+   회사 목록은 localStorage(cm-labels-v2.cap)에만 — 저장소·사이트에는 올리지 않음 */
+const SITE_ROOT = DATA.replace(/data\/$/, "");
+const LABELS_KEY = "cm-labels-v2";
+const readLabels = () => { try { return JSON.parse(localStorage.getItem(LABELS_KEY) || "{}") || {}; } catch (e) { return {}; } };
+function allCos(){ const m = new Map(); ["biz", "hff", "microbiome"].forEach(g => (D[g]?.companies || []).forEach(c => { if (!m.has(c.id)) m.set(c.id, c); })); return m; }
+function capSecs(L){ const all = allCos();
+  return (L.cap || []).map(x => ({ title: x.title || "", items: (x.ids || []).map(id => all.get(id)).filter(c => c && c.ticker) })).filter(x => x.items.length); }
+function capRows(day, secs){
+  // day 당일 값이 없으면 그 이전 가장 가까운 거래일 (휴장·미반영 대비)
+  const out = [];
+  secs.forEach(sec => {
+    if (sec.title || out.length) out.push({ title: sec.title, sec: true });
+    sec.items.forEach(c => { const p = c.price; let i = -1;
+      if (p?.mcap) for (let k = p.dates.length - 1; k >= 0; k--) if (p.dates[k] <= day){ i = k; break; }
+      out.push({ c, code: c.ticker.slice(0, 6), mcap: i < 0 ? null : p.mcap[i], d: i < 0 ? null : p.dates[i] }); });
+  });
+  return out;
+}
+const capText = L => { const all = allCos(); return (L.cap || []).map(x => [x.title ? "# " + x.title : null, ...(x.ids || []).map(id => all.get(id)?.name || id)].filter(v => v != null).join("\n")).join("\n"); };
+function parseCap(text){
+  const listed = [...allCos().values()].filter(c => c.ticker), out = [], miss = [], norm = v => v.replace(/\s/g, "").toLowerCase();
+  text.split("\n").map(v => v.trim()).filter(Boolean).forEach(v => {
+    if (v.startsWith("#")){ out.push({ title: v.replace(/^#+\s*/, ""), ids: [] }); return; }
+    const c = listed.find(x => norm(x.name) === norm(v) || x.ticker.slice(0, 6) === v.replace(/\D/g, ""));
+    if (!c){ miss.push(v); return; }
+    if (!out.length) out.push({ title: "", ids: [] });
+    out.at(-1).ids.push(c.id);
+  });
+  return { cap: out.filter(x => x.ids.length), miss };
+}
+function admRender(day){
+  const L = readLabels(), secs = capSecs(L), n = secs.reduce((t, x) => t + x.items.length, 0);
+  const dates = [...new Set(secs.flatMap(x => x.items).filter(c => c.price?.mcap).flatMap(c => c.price.dates))].sort();
+  const inp = $("admDate"); if (dates.length){ inp.min = dates[0]; inp.max = dates.at(-1); if (!day) inp.value = dates.at(-1); }
+  $("admCopy").disabled = !dates.length;
+  $("admHint").textContent = n ? `${n}개사 · 저장한 목록 기준 · 당일 값이 없으면 직전 거래일` : "";
+  if (!n){ $("admCap").innerHTML = '<p class="empty">아래 목록을 저장하면 표시됩니다</p>'; return; }
+  const out = []; capRows(inp.value, secs).forEach(r => { if (r.sec || !out.length) out.push({ title: r.sec ? r.title : "", rows: [] }); if (!r.sec) out.at(-1).rows.push(r); });
+  $("admCap").innerHTML = out.filter(x => x.rows.length).map(x => `<div class="cap-sec">${x.title ? `<h3>${esc(x.title)}</h3>` : ""}<table><tbody>${x.rows.map(r =>
+    `<tr><td>${esc(r.c.name)} <span class="dim">${esc(r.code)}</span></td><td>${r.mcap == null ? "–" : big(r.mcap)}</td><td class="dim">${r.d ? md(r.d) : "–"}</td></tr>`).join("")}</tbody></table></div>`).join("");
+}
+function openAdmin(){
+  let d = $("adm");
+  if (!d){ d = document.createElement("dialog"); d.id = "adm"; d.setAttribute("aria-labelledby", "admTitle"); document.body.appendChild(d); }
+  d.innerHTML = `<div class="adm-in"><div class="adm-hd"><h2 id="admTitle">관리자</h2><button class="cp-x" type="button" data-adm-x aria-label="닫기">✕</button></div>
+    <div class="adm-links"><a class="adm-go" href="${SITE_ROOT}v1/">v1 보관본 열기<small>Beta 전환 전 화면 그대로</small></a></div>
+    <h3>일자별 시가총액 <small id="admHint"></small></h3>
+    <div class="adm-tool"><input type="date" id="admDate" aria-label="기준일"><button type="button" class="morebtn" id="admCopy" title="종목(코드)과 시가총액(억원, 원 단위까지)을 엑셀에 붙여넣을 수 있게 복사">시총 복사</button><span class="mu" id="admToast" role="status"></span></div>
+    <div class="cap-grid" id="admCap"></div>
+    <details class="fold"><summary>목록 편집</summary><div class="fold-b">
+      <p class="note" style="margin:0 0 8px">"# 섹션 이름" 줄은 섹션, 나머지는 상장사 이름 또는 6자리 종목코드. 이 브라우저에만 저장됩니다.</p>
+      <textarea id="admList" rows="9" spellcheck="false">${esc(capText(readLabels()))}</textarea>
+      <div class="adm-tool"><button type="button" class="morebtn" id="admSave">저장</button><span class="mu" id="admErr"></span></div></div></details></div>`;
+  d.showModal(); admRender();
+  $("admDate").onchange = () => admRender($("admDate").value);
+  $("admCopy").onclick = async () => {
+    const lines = [["name(ticker)", "market_cap_억원"]];
+    capRows($("admDate").value, capSecs(readLabels())).forEach(r => { if (r.sec){ lines.push(["", ""]); if (r.title) lines.push(["▼" + r.title, ""]); return; }
+      lines.push([`${r.c.name}(${r.code})`, r.mcap == null ? "" : r.mcap / 1e8]); });
+    try { await navigator.clipboard.writeText(lines.map(r => r.join("\t")).join("\n")); $("admToast").textContent = "복사했습니다"; }
+    catch (e) { $("admToast").textContent = "복사 실패 — 클립보드 권한을 확인하세요"; }
+    setTimeout(() => $("admToast").textContent = "", 2000);
+  };
+  $("admSave").onclick = () => {
+    const { cap, miss } = parseCap($("admList").value);
+    if (miss.length){ $("admErr").textContent = `찾을 수 없음(상장사 이름·종목코드): ${miss.join(", ")}`; return; }
+    const L = readLabels(); L.cap = cap;
+    try { localStorage.setItem(LABELS_KEY, JSON.stringify(L)); $("admErr").textContent = "저장했습니다"; } catch (e) { $("admErr").textContent = "이 브라우저에서는 저장할 수 없습니다"; return; }
+    admRender($("admDate").value);
+  };
+}
+document.addEventListener("click", e => { const d = $("adm"); if (d?.open && (e.target === d || e.target.closest("[data-adm-x]"))) d.close(); });
+// 길게 누르기(0.7초): 손가락·마우스 모두. 길게 누른 뒤의 클릭(이동)은 막음
+(() => {
+  let t = null, fired = false;
+  const brand = e => e.target.closest?.(".brand");
+  document.addEventListener("pointerdown", e => { if (!brand(e)) return; fired = false; clearTimeout(t); t = setTimeout(() => { fired = true; openAdmin(); }, 700); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => document.addEventListener(ev, e => { if (brand(e) || ev !== "pointerleave") clearTimeout(t); }, true));
+  document.addEventListener("click", e => { if (brand(e) && fired){ e.preventDefault(); fired = false; } }, true);
+  document.addEventListener("contextmenu", e => { if (brand(e)) e.preventDefault(); });
+})();

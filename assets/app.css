@@ -178,6 +178,25 @@ button.co{font-weight:600}
 .big1{display:flex;align-items:baseline;gap:10px;margin:-4px 0 10px}.big1 b{font-size:30px;letter-spacing:-.02em}.big1 span{font-size:15px;color:var(--muted)}
 td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-radius:3px;padding:1px 5px;margin:0 4px 0 0}
 
+/* 관리자 모드 (브랜드명 길게 누르기) */
+.brand{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+#adm{border:0;border-radius:18px;padding:0;width:min(860px,calc(100vw - 32px));max-height:calc(100vh - 48px);color:var(--ink);background:var(--surface);box-shadow:0 18px 50px rgba(19,35,61,.3)}
+#adm::backdrop{background:rgba(19,35,61,.45)}
+.adm-in{padding:20px 24px 22px}
+.adm-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.adm-hd h2{margin:0;font-size:21px}
+#adm h3{font-size:16px;margin:18px 0 8px}#adm h3 small{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
+.adm-go{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-weight:700;color:var(--accent)}
+.adm-go small{font-weight:400;color:var(--muted);font-size:13px}
+.adm-go:hover{border-color:var(--accent)}
+.adm-tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.adm-tool input{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px}
+.cap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.cap-sec{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cap-sec h3{margin:0 !important;padding:8px 12px;font-size:14px !important;background:var(--tag)}
+.cap-sec td{padding:7px 12px;font-size:14px}.cap-sec tr:last-child td{border-bottom:0}
+#admList{width:100%;font:inherit;font-size:14px;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+
 /* 휴대폰 */
 @media (max-width:760px){
   header{padding:12px 14px}
