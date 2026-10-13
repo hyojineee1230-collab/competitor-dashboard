@@ -83,6 +83,38 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;display:flex;al
 
 #content > #secPulse{order:-2}
 #content > #secFx{order:-1}
+/* 오늘: 시장 띠 → 이번 주 움직임 → 공시 → 보도 반응 인사이트 → 시총 조회 → 핵심 요약(분석 탭으로) */
+#content[data-mode="business"][data-sub="today"] > #secTicker{order:-6}
+#content[data-mode="business"][data-sub="today"] > #secPulse{order:-5}
+#content[data-mode="business"][data-sub="today"] > #secDisc{order:-4}
+#content[data-mode="business"][data-sub="today"] > #secFx{order:-3}
+#content[data-mode="business"][data-sub="today"] > #secReport{order:-2}
+#content[data-mode="business"][data-sub="today"] > #secHead{order:-1}
+#content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual){display:none !important}
+#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secPulse,#secFx,#secDisc,#secReport){display:none !important}
+#content:not([data-mode="business"]) > :is(#secFx,#secTicker){display:none !important}
+#content:not([data-sub="today"]) .head-more,#content:not([data-mode="business"]) .head-more{display:none}
+/* 산업 탭: 경쟁사 보기 → 이번 주 → 주가·기업가치 → 공시 → 시장 개요 → 실적 → 판관비 */
+#content[data-mode="full"] > #segBar{order:-9}
+#content[data-mode="full"] > #secPulse{order:-8}
+#content[data-mode="full"] > #secVal{order:-7}
+#content[data-mode="full"] > #secPrice{order:-6}
+#content[data-mode="full"] > #secQuote{order:-5}
+#content[data-mode="full"] > #secDisc{order:-4}
+#content[data-mode="full"] > #secMkt{order:1}
+#content[data-mode="full"] > #secAnnual{order:2}
+#content[data-mode="full"] > #secSga{order:3}
+.tk-grp{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start;padding:8px 0}
+.tk-grp + .tk-grp{border-top:1px solid var(--grid)}
+.tk-grp > b{font-size:14px;color:var(--ink-2);padding-top:6px}
+.tk-row{display:flex;flex-wrap:wrap;gap:8px}
+.tk{display:grid;gap:1px;border:1px solid var(--line);border-radius:8px;padding:6px 12px;min-width:150px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:inherit}
+.tk:hover{border-color:var(--axis)}
+.tk .n{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.tk .n i{width:8px;height:8px;border-radius:50%}
+.tk .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.tk .s{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:600px){.tk-grp{grid-template-columns:1fr;gap:6px}.tk-grp > b{padding-top:0}.tk{min-width:0;flex:1 1 140px}}
 #pulseMoveWrap{margin-bottom:16px}
 .mv-chips{display:flex;flex-wrap:wrap;gap:10px}
 .pr-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
@@ -137,14 +169,6 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;display:flex;al
 #content[data-mode="business"] > #secAnnual{order:6}
 #content[data-mode="business"] > #secDisc{order:7}
 #content[data-mode="business"] > #secReport{order:8}
-/* 건강기능식품 탭: 시장 개요 → 경쟁사 보기 → 성장 vs 마케팅 → 실적 → 판관비 구조 → 기업가치 → 공시 */
-#content[data-gid="hff"] > *{order:20}
-#content[data-gid="hff"] > #secMkt{order:1}
-#content[data-gid="hff"] > #segBar{order:2}
-#content[data-gid="hff"] > #secAnnual{order:4}
-#content[data-gid="hff"] > #secSga{order:5}
-#content[data-gid="hff"] > #secVal{order:6}
-#content[data-gid="hff"] > #secDisc{order:7}
 .grow-box{height:440px}
 @media (max-width:600px){.grow-box{height:340px}}
 #content > *{min-width:0}
@@ -732,6 +756,11 @@ td span.err{font-size:13.5px}
 
   <div id="content">
     <!-- 시장 개요 (full) : data/market.json -->
+    <!-- 시장 띠 (오늘 탭 맨 위): 국내 상장 경쟁사 등락·시가총액, 장중에는 data/live.json 지연 시세 -->
+    <section class="panel" id="secTicker" hidden>
+      <div class="ph"><div><h2>오늘 시장</h2><p class="hint" id="tickHint"></p></div></div>
+      <div id="tickBody"></div>
+    </section>
     <!-- 이번 주 움직임 · 보도 반응 인사이트 (모든 탭 맨 위, data/newsfx.json) -->
     <section class="panel" id="secPulse" hidden>
       <div class="ph"><div><h2>이번 주 움직임</h2><p class="hint" id="pulseHint"></p></div></div>
@@ -805,7 +834,8 @@ td span.err{font-size:13.5px}
     </section>
     <!-- 한 줄 결론 (요약 탭 맨 위) -->
     <section class="panel head-panel" id="secHead" hidden>
-      <div class="ph"><div><h2>핵심 요약</h2><p class="hint" id="headHint"></p></div></div>
+      <div class="ph"><div><h2>핵심 요약</h2><p class="hint" id="headHint"></p></div>
+        <div class="controls head-more"><button class="btn" type="button" id="headMore">경쟁사 분석 ›</button></div></div>
       <ol class="headline" id="headBody"></ol>
     </section>
     <!-- 벤치마킹 포인트 (요약 탭) -->
@@ -937,6 +967,7 @@ const METRICS = [["revenue","매출액"],["grossProfit","매출이익"],["gpm","
 const PCT_METRICS = new Set(["gpm", "opm"]);   // 비율 지표 (통화와 무관하게 전체 비교)
 const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연구비/판관비"] };
 function annualMetrics(){ return [...METRICS, ...(grp().extras || []).map(k => EXTRA_METRICS[k]).filter(Boolean)]; }
+const SUB_ANALYSIS = "-x";   // 요약 그룹의 '경쟁사 분석' 탭 (주소 #biz-x)
 const MODE_LABEL = { market:"주가 · 시가총액", business:"핵심 경쟁사 실적·동향", full:"시장 · 경쟁사 · 기업가치" };
 const state = { ofs:false, valView:"rel", meta:null, group:null, data:{}, period:"1Y", view:"rel", metric:"revenue", finPeriod:"a", mktRegion:"kr", seg:{},
   currency:"KRW", hidden:new Set(), focus:null, sort:{key:"marketCap",dir:"desc"}, tsort:{fin:null, sga:null} };
@@ -1073,6 +1104,12 @@ async function init(){
     const fu = g.mode !== "full";
     if (prevFU === true && !fu) html += `<span class="tab-sep" aria-hidden="true"></span>`;
     prevFU = fu;
+    if (g.mode === "business"){
+      // 같은 데이터를 두 탭으로: 오늘(매일 바뀌는 정보) · 경쟁사 분석(실적·성장 원인·벤치마킹)
+      html += `<button class="tab" role="tab" data-id="${esc(g.id)}" aria-selected="false">오늘<small>주가 · 보도 · 공시</small></button>`;
+      html += `<button class="tab" role="tab" data-id="${esc(g.id)}${SUB_ANALYSIS}" aria-selected="false">경쟁사 분석<small>실적 · 성장 원인 · 벤치마킹</small></button>`;
+      return;
+    }
     html += `<button class="tab" role="tab" data-id="${esc(g.id)}" aria-selected="false">${esc(g.name)}<small>${MODE_LABEL[g.mode] || ""}</small></button>`;
   });
   $("tabs").innerHTML = html;
@@ -1085,12 +1122,12 @@ async function init(){
   segment("finPeriod", [["a","연간"],["q","분기"]], () => state.finPeriod, v => { state.finPeriod = v; state.tsort.fin = null; setMetricButtons(); renderAnnual(); });
   $("currency").addEventListener("change", e => { state.currency = e.target.value; renderAnnual(); });
 
-  const first = groups.find(g => g.id === location.hash.slice(1)) || groups[0];
-  selectGroup(first.id);
+  const h = location.hash.slice(1), hb = h.endsWith(SUB_ANALYSIS) ? h.slice(0, -SUB_ANALYSIS.length) : h;
+  selectGroup(groups.some(g => g.id === hb) ? h : groups[0].id);
   maybeIntro();   // 처음 방문한 사람에게만 자동 표시
   addEventListener("hashchange", () => {
-    const id = location.hash.slice(1);
-    if (id !== state.group && groups.some(g => g.id === id)) selectGroup(id);
+    const id = location.hash.slice(1), base = id.endsWith(SUB_ANALYSIS) ? id.slice(0, -SUB_ANALYSIS.length) : id;
+    if (groups.some(g => g.id === base) && (base !== state.group || (id !== base) !== (state.sub === "analysis"))) selectGroup(id);
   });
 }
 function segment(id, items, get, set){
@@ -1104,10 +1141,13 @@ function segment(id, items, get, set){
 }
 function syncSeg(id, val){ $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === val)); }
 
-async function selectGroup(id){
+async function selectGroup(tabId){
+  const id = tabId.endsWith(SUB_ANALYSIS) ? tabId.slice(0, -SUB_ANALYSIS.length) : tabId;
+  state.sub = tabId === id ? "today" : "analysis";
+  $("content").dataset.sub = state.sub;
   state.group = id; state.hidden.clear(); state.focus = null;
-  history.replaceState(null, "", "#" + id);
-  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.id === id));
+  history.replaceState(null, "", "#" + tabId);
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.id === tabId));
   if (!state.data[id]){
     try { state.data[id] = await loadJSON(`data/${id}.json`); }
     catch(e){ state.data[id] = {companies:[], mode:"full"}; }
@@ -1121,7 +1161,7 @@ async function selectGroup(id){
     g._extra = g.growExtra.map(id => all.get(id)).filter(Boolean).map((c, i) => ({ ...c, _ci: g.companies.length + i, _main: c._main || null }));
   }
   applyBasis(g);
-  $("gdesc").textContent = g.description || "";
+  $("gdesc").textContent = g.mode === "business" && state.sub === "today" ? "국내 상장 경쟁사 주가와 보도·공시 · 평일 매시 갱신" : (g.description || "");
 
   // 탭 성격에 맞는 섹션만 표시
   const m = g.mode;
@@ -1148,8 +1188,8 @@ async function selectGroup(id){
     $("segPick").innerHTML = [...g.segments.map(x => [x.key, x.title]), ["all", "전체"]].map(([k, l]) =>
       `<button data-k="${esc(k)}" aria-pressed="${k === state.seg[g.id]}">${esc(l)}</button>`).join("");
   }
-  // 공시: 요약 탭은 참고 자료라 접힌 상태로, 산업 탭은 펼친 상태로 시작
-  discOpen = m !== "business";
+  // 공시: 매일 바뀌는 정보라 모든 탭에서 펼친 상태로 시작
+  discOpen = true;
   $("secMkt").hidden = m !== "full";
   state.view = m === "market" ? "mcap" : "rel"; syncSeg("views", state.view);
   state.sort = g.sections?.length ? {key:"order", dir:"asc"} : {key:"marketCap", dir:"desc"};
@@ -1214,7 +1254,39 @@ function renderCompanies(){
   if (GROW_GROUPS.includes(g.id)) renderGrow();
   renderDisc(true);
   if (m !== "market") renderPulse();
+  if (m === "business") renderTicker();
 }
+
+/* ---------- 오늘 시장 (시장 띠): 국내 상장 경쟁사, 장중엔 지연 시세(data/live.json) ---------- */
+let liveQ = null;
+async function renderTicker(){
+  if ($("content").dataset.mode !== "business") return;
+  if (!liveQ){ try { liveQ = await loadJSON("data/live.json"); } catch(e){ liveQ = {}; } }
+  const all = await allCompanies(), groups = (state.meta?.groups || []).filter(g => g.mode === "full");
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const seen = new Set(), secs = [];
+  let liveTs = null, krxDay = null;
+  groups.forEach(g => {
+    const items = (state.data[g.id]?.companies || []).filter(c => /\.(KQ|KS)$/.test(c.ticker || "") && !seen.has(c.id) && c.quote);
+    items.forEach(c => seen.add(c.id));
+    const rows = items.map(c => {
+      const q = c.quote, L = liveQ?.quotes?.[c.id], live = L && L.ts?.slice(0, 10) === today && L.ts.slice(0, 10) > (q.asOf || "");
+      if (live) liveTs = L.ts; else krxDay = q.asOf || krxDay;
+      return { c, chg: live ? L.chg : q.change1d, w: q.change1w, cap: live && L.mcap ? L.mcap : q.marketCap, live };
+    }).sort((a, b) => (b.cap || 0) - (a.cap || 0));
+    if (rows.length) secs.push({ name: g.name, rows });
+  });
+  $("secTicker").hidden = !secs.length;
+  if (!secs.length) return;
+  const col = (c, i) => color(i);
+  const core = new Set(comps().map(c => c.id));
+  $("tickHint").textContent = liveTs ? `장중 지연 시세 ${liveTs.slice(11, 16)} 기준(약 15~20분 지연) · 1주·시가총액은 최근 값` : `KRX 종가 ${krxDay ? krxDay.slice(5).replace("-", ".") : ""} 기준 · 전일 대비`;
+  $("tickBody").innerHTML = secs.map(x => `<div class="tk-grp"><b>${esc(x.name)}</b><div class="tk-row">${x.rows.map((r, i) =>
+    { const pop = core.has(r.c.id), tag = pop ? "button" : "div";
+      return `<${tag} ${pop ? `type="button" title="${esc(r.c.name)} 상세"` : ""} class="tk" data-id="${esc(r.c.id)}"${pop ? "" : ' style="cursor:default"'}><span class="n"><i style="background:${col(r.c, i)}"></i>${esc(r.c.name)}</span>
+      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s">1주 ${sgn(r.w)} · ${fmtBig(r.cap, "KRW")}</span></${tag}>`; }).join("")}</div></div>`).join("");
+}
+$("tickBody").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
 
 /* ---------- 이번 주 움직임 · 보도 반응 인사이트 (data/newsfx.json) ---------- */
 let newsfx = null, fxAxis = "cat";
@@ -1230,7 +1302,8 @@ async function renderPulse(){
   const adjTxt = fx.index?.length ? "시장지수 대비 초과수익" : "종목 수익률(시장지수 반영 전)";
   // 최근 보도: 이 탭 회사만, 최신 8건
   const rec = fx.recent.filter(e => ids.has(e.c));
-  $("pulseHint").textContent = `최근 14일 · ${adjTxt} D0~D+2 · 거래량은 직전 20일 평균 대비`;
+  const upd = fx.updatedAt ? new Date(fx.updatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  $("pulseHint").textContent = `${upd ? `갱신 ${upd} · ` : ""}최근 14일 · ${adjTxt} D0~D+2 · 거래량은 직전 20일 평균 대비`;
   $("pulseNews").innerHTML = rec.length ? rec.slice(0, 8).map(e => {
     const c = byId.get(e.c), ar = (e.ar || []).slice(0, 3).filter(v => v != null), sum = ar.length ? ar.reduce((t, v) => t + v, 0) : null;
     const fxv = !c?.listed ? `<span class="pr-fx na">비상장</span>`
@@ -1274,6 +1347,7 @@ function renderFx(){
   $("fxNote").textContent = `${fx.index?.length ? "시장지수 대비 초과수익" : "시장지수 반영 전(종목 수익률)"} · 시세 기사, 공시와 겹친 보도, 3거래일 안에 이어진 보도는 제외 · 흐린 줄은 보도 5건 미만`
     + (cr ? ` · 일별 기사 수와 주가 변동폭 상관 r=${cr.r}(n=${cr.n})` : "");
 }
+$("headMore").addEventListener("click", () => { selectGroup(state.group + SUB_ANALYSIS); scrollTo({ top: 0 }); });
 $("fxAxis").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === fxAxis) return; fxAxis = b.dataset.k; renderFx(); });
 
 /* ---------- 차트 공통 ---------- */
