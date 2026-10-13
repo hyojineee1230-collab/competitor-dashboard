@@ -45,10 +45,10 @@ def _norm(t):
 
 
 # ---------------------------------------------------------------- DART 전체 공시
-def dart_activity(list_fn, corp, days=183):
+def dart_activity(list_fn, corp, days=183, pages=3):
     """list_fn(corp, ty, pages, days) → DART list 행. ty=None 이면 전체 유형"""
     out = []
-    for x in list_fn(corp, None, 3, days):
+    for x in list_fn(corp, None, pages, days):
         title = " ".join(x.get("report_nm", "").split())
         if NOISE.search(title):
             continue

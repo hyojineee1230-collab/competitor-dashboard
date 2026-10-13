@@ -87,15 +87,13 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 .fs-btn[aria-pressed="true"] .sw{background:var(--s1)}
 .fs-btn[aria-pressed="true"] .sw::after{left:16px}
 
-#content > #secFx{order:-1}
 /* 오늘: 시장 띠 → 분야별 블록(건기식 · 마이크로바이옴) → 보도 반응 패턴 → 공시·기사 */
 #content[data-mode="business"][data-sub="today"] > #secTicker{order:-8}
 #content[data-mode="business"][data-sub="today"] > #secDay{order:-7}
-#content[data-mode="business"][data-sub="today"] > #secFx{order:-5}
 #content[data-mode="business"][data-sub="today"] > #secDisc{order:-4}
 #content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual,#secHead){display:none !important}
-#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secDay,#secFx,#secDisc){display:none !important}
-#content:not([data-mode="business"]) > :is(#secFx,#secTicker,#secDay){display:none !important}
+#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secDay,#secDisc){display:none !important}
+#content:not([data-mode="business"]) > :is(#secTicker,#secDay){display:none !important}
 .mk-strip{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px 20px}
 .mk-strip .ms-l{margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;font-size:15px}
 .mk-strip .ms-l > span:not(.hint){font-variant-numeric:tabular-nums;font-weight:600}
@@ -119,6 +117,10 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 .mv-it .why a{color:var(--ink);text-decoration:none}
 .mv-it .why a:hover{text-decoration:underline}
 .mv-it .why small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.mv-it .why .tg{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--tag);color:var(--ink-2);margin-right:6px;vertical-align:1px}
+.mv-it .why .unk{color:var(--ink-2);font-weight:600}
+.sg-sec{margin:0 0 8px;font-size:14.5px;font-weight:600}
+.sg-sec small{font-weight:400;color:var(--muted);margin-left:6px}
 @media (max-width:600px){.mv-it{grid-template-columns:1fr auto}.mv-it .why{grid-column:1/-1}}
 .vo-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:28px}
 @media (max-width:900px){.vo-grid{grid-template-columns:1fr}}
@@ -189,24 +191,6 @@ small.hot{display:inline-block;font-size:13px;font-weight:600;color:var(--up);ba
 .mv-h b{font-variant-numeric:tabular-nums}
 .mv-n{margin-top:3px;font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mv-n a{color:var(--ink-2)}
-.fx-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-bottom:18px}
-.fx-card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-top:3px solid var(--s1)}
-.fx-card.neg{border-top-color:var(--down)}
-.fx-card .ax{font-size:13px;color:var(--muted)}
-.fx-card .k{font-size:16px;font-weight:700;margin:2px 0 6px}
-.fx-card .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
-.fx-card .s{font-size:13px;color:var(--muted);margin-top:4px}
-.fx-bar{display:grid;grid-template-columns:150px 44px minmax(0,1fr) 70px 64px;gap:10px;align-items:center;padding:5px 0;font-size:14px;font-variant-numeric:tabular-nums}
-.fx-bar.dim{opacity:.45}
-.fx-bar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fx-bar .n{color:var(--muted);font-size:13px;text-align:right}
-.fx-bar .tr{position:relative;height:12px}
-.fx-bar .tr::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid var(--axis)}
-.fx-bar .tr i{position:absolute;top:0;height:100%;border-radius:2px;background:var(--up)}
-.fx-bar .tr i.neg{background:var(--down)}
-.fx-bar .c{text-align:right;font-weight:600}
-.fx-bar .vr{text-align:right;color:var(--ink-2)}
-.fx-bar.head{font-size:13px;color:var(--muted);padding-bottom:2px}
 @media (max-width:600px){.fx-bar{grid-template-columns:96px 30px minmax(0,1fr) 56px;gap:6px}.fx-bar .vr{display:none}.pr-row{grid-template-columns:44px minmax(0,1fr);row-gap:2px}.pr-fx{grid-column:2;text-align:left;font-size:14px}.pr-fx small{display:inline;margin-left:6px}}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
@@ -822,13 +806,6 @@ td span.err{font-size:13.5px}
     </section>
     <!-- 분야별 블록 (건강기능식품 · 마이크로바이옴): ① 주가 vs 시장 ② 다르게 움직인 곳 ③ 보도 -->
     <div class="day-wrap" id="secDay" hidden></div>
-    <section class="panel" id="secFx" hidden>
-      <div class="ph"><div><h2>어떤 보도가 주가를 움직이나?</h2><p class="hint" id="fxHint"></p></div>
-        <div class="controls"><div class="seg" id="fxAxis" role="group" aria-label="비교 기준" hidden></div><button class="btn" type="button" id="fxToggle" aria-expanded="false">근거 보기</button></div></div>
-      <p class="ans" id="fxAns"></p>
-      <div class="fx-cards" id="fxCards"></div>
-      <div id="fxMore" hidden><div id="fxBars"></div><p class="note" id="fxNote"></p></div>
-    </section>
     <section class="panel" id="secMkt" hidden>
       <div class="ph"><div><h2>시장 개요</h2></div><div class="seg" id="mktRegion" role="group" aria-label="시장 구분"></div></div>
       <div id="mktBody"></div>
@@ -1322,8 +1299,7 @@ function renderCompanies(){
 
 /* ---------- 오늘 탭: 질문 → 답 한 줄 → 근거 (답은 데이터로 규칙에 따라 생성, 매시 갱신) ---------- */
 const BRIEF = { move: 5, hot: 2 };          // 시장과 다르게 움직임: 3거래일 시장 대비 ±5% 이상 · 거래량 급증: 평소 2배
-let liveQ = null, idxD = null, newsfx = null, fxAxis = "cat";
-const FX_AXES = [["cat", "기사 유형"], ["tier", "매체 등급"], ["timing", "발행 시점"], ["weekday", "요일"], ["reach", "매체 수"], ["keyword", "키워드"]];
+let liveQ = null, idxD = null, newsfx = null;
 const sgn = (v, d = 1) => v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(d)}%`;
 const upDown = v => v > 0 ? "up" : v < 0 ? "down" : "";
 const arrow = v => v == null ? "–" : `${v > 0 ? "▲" : v < 0 ? "▼" : ""}${Math.abs(v).toFixed(1)}%`;
@@ -1371,11 +1347,10 @@ async function renderToday(){
   $("secDay").innerHTML = blocks.map(b => {
     b.rows.forEach(r => { const m = mktChg(r.mk, r.lv, day); r.rel = r.chg == null || m == null ? null : r.chg - m; });
     return `<section class="panel day" data-g="${esc(b.g.id)}"><div class="ph"><div><h2>${esc(b.g.name)}</h2></div></div>
-      ${dayTicker(b.rows, kq)}${fx.recent ? dayPulse(b.pool) + dayVoice(b.pool) : ""}</section>`;
+      ${dayTicker(b.rows, kq)}${fx.signals ? daySignals(b.g.id, b.pool) : ""}${fx.recent ? dayVoice(b.pool) : ""}</section>`;
   }).join("");
-  $("secFx").hidden = !fx.axes;
-  if (fx.axes) renderFx();
 }
+$("headMore").addEventListener("click", () => { selectGroup(state.group + SUB_ANALYSIS); scrollTo({ top: 0 }); });
 $("secDay").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
 // ① 주가, 시장보다 강했나? — 분야 평균 vs 코스닥, 시장 대비 가장 강한·약한 곳
 function dayTicker(rows, kq){
@@ -1393,33 +1368,26 @@ function dayTicker(rows, kq){
     `<button type="button" class="tk" data-id="${esc(r.c.id)}" title="${esc(r.c.name)} 상세"><span class="n"><i style="background:${color(r.c._ci ?? 0)}"></i>${esc(r.c.name)}</span>
       <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></button>`).join("")}</div></div>`;
 }
-// ② 시장과 다르게 움직인 곳, 이유는? — 보도는 회사·반응 시작일로 묶고, 보도 없이 움직인 날도 함께
-function dayPulse(pool){
-  const fx = newsfx, grp = new Map();
-  fx.recent.filter(e => pool.has(e.c) && pool.get(e.c).listed).forEach(e => {
-    const ar = (e.ar || []).slice(0, 3).filter(v => v != null); if (!ar.length) return;
-    const k = e.c + "|" + (e.d0 || e.d);
-    const g = grp.get(k) || { c: e.c, d: e.d0 || e.d, r: ar.reduce((t, v) => t + v, 0), n: ar.length, vr: e.vr, items: [] };
-    g.items.push(e); grp.set(k, g);
-  });
-  const rows = [...grp.values()].filter(g => Math.abs(g.r) >= BRIEF.move);
-  (fx.movers || []).filter(m => pool.has(m.c) && Math.abs(m.ar) >= BRIEF.move && !rows.some(g => g.c === m.c && Math.abs(new Date(g.d) - new Date(m.d)) <= 2 * 864e5))
-    .forEach(m => rows.push({ c: m.c, d: m.d, r: m.ar, n: 1, vr: m.vr, items: m.news?.length ? m.news : [] }));
-  rows.sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+// ② 평소와 다르게 움직인 곳, 이유는? — data/newsfx.json signals: 분야 중앙값을 뺀 회사 고유 움직임이 평소 변동폭의 2배 이상(또는 거래량 3배)
+//    사유는 공시 → 주가 관련 보도 → 미확인 순. 분야 전체가 같이 움직인 날은 따로 한 줄
+function daySignals(gid, pool){
+  const S = newsfx.signals, fx = newsfx;
+  const items = (S.items || []).filter(r => r.g === gid && pool.has(r.c)), sector = (S.sector || []).filter(r => r.g === gid);
   const kept = [];
-  rows.forEach(g => { const k = kept.find(x => x.c === g.c); if (k) k.more = (k.more || 0) + 1; else kept.push(g); });
-  const top = kept.slice(0, 5);
-  const why = it => !it ? "관련 보도 없이" : it.cat === "market" ? "증권 기사 외 뚜렷한 보도 없이" : it.cat === "etc" || !fx.cats?.[it.cat] ? "보도 뒤" : `${fx.cats[it.cat]} 보도 뒤`;
-  const pick = g => g.items.find(x => x.cat !== "market") || g.items[0];
+  items.slice().sort((a, b) => b.z - a.z).forEach(r => { const k = kept.find(x => x.c === r.c); if (k) k.more2 = (k.more2 || 0) + 1; else kept.push({ ...r }); });
   const nm = id => pool.get(id)?.name || fx.names?.[id] || id;
+  const why = r => !r.why ? "사유 미확인" : r.why.type === "filing" ? "공시 뒤" : `${fx.cats?.[r.why.cat] || ""} 보도 뒤`;
+  const top = kept.slice(0, 5);
   const ans = top.length
-    ? top.slice(0, 2).map(g => `${esc(nm(g.c))} <span class="${upDown(g.r)}">${arrow(g.r)}</span> <small>— ${esc(why(pick(g)))}</small>`).join(" · ")
-    : `최근 2주 시장 대비 ±${BRIEF.move}% 넘게 움직인 곳 없음`;
-  const list = top.length ? `<div class="mv-list">${top.map(g => { const it = pick(g), c = pool.get(g.c);
-    return `<div class="mv-it"><span class="co"><i style="background:${color(c?._ci ?? 0)}"></i>${esc(nm(g.c))}</span><span class="r ${upDown(g.r)}">${arrow(g.r)}</span>
-      <span class="why">${it ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : "관련 보도 없음"}
-      <small>${md(g.d)}${g.n < 3 ? ` · ${g.n}거래일째` : ""}${g.more ? ` · 2주간 큰 움직임 외 ${g.more}회` : ""}${it?.cat === "market" ? " · 증권 기사(원인 아닐 수 있음)" : it?.cat && it.cat !== "etc" ? ` · ${esc(fx.cats?.[it.cat] || "")}` : ""}${g.items.length > 1 ? ` · 같은 때 보도 ${g.items.length}건` : ""}${g.vr >= BRIEF.hot ? " · 거래량 급증" : ""}</small></span></div>`; }).join("")}</div>` : "";
-  return `<div class="dq"><h3>시장과 다르게 움직인 곳, 이유는? <span class="hint">최근 2주 · 보도 후 3거래일</span></h3><p class="ans">${ans}</p>${list}</div>`;
+    ? top.slice(0, 2).map(r => `${esc(nm(r.c))} <span class="${upDown(r.idio)}">${arrow(r.idio)}</span> <small>평소의 ${r.z.toFixed(1)}배 — ${esc(why(r))}</small>`).join(" · ")
+    : `최근 2주 평소 범위를 벗어난 곳 없음`;
+  const secHtml = sector.map(x => `<p class="sg-sec">${md(x.d)} 분야 전체 ${x.med < 0 ? "하락" : "상승"} <small>${x.n}곳 중 ${x.med < 0 ? x.down : x.up}곳 · 중앙값 ${arrow(x.med)} · 개별 신호에서 제외</small></p>`).join("");
+  const list = top.length ? `<div class="mv-list">${top.map(r => { const c = pool.get(r.c), w = r.why;
+    const reason = !w ? `<span class="unk">사유 미확인</span><small>전 거래일~당일 공시·주가 관련 보도 없음</small>`
+      : `<span class="tg">${w.type === "filing" ? "공시" : esc(fx.cats?.[w.cat] || "보도")}</span><a href="${esc(w.url)}" target="_blank" rel="noopener">${esc(w.title)}</a>`;
+    return `<div class="mv-it"><span class="co"><i style="background:${color(c?._ci ?? 0)}"></i>${esc(nm(r.c))}</span><span class="r ${upDown(r.idio)}">${arrow(r.idio)}</span>
+      <span class="why">${reason}<small>${md(r.d)} · 평소의 ${r.z.toFixed(1)}배${r.vr >= 2 ? ` · 거래량 ${r.vr.toFixed(1)}배` : ""}${r.more ? ` · 같은 때 공시·보도 ${r.more + 1}건` : ""}${r.more2 ? ` · 2주간 신호 외 ${r.more2}회` : ""}</small></span></div>`; }).join("")}</div>` : "";
+  return `<div class="dq"><h3>평소와 다르게 움직인 곳, 이유는? <span class="hint">최근 2주 · 분야 평균 대비, 회사 평소 변동폭의 2배 이상</span></h3><p class="ans">${ans}</p>${secHtml}${list}</div>`;
 }
 // ③ 지금 무엇을 알리고 있나? — 이번 주 vs 지난주 보도 건수(같은 보도 묶음, 시세 기사 제외)
 function dayVoice(pool){
@@ -1443,41 +1411,6 @@ function dayVoice(pool){
     <span class="tr"><i style="width:${(cw[id] || 0) / mx * 100}%"></i><b style="left:calc(${(cp[id] || 0) / mx * 100}% - 1px)"></b></span><span class="n">${cw[id] || 0}<small> / ${cp[id] || 0}</small></span></div>`).join("")}</div>
     ${catHtml ? `<div><p class="mk-h">이번 주 보도 유형</p><div class="vo-cat">${catHtml}</div></div>` : ""}</div></div>`;
 }
-function renderFx(){
-  const fx = newsfx, A = fx.axes || {}, cv = fx.coverage || {};
-  $("fxAxis").innerHTML = FX_AXES.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${k === fxAxis}">${l}</button>`).join("");
-  $("fxHint").textContent = `어떤 보도 뒤에 주가가 움직였나 · 국내 ${cv.companies || 0}개사 보도 ${(cv.clean || 0).toLocaleString("ko-KR")}건 분석(${cv.from ? cv.from.slice(0, 7).replace("-", ".") : "–"}~)`;
-  // 인사이트 카드: 유의(p<0.1, n≥10) → 참고 순, 축마다 가장 강한 것
-  const pick = [];
-  FX_AXES.forEach(([k, l]) => (A[k] || []).filter(r => r.level === "sig").forEach(r => pick.push({ ...r, axis: l })));
-  pick.sort((a, b) => a.p - b.p);
-  const cards = pick.slice(0, 4);
-  const lab = r => `${r.name}${({ "키워드": " 기사", "매체 등급": " 보도", "요일": " 발행", "발행 시점": " 발행", "기사 유형": " 기사" })[r.axis] || ""}`;
-  $("fxAns").innerHTML = cards.length
-    ? `${esc(lab(cards[0]))} 뒤 3거래일 평균 <span class="${upDown(cards[0].car)}">${arrow(cards[0].car)}</span><small> · 보도 ${cards[0].n}건${cards[0].vol ? `, 거래량 평소의 ${cards[0].vol.toFixed(1)}배` : ""}</small>`
-    : `아직 통계적으로 뚜렷한 패턴은 없습니다 <small>· 보도 ${(cv.clean || 0).toLocaleString("ko-KR")}건 기준</small>`;
-  $("fxCards").innerHTML = cards.length > 1 ? cards.slice(1).map(r => `<div class="fx-card ${r.car < 0 ? "neg" : ""}"><div class="ax">${esc(r.axis)}</div>
-      <div class="k">${esc(r.name)}${({ "키워드": " 기사", "매체 등급": " 보도", "요일": " 발행", "발행 시점": " 발행", "기사 유형": " 기사" })[r.axis] || ""}</div>
-      <div class="v">3일간 평균 <span class="${upDown(r.car)}">${arrow(r.car)}</span></div>
-      <div class="s">보도 ${r.n}건 기준</div></div>`).join("")
-    : "";
-  $("fxCards").hidden = cards.length < 2;
-  // 축별 막대: 평균 초과수익(0 기준 좌우) · 거래량 배수
-  const rows = (A[fxAxis] || []).slice(0, 12), mx = Math.max(1, ...rows.map(r => Math.abs(r.car)));
-  $("fxBars").innerHTML = rows.length ? `<div class="fx-bar head"><span>${esc(FX_AXES.find(x => x[0] === fxAxis)[1])}</span><span class="n">보도</span><span style="text-align:center">평균 초과수익 D0~D+2</span><span class="c"></span><span class="vr">거래량</span></div>` +
-    rows.map(r => { const w = Math.abs(r.car) / mx * 50;
-      return `<div class="fx-bar ${r.n < 5 ? "dim" : ""}"><span class="nm" title="${esc(r.name)}">${esc(r.name)}</span><span class="n">${r.n}</span>
-        <span class="tr"><i class="${r.car < 0 ? "neg" : ""}" style="${r.car < 0 ? `right:50%` : `left:50%`};width:${w}%"></i></span>
-        <span class="c ${upDown(r.car)}">${sgn(r.car, 2)}</span><span class="vr">${r.vol ? r.vol.toFixed(1) + "배" : "–"}</span></div>`; }).join("")
-    : `<p class="empty">집계할 보도가 아직 없습니다</p>`;
-  const cr = fx.corr?.absAr;
-  $("fxNote").textContent = `${fx.index?.length ? "시장지수 대비, 회사 평소 수준을 뺀 초과수익" : "시장지수 반영 전(종목 수익률)"} · 거래량은 중앙값 · 시세 기사, 공시와 겹친 보도, 3거래일 안에 이어진 보도는 제외 · 흐린 줄은 보도 5건 미만`
-    + (cr ? ` · 일별 기사 수와 주가 변동폭 상관 r=${cr.r}(n=${cr.n})` : "");
-}
-$("headMore").addEventListener("click", () => { selectGroup(state.group + SUB_ANALYSIS); scrollTo({ top: 0 }); });
-$("fxToggle").addEventListener("click", () => { const open = $("fxMore").hidden; $("fxMore").hidden = $("fxAxis").hidden = !open;
-  $("fxToggle").textContent = open ? "접기" : "근거 보기"; $("fxToggle").setAttribute("aria-expanded", open); });
-$("fxAxis").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === fxAxis) return; fxAxis = b.dataset.k; renderFx(); });
 
 /* ---------- 차트 공통 ---------- */
 function chartBase(){

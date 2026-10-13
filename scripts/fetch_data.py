@@ -1039,6 +1039,17 @@ def main():
             e["activity"] = activity.merge(new_act, prev_act, names=c.get("news_names") or [c["name"]])
             e["activityOk"] = ok
 
+        # 최근 공시 전체(이상 움직임 신호의 사유 확인용): 주요 활동을 따로 모으지 않는 국내 상장사, 최근 60일
+        if c.get("dart") and cid not in needs_act and DART_KEY and not _corps_failed:
+            try:
+                corp = c.get("corp_code") or corp_code_by_stock(c["dart"])
+                e["filings"] = activity.dart_activity(_dart_list, corp, days=60, pages=1) if corp else []
+            except Exception as ex:
+                e["filings"] = (previous.get(cid) or {}).get("filings") or []
+                log_err(f"{c['name']} 최근 공시 실패: {ex}")
+        elif cid not in needs_act and (previous.get(cid) or {}).get("filings"):
+            e["filings"] = previous[cid]["filings"]
+
         if DART_KEY and c.get("country", "KR") == "KR":     # DART 값 유지는 국내 회사만 (해외는 Yahoo)
             kept = carry_over(e, previous.get(cid))
             if kept:
@@ -1072,7 +1083,7 @@ def main():
                            "must": c.get("news_must"), "exclude": c.get("news_exclude"),
                            "listed": bool(c.get("ticker")), "market": (c.get("ticker") or "")[-2:],
                            "price": (e.get("price") or {}) if (e.get("price") or {}).get("mcapSource") == "KRX" else {},
-                           "disc": disc})
+                           "disc": disc, "filings": newsfx.filings_of(e)})
         fx = newsfx.build(fx_cos, newsraw.load(), krx.index_series() if krx_data else {})
         (DATA_DIR / "newsfx.json").write_text(scrub(json.dumps(fx, ensure_ascii=False, separators=(",", ":"))), encoding="utf-8")
         print(f"보도 반응: 보도 {fx['coverage']['events']}건, 집계 {fx['coverage']['clean']}건")

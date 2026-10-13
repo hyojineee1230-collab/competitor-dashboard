@@ -11,6 +11,13 @@
 - CAR(0,2) = D0~D+2 AR 합 − 그 회사의 평소 3거래일 AR(2년 평균) · 거래량 배수 = D0~D+2 평균 ÷ D-21~D-2 평균
 - 축별 거래량은 중앙값(몇 건의 급등이 평균을 끌어올리지 않게)
 - 집계에서 빼는 보도: 시세·증권 기사(주가가 기사를 만든 경우), D-1~D+2에 공시가 있는 보도, 같은 회사 앞 보도와 3거래일 안에 겹치는 보도
+
+이상 움직임 신호(signals) — 주가·거래량에서 출발해 이유를 찾음
+- 회사 고유 움직임 = 시장조정 수익률 − 같은 분야(산업 탭 그룹) 다른 상장사의 그날 중앙값 (업종 전체 움직임을 뺌)
+- 평소 변동폭 σ = 직전 60거래일 회사 고유 움직임의 표준편차
+- 신호: |고유 움직임| ≥ max(2σ, 3%) 또는 (거래량 ≥ 직전 20일 중앙값의 3배 이고 |고유 움직임| ≥ σ)
+- 업종 동반: 분야 상장사 70% 이상이 같은 방향이고 분야 중앙값이 그 분야 평소의 2배 이상인 날(개별 신호와 따로 표시)
+- 사유: ① 전 거래일~당일 DART 공시(접수일 기준) ② 같은 기간 주가 영향 유형 보도(실적·지분·계약·투자·R&D) ③ 없으면 미확인
 """
 import bisect
 import json
@@ -52,6 +59,119 @@ REACH = [("1", "매체 1곳"), ("2-4", "매체 2~4곳"), ("5+", "매체 5곳 이
 WEEK = "월화수목금토일"
 KW_STOP = set("출시 진행 기업 대표 관련 올해 지난해 국내 위해 통해 이번 오늘 최대 확대 강화 나선다 선보여 선봬 기념 개최 참가 제공 공개 추진 돌입 성공 기록 전년 대비 억원 만원 조원 이상 업계 시장 제품 브랜드 건강 건강기능식품 건기식 주식 종목 뉴스 단독 종합 인터뷰 신제품 론칭 지원 현장 최초 연속 성장 전략 가속 돌파 달성 눈길 주목 발표 체결 협약 업무 the and for".split())
 MIN_N, P_SIG, P_REF = 10, 0.10, 0.20
+SIG_K, SIG_MIN, SIG_VOL, SIG_WIN, SIG_DAYS = 2.0, 3.0, 3.0, 60, 10     # 신호 기준(σ 배수, 최소 %, 거래량 배수, σ 기간, 최근 거래일 수)
+PRICE_CATS = {"result", "equity", "deal", "invest", "rnd"}            # 주가 사유로 인정하는 보도 유형
+FILING_NOISE = re.compile(r"기업설명회|IR\b|임원ㆍ주요주주|임원·주요주주|주식등의대량보유|최대주주등소유주식|기재정정|첨부정정|증권발행실적|투자설명서")
+
+
+def _groups():
+    """config 의 산업 탭 그룹(mode full) → {회사 id: [그룹 id]}"""
+    try:
+        cfg = json.loads((ROOT / "config" / "companies.json").read_text(encoding="utf-8"))
+    except Exception:
+        return {}, {}
+    gs = [g for g in cfg.get("groups", []) if g.get("mode", "full") == "full"]
+    mem = defaultdict(list)
+    for g in gs:
+        for cid in g.get("members", []):
+            mem[cid].append(g["id"])
+    return mem, {g["id"]: g.get("name", g["id"]) for g in gs}
+
+
+def filings_of(e):
+    """수집 결과 한 회사의 공시 목록(주요 활동 공시 + 최근 공시 + 정기보고서·IR) → [{date,title,url}] 중복 제거"""
+    seen, out = set(), []
+    rows = [x for x in (e.get("activity") or []) if x.get("src") == "공시"] + (e.get("filings") or []) + (e.get("disclosures") or [])
+    for x in rows:
+        k = (x.get("date"), x.get("title"))
+        if x.get("date") and k not in seen:
+            seen.add(k)
+            out.append({"date": x["date"], "title": x.get("title", ""), "url": x.get("url")})
+    return out
+
+
+def _sd(v):
+    if len(v) < 20:
+        return None
+    m = sum(v) / len(v)
+    return math.sqrt(sum((x - m) ** 2 for x in v) / (len(v) - 1))
+
+
+def signals(companies, events, idx, today):
+    """최근 SIG_DAYS 거래일의 회사별 이상 움직임과 업종 동반 움직임"""
+    mem, gname = _groups()
+    ser = {}
+    for c in companies:
+        p = c.get("price") or {}
+        ds, cl, vol = p.get("dates") or [], p.get("close") or [], p.get("vol") or []
+        if not c.get("listed") or len(ds) < SIG_WIN + 5:
+            continue
+        mk = idx.get(c.get("market"), {})
+        ar, vr = {}, {}
+        for i in range(1, len(ds)):
+            if not (cl[i - 1] and cl[i]):
+                continue
+            r = cl[i] / cl[i - 1] - 1
+            if mk.get(ds[i]) and mk.get(ds[i - 1]):
+                r -= mk[ds[i]] / mk[ds[i - 1]] - 1
+            ar[ds[i]] = r * 100
+            base = sorted(v for v in vol[max(0, i - 20):i] if v)
+            if base and i < len(vol) and vol[i]:
+                vr[ds[i]] = vol[i] / base[len(base) // 2]
+        ser[c["id"]] = {"c": c, "ds": [d for d in ds if d in ar], "ar": ar, "vr": vr, "adj": bool(mk)}
+    out, sector = [], []
+    for gid, name in gname.items():
+        ids = [cid for cid in ser if gid in mem.get(cid, [])]
+        if len(ids) < 3:
+            continue
+        days = sorted({d for cid in ids for d in ser[cid]["ds"]})
+        med_all = {}
+        for d in days:
+            v = sorted(ser[cid]["ar"][d] for cid in ids if d in ser[cid]["ar"])
+            if len(v) >= 3:
+                med_all[d] = v[len(v) // 2]
+        recent = days[-SIG_DAYS:]
+        # 업종 동반 움직임
+        for d in recent:
+            v = [ser[cid]["ar"][d] for cid in ids if d in ser[cid]["ar"]]
+            hist = [med_all[x] for x in days if x < d and x in med_all][-SIG_WIN:]
+            sd = _sd(hist)
+            if len(v) < 3 or d not in med_all or not sd:
+                continue
+            up, dn = sum(1 for x in v if x > 0), sum(1 for x in v if x < 0)
+            if max(up, dn) >= 0.7 * len(v) and abs(med_all[d]) >= max(SIG_K * sd, 1.5):
+                sector.append({"g": gid, "d": d, "med": round(med_all[d], 2), "up": up, "down": dn, "n": len(v), "z": round(abs(med_all[d]) / sd, 1)})
+        # 회사 고유 움직임
+        for cid in ids:
+            S = ser[cid]
+            def idio(d):
+                v = sorted(ser[o]["ar"][d] for o in ids if o != cid and d in ser[o]["ar"])
+                return S["ar"][d] - (v[len(v) // 2] if len(v) >= 2 else 0.0)
+            for d in S["ds"][-SIG_DAYS:]:
+                k = S["ds"].index(d)
+                hist = [idio(x) for x in S["ds"][max(0, k - SIG_WIN):k]]
+                sd = _sd(hist)
+                if not sd:
+                    continue
+                x, v = idio(d), S["vr"].get(d)
+                if not (abs(x) >= max(SIG_K * sd, SIG_MIN) or (v and v >= SIG_VOL and abs(x) >= sd)):
+                    continue
+                prev = S["ds"][k - 1] if k else d
+                fil = [f for f in (S["c"].get("filings") or []) if prev <= f.get("date", "") <= d and not FILING_NOISE.search(f.get("title", ""))]
+                # 당일 장 마감(15:30) 뒤 보도는 그날 움직임의 사유가 될 수 없음
+                news = [e for e in events if e["c"] == cid and prev <= e["d"] <= d and e["cat"] in PRICE_CATS
+                        and not (e["d"] == d and e.get("t") and e["t"] > "15:30")]
+                why = ({"type": "filing", "title": fil[0]["title"], "url": fil[0].get("url"), "d": fil[0]["date"]} if fil else
+                       {"type": "news", "title": news[0]["title"], "url": news[0]["url"], "cat": news[0]["cat"], "d": news[0]["d"], "n": len(news)} if news else None)
+                out.append({"c": cid, "g": gid, "d": d, "ar": round(S["ar"][d], 2), "idio": round(x, 2), "sd": round(sd, 2),
+                            "z": round(abs(x) / sd, 1), "vr": round(v, 2) if v else None, "adj": S["adj"], "why": why,
+                            "more": len(fil) + len(news) - 1 if (fil or news) else 0})
+    out.sort(key=lambda r: (r["d"], r["z"]), reverse=True)
+    sector.sort(key=lambda r: r["d"], reverse=True)
+    win = sorted({d for v in ser.values() for d in v["ds"][-SIG_DAYS:]})
+    return {"from": win[0] if win else None, "to": win[-1] if win else None, "groups": gname,
+            "rule": f"고유 움직임(시장·분야 중앙값 제외) ≥ 평소 변동폭 {SIG_K:g}배·최소 {SIG_MIN:g}% 또는 거래량 {SIG_VOL:g}배 · 평소 = 직전 {SIG_WIN}거래일",
+            "items": out, "sector": sector}
 
 
 def classify(title):
@@ -338,7 +458,7 @@ def build(companies, raw, index, today=None):
                      "listed": sum(1 for c in companies if c.get("listed")), "companies": len(companies)},
         "index": sorted(idx), "method": "CAR(0,2) 시장조정 초과수익률(회사 평소 수준 차감) · 거래량 배수 = D0~D+2 ÷ D-21~D-2, 묶음별 중앙값",
         "cats": CAT_NAME, "tiers": tier_names, "axes": axes, "corr": corr,
-        "recent": recent, "movers": movers[:30],
+        "recent": recent, "movers": movers[:30], "signals": signals(companies, events, idx, today),
         "unknownMedia": [[k, v] for k, v in unknown.most_common(60)],
         "names": names_c,
     }

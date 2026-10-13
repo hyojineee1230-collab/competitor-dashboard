@@ -121,7 +121,7 @@ def main():
             fx_cos.append({"id": cid, "name": c["name"], "names": c.get("news_names") or [c["name"]],
                            "must": c.get("news_must"), "exclude": c.get("news_exclude"),
                            "listed": bool(c.get("ticker")), "market": (c.get("ticker") or "")[-2:],
-                           "price": p if p.get("mcapSource") == "KRX" else {}, "disc": disc})
+                           "price": p if p.get("mcapSource") == "KRX" else {}, "disc": disc, "filings": newsfx.filings_of(e)})
         fx = newsfx.build(fx_cos, newsraw.load(), load(DATA / "index.json", {}) or {})
         (DATA / "newsfx.json").write_text(json.dumps(fx, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(f"보도 반응: 보도 {fx['coverage']['events']}건, 집계 {fx['coverage']['clean']}건")
