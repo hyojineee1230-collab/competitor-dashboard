@@ -399,7 +399,49 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
 /* 좁은 화면: 줄바꿈 대신 한 줄 가로 스크롤 */
 @media (max-width:1000px){.core-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(210px,46%);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
   .core-grid .core-card{scroll-snap-align:start}}
-@media (max-width:600px){.core-grid{grid-auto-columns:78%}}
+@media (max-width:600px){.core-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row;grid-auto-columns:auto;overflow:visible;padding-bottom:0;gap:8px}
+  .core-grid .core-card:last-child:nth-child(odd){grid-column:1/-1}
+  .core-card .go{gap:6px}.core-card .go .open,.core-card .sel-btn{white-space:nowrap;font-size:13px}.core-card .sel-btn > span:first-child{display:none}
+  .core-card .brand-chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+/* 모바일: 표를 회사별 카드로(가로 스크롤 없이). 머리글은 각 칸 앞 작은 이름표(data-l)로 */
+@media (max-width:600px){
+  .tbl-wrap{overflow:visible}
+  table.mc,table.mc tbody{display:block;width:100%;min-width:0 !important}
+  table.mc thead{display:none}
+  table.mc tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 14px;padding:10px 2px;border-bottom:1px solid var(--grid)}
+  table.mc tbody td{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:0;border:0;position:static;background:none;white-space:normal;text-align:right;font-size:13.5px;min-width:0 !important}
+  table.mc tbody td::before{content:attr(data-l);color:var(--muted);font-size:12.5px;font-weight:400;text-align:left;flex:0 1 auto;min-width:0;overflow-wrap:anywhere}
+  table.mc tbody td:first-child,table.mc tbody td[colspan]{grid-column:1/-1;justify-content:flex-start;text-align:left;font-size:15px}
+  table.mc tbody td:first-child::before,table.mc tbody td[colspan]::before,table.mc tbody td[data-l=""]::before{display:none}
+  table.mc tbody td:empty,table.mc tbody td.mc-empty{display:none}
+  table.mc tbody tr.avg{background:var(--tag);border-radius:8px;padding:10px}
+  table.mc tbody tr.seg-row{padding-left:12px}
+  table.mc tbody tr.avg td{background:none}
+  table.mc tbody td.err:last-child{grid-column:1/-1;justify-content:flex-end;font-size:12.5px}
+  table.mc tbody td.err:last-child::before{display:none}
+  table.mc tbody td.g > div{display:inline}
+  table.mc tbody td.g{flex-wrap:nowrap}
+  table.mc tbody td.g .pv{margin-left:6px;color:var(--muted);font-size:12.5px}
+  table.mc tbody td.g > div,table.mc tbody td b{white-space:nowrap}
+  #sgaTable.mc tbody tr{grid-template-columns:minmax(0,1fr)}
+  #sgaTable.mc tbody td.g{justify-content:flex-start}
+  #sgaTable.mc tbody td.g::before{width:84px}
+  #sgaTable.mc tbody td.g .v{margin-left:auto}
+  #valTable.mc tbody td.est{grid-column:1/-1}
+  table.mc tbody td:first-child .co{flex-wrap:wrap;row-gap:2px;min-width:0}
+  table.mc tbody td,table.mc tbody td *{max-width:100%}
+  table.mc tbody tr{padding-right:6px}
+  :is(#valTable,#finTable,#sgaTable,#mktBrands,#discTable,#quoteTable).mc tbody td{padding:0;border:0;min-width:0}
+  #discTable.mc tbody tr{grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+  #discTable.mc tbody td::before{display:none}
+  #discTable.mc tbody td:first-child{grid-column:1;font-size:13px;color:var(--muted)}
+  #discTable.mc tbody td:nth-child(2){justify-content:flex-start}
+  #discTable.mc tbody td.ty{grid-column:3;grid-row:1}
+  #discTable.mc tbody td.t{grid-column:1/-1;grid-row:2;text-align:left;justify-content:flex-start;font-size:14.5px;line-height:1.45}
+  #discTable.mc tbody td.md{grid-column:1/-1;grid-row:3;justify-content:flex-start;gap:6px;font-size:12.5px;color:var(--muted)}
+  #discTable.mc tbody td.md b{font-weight:500}
+  table.mc tbody td[colspan]{padding-left:0 !important}
+}
 .core-card{--cc:var(--brand);position:relative;border:1px solid var(--line);border-top:4px solid var(--cc);border-radius:6px;padding:14px 16px 12px;
   background:color-mix(in srgb, var(--cc) 5%, var(--surface));cursor:pointer;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:6px;
   transition:background .15s, box-shadow .15s, transform .15s}
@@ -439,7 +481,7 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
 #discTable td.md b{display:block;font-weight:500;color:var(--ink);max-width:120px;overflow:hidden;text-overflow:ellipsis}
 #discTable td.md small{display:block;font-size:13px;color:var(--muted)}
 #discTable th.md,#discTable td.ty{text-align:left}
-@media (max-width:600px){#discTable td.md,#discTable th.md{display:none}}
+@media (max-width:600px){#discTable th.md{display:none}#discTable.mc tbody td.md{display:flex}#discTable.mc td.md b,#discTable.mc td.md small{display:inline;font-size:12.5px;color:var(--muted)}}
 #discGrid{table-layout:fixed;min-width:720px}           /* 내용과 상관없이 분기 열 너비 고정 */
 #discGrid th, #discGrid td{text-align:center}
 #discGrid th:first-child, #discGrid td:first-child{text-align:left;width:34%}
@@ -1109,6 +1151,19 @@ function sectioned(list, g = grp(), gid = state.group){
     items:x.members.map(id => list.find(c => c.id === id)).filter(c => c && !isSelf(c))}));
   return out.filter(x => x.items.length);
 }
+
+/* ---------- 모바일 표 → 카드: 표가 그려질 때마다 각 칸에 머리글 이름(data-l)을 붙임 ---------- */
+function mcard(t){
+  const hr = t.tHead?.rows; if (!hr?.length) return;
+  const heads = [...hr[hr.length - 1].cells].flatMap(th => Array(th.colSpan || 1).fill((th.querySelector(".hl") || th).innerText.replace(/\s+/g, " ").replace(/[▲▼]/g, "").trim()));
+  t.classList.add("mc");
+  [...(t.tBodies[0]?.rows || [])].forEach(tr => { let k = 0;
+    [...tr.cells].forEach(td => { td.dataset.l = td.colSpan > 1 ? "" : heads[k] || ""; if (!td.innerText.trim() || td.innerText.trim() === "–" && !heads[k]) td.classList.add("mc-empty"); k += td.colSpan || 1; }); });
+}
+new MutationObserver(ms => { const seen = new Set();
+  ms.forEach(m => { const t = m.target.closest?.("table") || m.target.querySelector?.("table"); if (t && t.closest(".tbl-wrap")) seen.add(t);
+    if (m.target.querySelectorAll) m.target.querySelectorAll(".tbl-wrap table").forEach(x => seen.add(x)); });
+  seen.forEach(mcard); }).observe(document.body, { childList: true, subtree: true });
 
 /* ---------- 데이터 로드 ---------- */
 async function loadJSON(path){
@@ -2220,6 +2275,7 @@ function renderDisc(reset){
   $("discGridWrap").hidden = $("discYearWrap").hidden = !isGrid;
   $("discListWrap").hidden = isGrid;
   if (isGrid){
+    $("discType").hidden = $("discTier").hidden = true;
     const n = renderGrid(list.filter(c => !pick || c.id === pick), today);
     $("discMoreWrap").hidden = true;
     $("discHint").textContent = `${discYear ?? ""}년 정기보고서 ${n}건`;
