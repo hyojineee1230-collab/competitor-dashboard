@@ -110,7 +110,7 @@ const SUM = {
     }
     const chs = m.channels?.items?.length ? card(`<h2>어디서 사나<small>${esc(m.channels.title || "")}</small></h2>${barChart(m.channels.items.slice().sort((a, b) => (/(기타|그 외|미공개)/.test(a[0])) - (/(기타|그 외|미공개)/.test(b[0])) || b[1] - a[1]).map(([n, v]) => ({ label: n.replace(/\(.*\)/, ""), color: /(기타|그 외|미공개)/.test(n) ? "#C3CEDF" : v > 50 ? "#2B5CA8" : "#7C97C2", v })), { row: 42, lab: 120, valW: 70, fmt: v => `${v.toFixed(1)}%` })}`) : "";
     const sh = m.share?.items?.length ? card(`<h2>무엇을 사나<small>${esc(m.share.title || "")}</small></h2><div style="display:flex;height:40px;border-radius:6px;overflow:hidden;font-size:15px;font-weight:700">${m.share.items.map((x, i) => `<span style="width:${x.pct}%;background:${["#A0522D", "#2B8A7E", "#D3DAE5"][i] || "#B4BFCF"};color:${i < 2 ? "#fff" : "#4A5568"};display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden">${esc(x.name.length > 22 ? x.name.slice(0, 20) + "…" : x.name)} ${x.pct}%</span>`).join("")}</div>`) : "";
-    const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 170px;gap:12px;padding:10px 0;border-top:1px solid #EEF1F6;font-size:15.5px"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
+    const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;
     return `<div class="ph"><h1>시장</h1><span class="m">${esc(m.label || F.name)} · ${upd}</span><span class="r">${regBtn}</span></div>
       ${kp ? `<div class="g3">${kp}</div>` : ""}${trend || chs ? `<div class="g2">${trend}${chs}</div>` : ""}${sh}${pipe}
@@ -127,7 +127,7 @@ const SUM = {
     const cats = Object.entries(byCat).sort((a, b) => (a[0] === "etc") - (b[0] === "etc") || b[1] - a[1]);
     const recent = (D.newsfx?.recent || []).filter(e => ids.includes(e.c) && e.cat !== "market").slice(0, 6);
     const list = recent.map(e => { const c = F.cos.find(x => x.id === e.c);
-      return `<a href="${esc(e.url)}" target="_blank" rel="noopener" style="display:grid;grid-template-columns:62px 160px minmax(0,1fr);gap:14px;align-items:center;padding:13px 0;border-top:1px solid #EEF1F6;font-size:16.5px">
+      return `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="nrow">
         <span class="mu" style="font-size:15px">${md(e.d)}</span><span class="co">${'<i class="dot" style="background:' + c.color + '"></i>' + esc(c.name)}</span>
         <span><span class="tag" style="margin-right:10px">${esc(catName(e.cat))}</span>${esc(e.title)}</span></a>`; }).join("");
     return `<div class="ph"><h1>공시·기사</h1><span class="m">기사 ${D.newsfx?.updatedAt ? mdh(D.newsfx.updatedAt) : "–"} · 공시 ${D.meta?.updatedAt ? mdh(D.meta.updatedAt) : "–"}</span></div>

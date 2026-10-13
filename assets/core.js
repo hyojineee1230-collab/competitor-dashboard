@@ -230,7 +230,7 @@ function header(){
   const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}>${l}</a>`).join("");
   const fsw = FIELDS.map(([k, l]) => `<a href="${href(S.menu, k)}"${k === S.field ? ' aria-current="true"' : ""}>${l}</a>`).join("");
   const vw = [["summary", "요약"], ["detail", "상세"]].map(([k, l]) => `<a href="${href(S.menu, S.field, k)}"${k === VIEW ? ' aria-current="true"' : ""} data-view="${k}">${l}</a>`).join("");
-  return `<div class="hd"><span class="brand">경쟁사 모니터</span><nav class="nav" aria-label="메뉴">${nav}</nav>
+  return `<div class="hd"><a class="brand" href="../">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
     <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r"><div class="sw view" role="group" aria-label="보기">${vw}</div></div></div>`;
 }
 let PAGES = {};

@@ -84,6 +84,11 @@ tr.grp td{background:#F6F8FB;font-size:13px;font-weight:700;color:var(--ink-2);p
 td.wrap{white-space:normal;text-align:left}
 th[data-k]{cursor:pointer}
 
+.nrow{display:grid;grid-template-columns:62px 160px minmax(0,1fr);gap:14px;align-items:center;padding:13px 0;border-top:1px solid var(--grid);font-size:16.5px;min-width:0}
+
+.prow{display:grid;grid-template-columns:150px minmax(0,1fr) 170px;gap:12px;padding:10px 0;border-top:1px solid var(--grid);font-size:15.5px;min-width:0}
+.prow > span:last-child{text-align:right}
+
 /* 휴대폰 */
 @media (max-width:760px){
   header{padding:12px 14px}
@@ -98,6 +103,8 @@ th[data-k]{cursor:pointer}
   main{padding:14px 14px 40px;gap:14px}
   .g2,.g3{grid-template-columns:minmax(0,1fr)}
   .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .prow{grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:14.5px}.prow > span:nth-child(2){grid-column:1/-1;grid-row:2}
+  .nrow{grid-template-columns:auto minmax(0,1fr);gap:4px 10px;font-size:15px}.nrow > span:last-child{grid-column:1/-1}
   .card{padding:16px;border-radius:16px}
   .card h2{font-size:17px}
   .ph h1{font-size:23px}
