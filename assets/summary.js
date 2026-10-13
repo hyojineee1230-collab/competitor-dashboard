@@ -1,7 +1,7 @@
 /* Beta: 그래프 중심, 핵심 숫자만, AI 정리 문장 없음
    그래프는 마우스를 올리거나 누르면 그 점의 숫자(얼마 → 얼마)가 뜨고, 카드 아래 '숫자 보기'를 펼치면 근거 표 */
 "use strict";
-const card = (inner, cls = "") => `<div class="card ${cls}">${inner}</div>`;
+const card = (inner, cls = "", attr = "") => `<div class="card ${cls}"${attr}>${inner}</div>`;
 // 인사이트 카드: 머리줄(오른쪽 '자세히'), 큰 숫자, 그래프, 펼치는 표
 const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link = "", more = "" } = {}) =>
   card(`<div class="meta"><span>${meta}${isNew ? '<span class="new" aria-label="새 소식"></span>' : ""}</span>${link ? `<a class="more" href="${link}">자세히 ›</a>` : ""}</div>
@@ -138,8 +138,9 @@ function openCo(id){
   const dlg = $("coPop"); $("coPopBody").innerHTML = coPL(c, F);
   if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
 }
+document.addEventListener("keydown", e => { const b = e.target.closest?.(".fcard[data-co]"); if (b && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openCo(b.dataset.co); } });
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-co]"); if (b){ e.preventDefault(); openCo(b.dataset.co); return; }
+  const b = e.target.closest("[data-co]"); if (b && !e.target.closest("[data-tip]")){ e.preventDefault(); openCo(b.dataset.co); return; }
   const d = $("coPop"); if (d?.open && (e.target === d || e.target.closest("[data-close]"))) d.close();
 });
 
@@ -333,22 +334,18 @@ const SUM = {
       const tips = ks.map((k, j) => { const p = P[j], pv = j ? P[j - 1][met] : k > 0 ? plAt(a, k - 1)[met] : null;
         return [`${c.name} · ${ys[j]}`, `${MET[met]}\t${big(p[met], cur)}`, pv != null && p[met] != null ? `${met === "rv" ? "매출 성장률" : "전년 대비"}\t${pv > 0 ? sgn(growth(p[met], pv)) : "전년 적자"}` : null,
           met !== "rv" ? `매출\t${big(p.rv, cur)}` : null, p.opm != null ? `영업이익률\t${p.opm.toFixed(1)}%` : null]; });
-      const plTbl = tbl(["항목", ...ys], [
-        ["매출", ...P.map(p => big(p.rv, cur))], ["매출 성장률", ...P.map((p, j) => pct(p.g, 1, 0))], ["매출원가", ...P.map(p => big(p.cs, cur))],
-        ["매출총이익", ...P.map(p => big(p.gp, cur))], ["영업이익", ...P.map(p => big(p.op, cur))], ["영업이익률", ...P.map(p => p.opm == null ? "–" : `${p.opm.toFixed(1)}%`)],
-        ["당기순이익", ...P.map(p => big(p.ni, cur))]], "", true);
-      return card(`<button type="button" class="cob" data-co="${esc(c.id)}" style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}<span class="cob-h">약식 PL ›</span></button>
+      return card(`<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(last[met], cur)}</span><span style="font-size:15px;color:${MU}">${ys.at(-1)} ${MET[met]}</span>${met === "rv" ? `<span style="font-size:17px;font-weight:700">${pct(last.g, 1, 0)}</span>` : ""}</div>
         ${colChart(vals, ys, { W: 360, H: 130, colors: vals.map((v, i) => v < 0 ? "#9DB5DD" : i === vals.length - 1 ? c.color : "#D5DCE7"), fmt: v => v == null ? "–" : cur === "KRW" ? nf(v) : (Math.abs(v) < 10 ? v.toFixed(1) : nf(v)) + "M", tips })}
         <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>영업이익률</span><span>${P.map(p => { const v = margin(p.op, p.rv); return capFn(v) == null ? (v == null ? "–" : "매출 미미") : `<b style="color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b>`; }).join(" → ")}</span></div>
-        ${fold("fin-" + c.id, "손익 숫자 보기", plTbl)}`);
+`, "fcard", ` data-co="${esc(c.id)}" role="button" tabindex="0" title="누르면 약식 손익계산서"`);
     }).join("");
     const pts = cos.map(c => { const s = sgaOf(c), a = c.annual, n = a.revenue.length; if (!s?.mk || a.currency !== "KRW") return null;
       const g = growth(a.revenue[n - 1], a.revenue[n - 2]), om = margin(a.operatingIncome[n - 1], a.revenue[n - 1]);
       return g == null ? null : { label: c.name, color: c.color, x: s.mk, y: g, r: Math.max(8, Math.sqrt(a.revenue[n - 1] / 1e8) / 2.2), sub: om == null ? "" : `영업이익률 ${om.toFixed(1)}%`,
         tip: [`${c.name} · ${s.y}`, `매출\t${big(a.revenue[n - 1])}`, `매출 성장률\t${sgn(g)}`, `마케팅 강도\t${s.mk.toFixed(1)}%`, `광고·판촉비\t${big(s.adpromo)}`, `판매수수료\t${s.comm == null ? "계정 없음" : big(s.comm)}`, om == null ? null : `영업이익률\t${om.toFixed(1)}%`] }; }).filter(Boolean);
     const yr = cos[0]?.annual?.years?.at(-1) || "";
-    return `<div class="ph"><h1>재무</h1><span class="m">${yr} 사업연도 · 연결 기준 · OpenDART · 막대를 누르면 금액</span><span class="r">${metBtn}${segBtn}</span></div>
+    return `<div class="ph"><h1>재무</h1><span class="m">${yr} 사업연도 · 연결 기준 · OpenDART · 카드를 누르면 약식 PL · 막대를 누르면 금액</span><span class="r">${metBtn}${segBtn}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
       ${pts.length >= 2 ? card(`<h2>성장 vs 마케팅 강도<small>${yr} · 원 크기 = 매출 · 원을 누르면 숫자</small></h2>${scatter(pts, { xl: "마케팅 강도 (광고·판촉 + 판매수수료) ÷ 매출 →", yl: "↑ 매출 성장률" })}`) : ""}
       ${moreLink("finance", "손익·판관비 표로 보기")}`;
