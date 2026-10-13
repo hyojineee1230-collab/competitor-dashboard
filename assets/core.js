@@ -9,7 +9,7 @@ const DATA = SITE + "data/", CONF = SITE + "config/";
 const MENUS = [["insight", "인사이트"], ["quotes", "시세"], ["finance", "재무"], ["market", "시장"], ["news", "공시·기사"]];
 const FIELDS = [["core", "핵심 경쟁사", "biz"], ["hff", "건강기능식품", "hff"], ["microbiome", "마이크로바이옴", "microbiome"]];
 const MARKET_OF = { core: "hff", hff: "hff", microbiome: "microbiome" };
-const LS = { view: "cm2-view", field: "cm2-field" };
+const LS = { view: "cm2-view", field: "cm2-field", ofs: "cm2-ofs" };
 // 회사 색: assets/colors.js (기존 화면과 같은 색)
 const UP = "#D3433A", DN = "#2467C9", INK = "#121B2B", MU = "#6B778A", GR = "#E9EDF3";
 
@@ -71,7 +71,10 @@ const MCAP = 1000;   // ±1,000% 넘는 이익률은 '매출 미미'
 function fieldCtx(fid){
   const f = FIELDS.find(x => x[0] === fid) || FIELDS[1];
   const g = D[f[2]] || { companies: [] };
-  const cos = g.companies.map((c, i) => ({ ...c, listed: c.listed ?? !!c.ticker, color: coColor(c.id, i) }));
+  // 별도 재무제표(S.ofs): 별도 값(c.alt)이 있는 회사만 바꿈. 연결이 없는 회사는 본래 별도 그대로. 부문 주석은 연결 기준이라 뺌
+  const cos = g.companies.map((c, i) => { const x = { ...c, listed: c.listed ?? !!c.ticker, color: coColor(c.id, i) }, A = S.ofs && c.alt?.annual ? c.alt : null;
+    if (A){ x.annual = A.annual; if (A.quarterly !== undefined) x.quarterly = A.quarterly; x.sga = A.sga || null; x.segment = null; }
+    return x; });
   return { id: f[0], name: f[1], gid: f[2], g, cos, mk: (D.market?.groups || {})[MARKET_OF[f[0]]] || {} };
 }
 const isKR = c => /\.(KQ|KS)$/.test(c.ticker || "");
@@ -129,7 +132,7 @@ function freshness(F){
   items.push(["#1F8A78", `재무 ${qs ? qs.slice(2, 4) + "년 " + qs.slice(5) + "Q" : ys ? ys + "년" : "–"}`]);
   const ser = F.mk.kr?.size?.series?.[0]?.points; items.push(["#C98A1B", `시장 ${ser?.length ? ser.at(-1)[0] + "년" : D.market?.updatedAt ? md(D.market.updatedAt) : "–"}`]);
   if (VIEW === "detail" && D.summaries?.updatedAt) items.push(["#7A5AD0", `AI 정리 ${md(D.summaries.updatedAt)}`]);
-  return `<div class="fresh">${items.map(([c, s]) => `<span><i style="background:${c}"></i>${esc(s)}</span>`).join("")}<span style="margin-left:auto">다음 갱신 시세·기사 ${nextHourly()}</span></div>`;
+  return `<div class="fresh">${items.map(([c, s]) => `<span><i style="background:${c}"></i>${esc(s)}</span>`).join("")}<span class="fr">다음 갱신 시세·기사 ${nextHourly()}<button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결)">별도 재무제표<i aria-hidden="true"></i></button></span></div>`;
 }
 
 /* ---------- 그래프 (SVG 문자열) ---------- */
@@ -288,7 +291,9 @@ const fold = (key, label, inner) => `<details class="fold" data-fold="${esc(key)
 document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.fold) d.open ? OPEN.add(d.dataset.fold) : OPEN.delete(d.dataset.fold); }, true);
 
 /* ---------- 라우팅 · 헤더 ---------- */
-const S = { menu: "insight", field: lsGet(LS.field) || "hff", ui: {} };
+const S = { menu: "insight", field: lsGet(LS.field) || "hff", ui: {}, ofs: lsGet(LS.ofs) === "1" };
+// 재무 기준 표시: 별도 스위치를 켜면 '별도', 아니면 '연결' (본래 별도만 있는 회사는 표·팝업에 따로 표시)
+const basisLbl = () => S.ofs ? "별도" : "연결";
 function parseHash(){
   const h = location.hash.replace(/^#\/?/, "");
   // 예전 메인(v1) 탭 주소: #biz · #biz-x · #hff · #microbiome → 같은 분야 인사이트
@@ -328,6 +333,13 @@ async function render(){
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-ui]"); if (!b) return;
   const [k, v] = b.dataset.ui.split("="); S.ui[k] = v; if (k !== "lim") delete S.ui.lim; render();
+});
+// 연결 ↔ 별도 (모든 메뉴·분야 공통, 이 브라우저에 기억)
+document.addEventListener("click", e => {
+  if (!e.target.closest("[data-ofs]")) return;
+  S.ofs = !S.ofs; lsSet(LS.ofs, S.ofs ? "1" : "0");
+  const d = $("coPop"); if (d?.open) d.close();
+  render();
 });
 // 화면 안 선택 상자: <select data-uisel="key"> — 회사·유형 등을 바꾸면 '더 보기'는 처음으로
 document.addEventListener("change", e => {
