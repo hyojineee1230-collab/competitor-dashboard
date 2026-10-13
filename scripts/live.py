@@ -77,6 +77,30 @@ def quotes(cos, log=print):
     return out
 
 
+def index_quotes(log=print):
+    """코스닥·코스피 장중 지연 지수. 전일 종가는 KRX 지수(data/index.json) 기준"""
+    import yfinance as yf
+    today = datetime.now(KST).strftime("%Y-%m-%d")
+    base = load(DATA / "index.json", {}) or {}
+    out = {}
+    for mk, tk in (("KQ", "^KQ11"), ("KS", "^KS11")):
+        try:
+            s = yf.Ticker(tk).history(period="1d", interval="5m")["Close"].dropna()
+        except Exception as ex:
+            log(f"장중 지수 {mk} 실패: {type(ex).__name__}")
+            continue
+        if s.empty:
+            continue
+        ts = s.index[-1].tz_convert(KST)
+        b = base.get(mk) or {}
+        prev = next((c for d, c in zip(reversed(b.get("dates") or []), reversed(b.get("close") or [])) if d < today), None)
+        if ts.strftime("%Y-%m-%d") != today or not prev:
+            continue
+        last = float(s.iloc[-1])
+        out[mk] = {"close": round(last, 2), "prev": prev, "chg": round((last / prev - 1) * 100, 2), "ts": ts.strftime("%Y-%m-%dT%H:%M")}
+    return out
+
+
 def main():
     errors = []
     log = lambda m: (errors.append(m), print(m))
@@ -105,8 +129,9 @@ def main():
         log(f"보도 반응 분석 실패: {type(ex).__name__}: {ex}")
     # 3) 장중 지연 시세
     q = quotes(cos, log)
+    ix = index_quotes(log)
     (DATA / "live.json").write_text(json.dumps({"updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                                "source": "Yahoo Finance 지연 시세", "quotes": q, "errors": errors},
+                                                "source": "Yahoo Finance 지연 시세", "quotes": q, "index": ix, "errors": errors},
                                                ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"장중 시세 {len(q)}종목")
 

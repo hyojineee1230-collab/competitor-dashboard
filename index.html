@@ -85,15 +85,42 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;display:flex;al
 #content > #secPulse{order:-2}
 #content > #secFx{order:-1}
 /* 오늘: 시장 띠 → 이번 주 움직임 → 공시 → 보도 반응 인사이트 → 시총 조회 → 핵심 요약(분석 탭으로) */
-#content[data-mode="business"][data-sub="today"] > #secTicker{order:-6}
-#content[data-mode="business"][data-sub="today"] > #secPulse{order:-5}
+#content[data-mode="business"][data-sub="today"] > #secTicker{order:-8}
+#content[data-mode="business"][data-sub="today"] > #secPulse{order:-7}
+#content[data-mode="business"][data-sub="today"] > #secVoice{order:-6}
+#content[data-mode="business"][data-sub="today"] > #secFx{order:-5}
 #content[data-mode="business"][data-sub="today"] > #secDisc{order:-4}
-#content[data-mode="business"][data-sub="today"] > #secFx{order:-3}
 #content[data-mode="business"][data-sub="today"] > #secReport{order:-2}
 #content[data-mode="business"][data-sub="today"] > #secHead{order:-1}
 #content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual){display:none !important}
 #content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secPulse,#secFx,#secDisc,#secReport){display:none !important}
-#content:not([data-mode="business"]) > :is(#secFx,#secTicker){display:none !important}
+#content:not([data-mode="business"]) > :is(#secFx,#secTicker,#secVoice){display:none !important}
+#content[data-mode="business"][data-sub="analysis"] > #secVoice{display:none !important}
+.ans{font-size:17px;font-weight:700;line-height:1.55;margin:2px 0 14px;color:var(--ink)}
+.ans .up,.ans .down{font-weight:800}
+.ans small{font-size:14px;font-weight:500;color:var(--ink-2)}
+.mv-list{display:grid;gap:0}
+.mv-it{display:grid;grid-template-columns:150px 86px minmax(0,1fr);gap:12px;align-items:baseline;padding:9px 0;border-top:1px solid var(--grid)}
+.mv-it .co{font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px}
+.mv-it .co i{width:8px;height:8px;border-radius:50%;flex:none}
+.mv-it .r{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.mv-it .why{font-size:14.5px;line-height:1.45}
+.mv-it .why a{color:var(--ink);text-decoration:none}
+.mv-it .why a:hover{text-decoration:underline}
+.mv-it .why small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+@media (max-width:600px){.mv-it{grid-template-columns:1fr auto}.mv-it .why{grid-column:1/-1}}
+.vo-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:28px}
+@media (max-width:900px){.vo-grid{grid-template-columns:1fr}}
+.vo-row{display:grid;grid-template-columns:110px minmax(0,1fr) 64px;gap:10px;align-items:center;padding:4px 0;font-size:14px}
+.vo-row .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.vo-row .tr{position:relative;height:14px;background:var(--grid);border-radius:3px}
+.vo-row .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--s1)}
+.vo-row .tr b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink-2);opacity:.55}
+.vo-row .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.vo-row .n small{color:var(--muted);font-weight:400}
+.vo-cat{display:flex;flex-wrap:wrap;gap:6px}
+.vo-cat span{font-size:14px;padding:4px 10px;border-radius:999px;background:var(--tag);color:var(--ink-2)}
+.vo-cat span b{color:var(--ink);margin-left:4px}
 #content:not([data-sub="today"]) .head-more,#content:not([data-mode="business"]) .head-more{display:none}
 /* 산업 탭: 경쟁사 보기 → 이번 주 → 주가·기업가치 → 공시 → 시장 개요 → 실적 → 판관비 */
 #content[data-mode="full"] > #segBar{order:-9}
@@ -769,18 +796,25 @@ td span.err{font-size:13.5px}
     <!-- 시장 개요 (full) : data/market.json -->
     <!-- 시장 띠 (오늘 탭 맨 위): 국내 상장 경쟁사 등락·시가총액, 장중에는 data/live.json 지연 시세 -->
     <section class="panel" id="secTicker" hidden>
-      <div class="ph"><div><h2>오늘 시장</h2><p class="hint" id="tickHint"></p></div></div>
+      <div class="ph"><div><h2>오늘 경쟁사 주가, 시장보다 강했나?</h2><p class="hint" id="tickHint"></p></div></div>
+      <p class="ans" id="tickAns"></p>
       <div id="tickBody"></div>
     </section>
     <!-- 이번 주 움직임 · 보도 반응 인사이트 (모든 탭 맨 위, data/newsfx.json) -->
     <section class="panel" id="secPulse" hidden>
-      <div class="ph"><div><h2>이번 주 움직임</h2><p class="hint" id="pulseHint"></p></div></div>
-      <div id="pulseMoveWrap"><p class="mk-h">큰 움직임 <span class="u">(최근 10거래일)</span></p><div class="mv-chips" id="pulseMove"></div></div>
-      <p class="mk-h">최근 보도와 주가 반응</p><div class="pr-list" id="pulseNews"></div>
+      <div class="ph"><div><h2>시장과 다르게 움직인 경쟁사, 이유는?</h2><p class="hint" id="pulseHint"></p></div></div>
+      <p class="ans" id="pulseAns"></p>
+      <div id="pulseList"></div>
+    </section>
+    <section class="panel" id="secVoice" hidden>
+      <div class="ph"><div><h2>경쟁사들은 지금 무엇을 알리고 있나?</h2><p class="hint" id="voiceHint"></p></div></div>
+      <p class="ans" id="voiceAns"></p>
+      <div class="vo-grid"><div id="voiceBars"></div><div id="voiceCats"></div></div>
     </section>
     <section class="panel" id="secFx" hidden>
-      <div class="ph"><div><h2>보도 반응 인사이트</h2><p class="hint" id="fxHint"></p></div>
+      <div class="ph"><div><h2>어떤 보도가 주가를 움직이나?</h2><p class="hint" id="fxHint"></p></div>
         <div class="controls"><div class="seg" id="fxAxis" role="group" aria-label="비교 기준" hidden></div><button class="btn" type="button" id="fxToggle" aria-expanded="false">근거 보기</button></div></div>
+      <p class="ans" id="fxAns"></p>
       <div class="fx-cards" id="fxCards"></div>
       <div id="fxMore" hidden><div id="fxBars"></div><p class="note" id="fxNote"></p></div>
     </section>
@@ -1200,8 +1234,8 @@ async function selectGroup(tabId){
     $("segPick").innerHTML = [...g.segments.map(x => [x.key, x.title]), ["all", "전체"]].map(([k, l]) =>
       `<button data-k="${esc(k)}" aria-pressed="${k === state.seg[g.id]}">${esc(l)}</button>`).join("");
   }
-  // 공시: 매일 바뀌는 정보라 모든 탭에서 펼친 상태로 시작
-  discOpen = true;
+  // 공시·기사: 오늘 탭은 위 질문형 섹션이 요약하므로 접힌 상태(전체 목록), 산업 탭은 펼침
+  discOpen = !(m === "business" && state.sub === "today");
   $("secMkt").hidden = m !== "full";
   state.view = m === "market" ? "mcap" : "rel"; syncSeg("views", state.view);
   state.sort = g.sections?.length ? {key:"order", dir:"asc"} : {key:"marketCap", dir:"desc"};
@@ -1269,71 +1303,137 @@ function renderCompanies(){
   if (m === "business") renderTicker();
 }
 
-/* ---------- 오늘 시장 (시장 띠): 국내 상장 경쟁사, 장중엔 지연 시세(data/live.json) ---------- */
-let liveQ = null;
-async function renderTicker(){
-  if ($("content").dataset.mode !== "business") return;
-  if (!liveQ){ try { liveQ = await loadJSON("data/live.json"); } catch(e){ liveQ = {}; } }
-  const all = await allCompanies(), groups = (state.meta?.groups || []).filter(g => g.mode === "full");
-  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
-  const seen = new Set(), secs = [];
-  let liveTs = null, krxDay = null;
-  groups.forEach(g => {
-    const items = (state.data[g.id]?.companies || []).filter(c => /\.(KQ|KS)$/.test(c.ticker || "") && !seen.has(c.id) && c.quote);
-    items.forEach(c => seen.add(c.id));
-    const rows = items.map(c => {
-      const q = c.quote, L = liveQ?.quotes?.[c.id], live = L && L.ts?.slice(0, 10) === today && L.ts.slice(0, 10) > (q.asOf || "");
-      if (live) liveTs = L.ts; else krxDay = q.asOf || krxDay;
-      return { c, chg: live ? L.chg : q.change1d, w: q.change1w, cap: live && L.mcap ? L.mcap : q.marketCap, live };
-    }).sort((a, b) => (b.cap || 0) - (a.cap || 0));
-    if (rows.length) secs.push({ name: g.name, rows });
-  });
-  $("secTicker").hidden = !secs.length;
-  if (!secs.length) return;
-  const col = (c, i) => color(i);
-  const core = new Set(comps().map(c => c.id));
-  $("tickHint").textContent = liveTs ? `장중 지연 시세 ${liveTs.slice(11, 16)} 기준(약 15~20분 지연) · 1주·시가총액은 최근 값` : `KRX 종가 ${krxDay ? krxDay.slice(5).replace("-", ".") : ""} 기준 · 전일 대비`;
-  $("tickBody").style.setProperty("--cols", Math.max(...secs.map(x => x.rows.length)));
-  $("tickBody").style.setProperty("--lw", Math.max(...secs.map(x => x.name.length)) * 13 + "px");
-  $("tickBody").innerHTML = secs.map(x => `<div class="tk-grp"><b>${esc(x.name)}</b><div class="tk-row">${x.rows.map((r, i) =>
-    { const pop = true, tag = "button";
-      return `<${tag} ${pop ? `type="button" title="${esc(r.c.name)} 상세"` : ""} class="tk" data-id="${esc(r.c.id)}"${pop ? "" : ' style="cursor:default"'}><span class="n"><i style="background:${col(r.c, i)}"></i>${esc(r.c.name)}</span>
-      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></${tag}>`; }).join("")}</div></div>`).join("");
-}
-$("tickBody").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
-
-/* ---------- 이번 주 움직임 · 보도 반응 인사이트 (data/newsfx.json) ---------- */
-let newsfx = null, fxAxis = "cat";
+/* ---------- 오늘 탭: 질문 → 답 한 줄 → 근거 (답은 데이터로 규칙에 따라 생성, 매시 갱신) ---------- */
+const BRIEF = { move: 5, hot: 2 };          // 시장과 다르게 움직임: 3거래일 시장 대비 ±5% 이상 · 거래량 급증: 평소 2배
+let liveQ = null, idxD = null, newsfx = null, fxAxis = "cat";
 const FX_AXES = [["cat", "기사 유형"], ["tier", "매체 등급"], ["timing", "발행 시점"], ["weekday", "요일"], ["reach", "매체 수"], ["keyword", "키워드"]];
 const sgn = (v, d = 1) => v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(d)}%`;
 const upDown = v => v > 0 ? "up" : v < 0 ? "down" : "";
 const arrow = v => v == null ? "–" : `${v > 0 ? "▲" : v < 0 ? "▼" : ""}${Math.abs(v).toFixed(1)}%`;
-async function renderPulse(){
+const md = d => d ? d.slice(5).replace("-", ".") : "";
+const todayKST = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+async function briefData(){
+  if (!liveQ){ try { liveQ = await loadJSON("data/live.json"); } catch(e){ liveQ = {}; } }
+  if (!idxD){ try { idxD = await loadJSON("data/index.json"); } catch(e){ idxD = {}; } }
   if (!newsfx){ try { newsfx = await loadJSON("data/newsfx.json"); } catch(e){ newsfx = {}; } }
-  const fx = newsfx, ids = new Set(comps().map(c => c.id)), byId = new Map(comps().map(c => [c.id, c]));
+}
+// 시장 등락: 장중이면 지연 지수, 아니면 KRX 지수의 그날 등락
+function mktChg(mk, live, day){
+  const L = liveQ?.index?.[mk];
+  if (live && L?.ts?.slice(0, 10) === todayKST()) return L.chg;
+  const s = idxD?.[mk]; if (!s) return null;
+  const k = s.dates.indexOf(day); if (k < 1) return null;
+  return (s.close[k] / s.close[k - 1] - 1) * 100;
+}
+// ① 오늘 경쟁사 주가, 시장보다 강했나?
+async function renderTicker(){
+  if ($("content").dataset.mode !== "business") return;
+  await briefData();
+  const groups = (state.meta?.groups || []).filter(g => g.mode === "full");
+  await allCompanies();
+  const today = todayKST(), seen = new Set(), secs = [], all = [];
+  let live = false, day = null;
+  groups.forEach(g => {
+    const items = (state.data[g.id]?.companies || []).filter(c => /\.(KQ|KS)$/.test(c.ticker || "") && !seen.has(c.id) && c.quote);
+    items.forEach(c => seen.add(c.id));
+    const rows = items.map(c => {
+      const q = c.quote, L = liveQ?.quotes?.[c.id], lv = !!(L && L.ts?.slice(0, 10) === today && today > (q.asOf || ""));
+      if (lv) live = true; else day = q.asOf || day;
+      return { c, mk: c.ticker.slice(-2), chg: lv ? L.chg : q.change1d, w: q.change1w, cap: lv && L.mcap ? L.mcap : q.marketCap, lv, ts: lv ? L.ts : null };
+    }).sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99));
+    if (rows.length){ secs.push({ name: g.name, rows }); all.push(...rows); }
+  });
+  $("secTicker").hidden = !secs.length;
+  if (!secs.length) return;
+  all.forEach(r => { const m = mktChg(r.mk, r.lv, day); r.rel = r.chg == null || m == null ? null : r.chg - m; });
+  const kq = mktChg("KQ", live, day), ks = mktChg("KS", live, day);
+  const avg = mean(all.map(r => r.chg)), up = all.filter(r => r.chg > 0).length;
+  const ts = live ? all.find(r => r.ts)?.ts : null;
+  $("tickHint").textContent = live ? `장중 지연 시세 ${ts?.slice(11, 16) || ""} 기준(약 15~20분 지연)` : `KRX 종가 ${md(day)} 기준 · 전일 대비`;
+  // 답 한 줄: 평균 vs 코스닥, 시장 대비 가장 강한·약한 곳
+  let verdict = "";
+  if (avg != null && kq != null){
+    const d = avg - kq;
+    verdict = d >= 1 ? (kq < 0 ? "시장보다 덜 빠졌습니다" : "시장보다 강했습니다") : d <= -1 ? (kq < 0 ? "시장보다 더 빠졌습니다" : "시장보다 약했습니다") : "시장과 비슷하게 움직였습니다";
+  }
+  const rel = all.filter(r => r.rel != null).sort((a, b) => b.rel - a.rel), best = rel[0], worst = rel.at(-1);
+  $("tickAns").innerHTML = `경쟁사 ${all.length}곳 중 ${up ? `${up}곳 상승` : "상승 없음"}, 평균 <span class="${upDown(avg)}">${arrow(avg)}</span>`
+    + (kq != null ? ` <small>(코스닥 ${arrow(kq)}${ks != null ? ` · 코스피 ${arrow(ks)}` : ""})</small>` : "")
+    + (verdict ? ` → ${verdict}` : "")
+    + (best && worst && best !== worst ? `<br><small>시장 대비 가장 강한 곳 <b>${esc(best.c.name)}</b>(${sgn(best.rel)}p) · 가장 약한 곳 <b>${esc(worst.c.name)}</b>(${sgn(worst.rel)}p)</small>` : "");
+  $("tickBody").style.setProperty("--cols", Math.max(...secs.map(x => x.rows.length)));
+  $("tickBody").style.setProperty("--lw", Math.max(...secs.map(x => x.name.length)) * 13 + "px");
+  $("tickBody").innerHTML = secs.map(x => `<div class="tk-grp"><b>${esc(x.name)}</b><div class="tk-row">${x.rows.map((r, i) =>
+    `<button type="button" class="tk" data-id="${esc(r.c.id)}" title="${esc(r.c.name)} 상세"><span class="n"><i style="background:${color(i)}"></i>${esc(r.c.name)}</span>
+      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></button>`).join("")}</div></div>`).join("");
+}
+$("tickBody").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
+
+// ② 시장과 다르게 움직인 경쟁사, 이유는? — 보도는 회사·반응 시작일로 묶고, 보도 없이 움직인 날도 함께
+async function renderPulse(){
+  await briefData();
+  const fx = newsfx, today = $("content").dataset.sub === "today" && $("content").dataset.mode === "business";
+  const pool = today ? await allCompanies() : new Map(comps().map(c => [c.id, c]));
   const show = !!fx.recent;
-  $("secPulse").hidden = $("secFx").hidden = !show;
-  if (!show) return;
-  const adjTxt = fx.index?.length ? "시장지수 대비 초과수익" : "종목 수익률(시장지수 반영 전)";
-  // 최근 보도: 이 탭 회사만, 최신 8건
-  const rec = fx.recent.filter(e => ids.has(e.c));
+  $("secPulse").hidden = !show;
+  if (!show){ $("secVoice").hidden = $("secFx").hidden = true; return; }
+  $("secFx").hidden = false;
+  const adj = fx.index?.length ? "시장 대비" : "주가";
+  const grp = new Map();
+  fx.recent.filter(e => pool.has(e.c) && pool.get(e.c).listed).forEach(e => {
+    const ar = (e.ar || []).slice(0, 3).filter(v => v != null); if (!ar.length) return;
+    const k = e.c + "|" + (e.d0 || e.d);
+    const g = grp.get(k) || { c: e.c, d: e.d0 || e.d, r: ar.reduce((t, v) => t + v, 0), n: ar.length, vr: e.vr, items: [] };
+    g.items.push(e); grp.set(k, g);
+  });
+  const rows = [...grp.values()].filter(g => Math.abs(g.r) >= BRIEF.move);
+  // 보도 없이 크게 움직인 날
+  (fx.movers || []).filter(m => pool.has(m.c) && Math.abs(m.ar) >= BRIEF.move && !rows.some(g => g.c === m.c && Math.abs(new Date(g.d) - new Date(m.d)) <= 2 * 864e5))
+    .forEach(m => rows.push({ c: m.c, d: m.d, r: m.ar, n: 1, vr: m.vr, items: m.news?.length ? m.news : [], nonews: !m.news?.length }));
+  rows.sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+  // 회사당 가장 큰 움직임 하나만(나머지는 '외 N회')
+  const kept = [];
+  rows.forEach(g => { const k = kept.find(x => x.c === g.c); if (k) k.more = (k.more || 0) + 1; else kept.push(g); });
+  const top = kept.slice(0, 6);
+  const why = it => !it ? "관련 보도 없이" : it.cat === "market" ? "증권 기사 외 뚜렷한 보도 없이" : it.cat === "etc" || !fx.cats?.[it.cat] ? "보도 뒤" : `${fx.cats[it.cat]} 보도 뒤`;
+  const pick = g => g.items.find(x => x.cat !== "market") || g.items[0];
+  const nm = id => pool.get(id)?.name || fx.names?.[id] || id;
   const upd = fx.updatedAt ? new Date(fx.updatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
-  $("pulseHint").textContent = `${upd ? `갱신 ${upd} · ` : ""}최근 14일 · 숫자는 보도 후 3거래일 ${fx.index?.length ? "시장 대비 " : ""}주가 등락`;
-  $("pulseNews").innerHTML = rec.length ? rec.slice(0, 8).map(e => {
-    const c = byId.get(e.c), ar = (e.ar || []).slice(0, 3).filter(v => v != null), sum = ar.length ? ar.reduce((t, v) => t + v, 0) : null;
-    const fxv = !c?.listed || sum == null ? `<span class="pr-fx na"></span>`
-      : `<span class="pr-fx ${upDown(sum)}">${arrow(sum)}${e.vr >= 2 ? `<small class="hot">거래량 급증</small>` : ""}</span>`;
-    return `<div class="pr-row"><span class="pr-d">${e.d.slice(5).replace("-", ".")}<small>${esc(e.t || "")}</small></span>
-      <span class="pr-main"><a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.title)}</a>
-      <span class="pr-meta"><span><i style="background:${color(c?._ci ?? 0)}"></i> ${esc(c?.name || fx.names?.[e.c] || e.c)}</span><span class="ct">${esc(fx.cats?.[e.cat] || e.cat)}</span></span></span>${fxv}</div>`; }).join("")
-    : `<p class="empty">최근 14일 보도 없음</p>`;
-  // 큰 움직임: 이 탭 회사만
-  const mv = (fx.movers || []).filter(m => ids.has(m.c)).slice(0, 6);
-  $("pulseMoveWrap").hidden = !mv.length;
-  $("pulseMove").innerHTML = mv.map(m => { const c = byId.get(m.c);
-    return `<div class="mv-row" style="--cc:${color(c?._ci ?? 0)}"><div class="mv-h"><span>${esc(c?.name || m.c)} <small style="color:var(--muted);font-weight:400">${m.d.slice(5).replace("-", ".")}</small></span><b class="${upDown(m.ar)}">${Math.abs(m.ar) >= 5 ? arrow(m.ar) : `<small class="hot">거래량 급증</small>`}</b></div>
-      <div class="mv-n">${m.news?.length ? m.news.map(n => `<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a>`).join("<br>") : "같은 날 보도 없음"}</div></div>`; }).join("");
+  $("pulseHint").textContent = `최근 2주 · ${adj} ${BRIEF.move}% 이상(보도 후 3거래일) · 갱신 ${upd}`;
+  $("pulseAns").innerHTML = top.length
+    ? top.slice(0, 2).map(g => `${esc(nm(g.c))} <span class="${upDown(g.r)}">${arrow(g.r)}</span> <small>— ${esc(why(pick(g)))}</small>`).join(" · ")
+    : `최근 2주 동안 시장과 다르게 크게(±${BRIEF.move}%) 움직인 경쟁사는 없습니다`;
+  $("pulseList").innerHTML = top.length ? `<div class="mv-list">${top.map(g => { const it = pick(g), c = pool.get(g.c);
+    return `<div class="mv-it"><span class="co"><i style="background:${color(c?._ci ?? 0)}"></i>${esc(nm(g.c))}</span><span class="r ${upDown(g.r)}">${arrow(g.r)}</span>
+      <span class="why">${it ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : "관련 보도 없음"}
+      <small>${md(g.d)}${g.n < 3 ? ` · ${g.n}거래일째` : ""}${g.more ? ` · 2주간 큰 움직임 외 ${g.more}회` : ""}${it?.cat === "market" ? " · 증권 기사(원인 아닐 수 있음)" : it?.cat && it.cat !== "etc" ? ` · ${esc(fx.cats?.[it.cat] || "")}` : ""}${g.items.length > 1 ? ` · 같은 때 보도 ${g.items.length}건` : ""}${g.vr >= BRIEF.hot ? " · 거래량 급증" : ""}</small></span></div>`; }).join("")}</div>` : "";
+  if (today) renderVoice(pool);
   renderFx();
+}
+// ③ 경쟁사들은 지금 무엇을 알리고 있나? — 이번 주 vs 지난주 보도 건수(같은 보도 묶음, 시세 기사 제외)
+function renderVoice(pool){
+  const fx = newsfx, t = new Date(todayKST());
+  const age = d => (t - new Date(d)) / 864e5;
+  const ev = (fx.recent || []).filter(e => pool.has(e.c) && e.cat !== "market");
+  const wk = ev.filter(e => age(e.d) < 7), pw = ev.filter(e => age(e.d) >= 7 && age(e.d) < 14);
+  $("secVoice").hidden = !ev.length;
+  if (!ev.length) return;
+  const cnt = (l, f) => l.reduce((m, e) => (m[f(e)] = (m[f(e)] || 0) + 1, m), {});
+  const cw = cnt(wk, e => e.c), cp = cnt(pw, e => e.c), cats = cnt(wk, e => e.cat);
+  const ids = [...new Set([...Object.keys(cw), ...Object.keys(cp)])].sort((a, b) => (cw[b] || 0) - (cw[a] || 0) || (cp[b] || 0) - (cp[a] || 0)).slice(0, 8);
+  const mx = Math.max(1, ...ids.map(id => Math.max(cw[id] || 0, cp[id] || 0)));
+  const nm = id => pool.get(id)?.name || fx.names?.[id] || id;
+  const lead = ids[0] && cw[ids[0]] ? ids[0] : null;
+  const leadCat = lead ? Object.entries(cnt(wk.filter(e => e.c === lead && e.cat !== "etc"), e => e.cat)).sort((a, b) => b[1] - a[1])[0] : null;
+  const topCat = Object.entries(cats).filter(([k]) => k !== "etc").sort((a, b) => b[1] - a[1])[0];
+  const diff = wk.length - pw.length;
+  $("voiceHint").textContent = "같은 소식을 여러 매체가 실은 경우 1건 · 시세 기사 제외";
+  $("voiceAns").innerHTML = `이번 주 보도 ${wk.length}건 <small>(지난주 ${pw.length}건, ${diff > 0 ? `${diff}건 늘어남` : diff < 0 ? `${-diff}건 줄어듦` : "같음"})</small>`
+    + (lead ? ` · 가장 많이 나온 곳 <b>${esc(nm(lead))}</b> ${cw[lead]}건${leadCat ? ` <small>(주로 ${esc(fx.cats?.[leadCat[0]] || "")})</small>` : ""}` : "")
+    + (topCat ? `<br><small>유형별로는 ${esc(fx.cats?.[topCat[0]] || "")} ${topCat[1]}건이 가장 많습니다</small>` : "");
+  $("voiceBars").innerHTML = `<p class="mk-h">회사별 보도 <span class="u">(막대 = 이번 주, 세로선 = 지난주)</span></p>` + ids.map(id => `<div class="vo-row"><span class="nm">${esc(nm(id))}</span>
+    <span class="tr"><i style="width:${(cw[id] || 0) / mx * 100}%"></i><b style="left:calc(${(cp[id] || 0) / mx * 100}% - 1px)"></b></span><span class="n">${cw[id] || 0}<small> / ${cp[id] || 0}</small></span></div>`).join("");
+  $("voiceCats").innerHTML = `<p class="mk-h">이번 주 보도 유형</p><div class="vo-cat">${Object.entries(cats).sort((a, b) => (a[0] === "etc") - (b[0] === "etc") || b[1] - a[1]).map(([k, v]) => `<span>${esc(fx.cats?.[k] || k)}<b>${v}</b></span>`).join("")}</div>`;
 }
 function renderFx(){
   const fx = newsfx, A = fx.axes || {}, cv = fx.coverage || {};
@@ -1341,14 +1441,19 @@ function renderFx(){
   $("fxHint").textContent = `어떤 보도 뒤에 주가가 움직였나 · 국내 ${cv.companies || 0}개사 보도 ${(cv.clean || 0).toLocaleString("ko-KR")}건 분석(${cv.from ? cv.from.slice(0, 7).replace("-", ".") : "–"}~)`;
   // 인사이트 카드: 유의(p<0.1, n≥10) → 참고 순, 축마다 가장 강한 것
   const pick = [];
-  FX_AXES.forEach(([k, l]) => (A[k] || []).filter(r => r.level !== "none").forEach(r => pick.push({ ...r, axis: l })));
-  pick.sort((a, b) => (a.level === b.level ? 0 : a.level === "sig" ? -1 : 1) || a.p - b.p);
+  FX_AXES.forEach(([k, l]) => (A[k] || []).filter(r => r.level === "sig").forEach(r => pick.push({ ...r, axis: l })));
+  pick.sort((a, b) => a.p - b.p);
   const cards = pick.slice(0, 4);
-  $("fxCards").innerHTML = cards.length ? cards.map(r => `<div class="fx-card ${r.car < 0 ? "neg" : ""}"><div class="ax">${esc(r.axis)}${r.level === "sig" ? "" : " · 참고"}</div>
+  const lab = r => `${r.name}${({ "키워드": " 기사", "매체 등급": " 보도", "요일": " 발행", "발행 시점": " 발행", "기사 유형": " 기사" })[r.axis] || ""}`;
+  $("fxAns").innerHTML = cards.length
+    ? `${esc(lab(cards[0]))} 뒤 3거래일 평균 <span class="${upDown(cards[0].car)}">${arrow(cards[0].car)}</span>${cards[0].vol ? ` <small>(거래량 평소의 ${cards[0].vol.toFixed(1)}배)</small>` : ""}`
+    : `아직 통계적으로 뚜렷한 패턴은 없습니다 <small>· 보도 ${(cv.clean || 0).toLocaleString("ko-KR")}건 분석 중, 2년치 기사가 쌓이면 다시 판단</small>`;
+  $("fxCards").innerHTML = cards.length > 1 ? cards.slice(1).map(r => `<div class="fx-card ${r.car < 0 ? "neg" : ""}"><div class="ax">${esc(r.axis)}</div>
       <div class="k">${esc(r.name)}${({ "키워드": " 기사", "매체 등급": " 보도", "요일": " 발행", "발행 시점": " 발행", "기사 유형": " 기사" })[r.axis] || ""}</div>
       <div class="v">3일간 평균 <span class="${upDown(r.car)}">${arrow(r.car)}</span></div>
       <div class="s">보도 ${r.n}건 기준</div></div>`).join("")
-    : `<p class="empty" style="grid-column:1/-1">아직 뚜렷한 패턴이 없습니다 · 과거 기사 수집이 끝나면 표본이 늘어납니다</p>`;
+    : "";
+  $("fxCards").hidden = cards.length < 2;
   // 축별 막대: 평균 초과수익(0 기준 좌우) · 거래량 배수
   const rows = (A[fxAxis] || []).slice(0, 12), mx = Math.max(1, ...rows.map(r => Math.abs(r.car)));
   $("fxBars").innerHTML = rows.length ? `<div class="fx-bar head"><span>${esc(FX_AXES.find(x => x[0] === fxAxis)[1])}</span><span class="n">보도</span><span style="text-align:center">평균 초과수익 D0~D+2</span><span class="c"></span><span class="vr">거래량</span></div>` +
