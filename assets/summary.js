@@ -8,7 +8,7 @@ const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link =
   <div class="big"><b style="color:${numCol}">${num}</b><span>${head}</span></div>${sub ? `<div class="sub">${sub}</div>` : ""}${chart}${more}`, "ic");
 const moreLink = (menu, label) => `<div class="right"><a class="more" href="${href(menu, S.field, "detail")}">${label} ›</a></div>`;
 const won = (v, cur = "KRW") => v == null ? "–" : cur === "KRW" ? `${nf(v)}원` : `${{ USD: "$", EUR: "€" }[cur] || ""}${nf(v, 2)}`;
-const coCell = c => `<span class="co"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</span>`;
+const coCell = c => `<button type="button" class="co cob" data-co="${esc(c.id)}"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</button>`;
 const capFn = v => v == null ? null : Math.abs(v) > MCAP ? null : v;
 
 function todayRows(F){
@@ -27,6 +27,106 @@ function plAt(a, k){
   return { rv, cs, gp: rv != null && cs != null ? rv - cs : null, op, ni, opm: capFn(margin(op, rv)), gpm: capFn(margin(rv != null && cs != null ? rv - cs : null, rv)),
            g: k > 0 ? growth(rv, a.revenue[k - 1]) : null };
 }
+
+/* ---------- 회사 약식 PL (회사 이름을 누르면) ----------
+   계산은 기존 화면 회사 팝업(openCo)과 같음: 연간 3개년 + 올해 누적(분기 자료가 있으면) + 3개년 평균(평균 금액끼리 나눈 %)
+   AI 정리(성장 원인·동향)는 넣지 않음 */
+const COMM_RE = /판매수수료|판매대행/;
+const signedB = (v, cur) => v == null ? "–" : `<span class="${v < 0 ? "dn" : ""}">${big(v, cur)}</span>`;
+const upPct = v => v == null || !isFinite(v) ? '<span class="dim">–</span>' : `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${v > 0 ? "▲" : v < 0 ? "▼" : ""}${Math.abs(v).toFixed(1)}%</span>`;
+function coPL(c, F){
+  const a = c.annual || {}, ys = a.years || [], n = ys.length, i = n - 1, cur = a.currency || "KRW";
+  // 비교 평균: 기존 화면과 같이 건강기능식품 '브랜드사' 묶음(이 분야에 있는 회사). 묶음 회사가 없으면 이 분야 전체
+  const brandSeg = (D.hff?.segments || []).find(x => x.key === "brand");
+  let peers = F.cos.filter(x => brandSeg ? brandSeg.members.includes(x.id) : x.id !== c.id), avgLbl = `건기식 ${peers.length}사 평균`;
+  if (!peers.length){ peers = F.cos.filter(x => (x.annual?.currency || "KRW") === "KRW" && x.annual?.revenue?.length); avgLbl = `${F.name} ${peers.length}사 평균`; }
+  const lastOf = x => { const A = x.annual, k = (A?.years?.length || 0) - 1; if (k < 0) return {};
+    const r = A.revenue?.[k], g = A.costOfSales?.[k] != null && r != null ? r - A.costOfSales[k] : null;
+    return { gr: k > 0 ? growth(r, A.revenue?.[k - 1]) : null, gpm: margin(g, r), opm: margin(A.operatingIncome?.[k], r) }; };
+  const me = lastOf(c), avgOf = k => mean(peers.map(x => lastOf(x)[k]).filter(v => v != null && Math.abs(v) < 1000));
+  const q = c.quarterly; let qy = null, qLbl = "";
+  if (q?.periods?.length){ const k = q.periods.length - 1, p = q.periods[k], j = q.periods.indexOf(`${+p.slice(0, 4) - 1}${p.slice(4)}`);
+    qy = j < 0 ? null : growth(q.revenue[k], q.revenue[j]); qLbl = `${p.slice(2, 4)}.${p.slice(5)}Q`; }
+  const pp = (v, b) => v == null || b == null ? "" : (() => { const d = v - b; return `<span class="${d > 0 ? "up" : d < 0 ? "dn" : ""}">${d > 0 ? "▲" : d < 0 ? "▼" : ""}${Math.abs(d).toFixed(1)}%p</span>`; })();
+  const pctTxt = v => v == null ? "–" : `${v.toFixed(1)}%`;
+  const kpi = (l, v, cmp) => `<div class="cp-kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="c">${cmp}</div></div>`;
+  const rev = a.revenue?.[i];
+  const kpis = [
+    kpi(`${ys[i] || ""} 매출`, big(rev, cur), `성장률 ${upPct(me.gr)} · ${avgLbl} ${upPct(avgOf("gr"))}`),
+    kpi("매출총이익률", pctTxt(me.gpm), `${avgLbl} ${pctTxt(avgOf("gpm"))} ${pp(me.gpm, avgOf("gpm"))}`),
+    kpi("영업이익률", `<span class="${me.opm < 0 ? "dn" : ""}">${pctTxt(me.opm)}</span>`, `${avgLbl} ${pctTxt(avgOf("opm"))} ${pp(me.opm, avgOf("opm"))}`),
+    kpi(qy == null ? "최근 분기 매출 YoY" : `${qLbl} 매출 YoY`, qy == null ? `<span class="dim" style="font-size:18px">${c.listed ? "분기 미수집" : "분기 미공시"}</span>` : upPct(qy), qy == null ? (c.listed ? "분기 실적은 핵심 경쟁사만" : "연간 실적만 공시") : "전년 같은 분기 대비"),
+  ].join("");
+  // 머리줄
+  const Q = c.quote || {};
+  const capTxt = c.listed && Q.marketCap ? `<span>시가총액 <b>${big(Q.marketCap, Q.currency || "KRW")}</b> <small>(${md(Q.asOf)})</small></span><span>1년 주가 ${upPct(Q.change1y)}</span>${Q.per ? `<span>PER ${Q.per.toFixed(1)}배</span>` : ""}` : "<span>비상장</span>";
+  const lastDisc = (c.disclosures || [])[0];
+  // 약식 손익
+  const sgaAt = y => { const d = c.sga; if (!d?.years) return null; const k = d.years.indexOf(String(y)); if (k < 0) return null;
+    const items = d.itemsYear === String(y) ? d.items : null;
+    const comm = d.commission ? d.commission[k] : items ? items.filter(x => COMM_RE.test(x[0])).reduce((t, x) => t + x[1], 0) : null;
+    return { tot: d.total[k], labor: d.labor[k], adpromo: d.adpromo[k], commission: comm, rnd: d.rnd[k] }; };
+  const cols = ys.map((y, k) => { const r = a.revenue?.[k], cs = a.costOfSales?.[k], g = r != null && cs != null ? r - cs : null, o = a.operatingIncome?.[k], sg = sgaAt(y);
+    return { h: `${y}`, y, rev: r, cogs: cs, gp: g, sga: sg?.tot ?? (g != null && o != null ? g - o : null), sg, op: o, ni: a.netIncome?.[k] }; });
+  if (q?.periods?.length){ const last = q.periods.at(-1), yr = last.slice(0, 4), idx = q.periods.map((p, k) => p.startsWith(yr) ? k : -1).filter(k => k >= 0);
+    if (yr > (ys.at(-1) || "") && idx.length){ const sum = key => idx.every(k => q[key]?.[k] != null) ? idx.reduce((t, k) => t + q[key][k], 0) : null;
+      const r = sum("revenue"), cs = sum("costOfSales"), g = r != null && cs != null ? r - cs : null, o = sum("operatingIncome");
+      cols.push({ h: `${yr} 누적<small>${idx.length}개 분기</small>`, y: `${yr} 누적`, ytd: true, rev: r, cogs: cs, gp: g, sga: g != null && o != null ? g - o : null, sg: null, op: o, ni: sum("netIncome") }); } }
+  const annualCols = cols.filter(col => !col.ytd);
+  const avg3 = fn => { const vs = annualCols.map(col => fn(col)).filter(v => v != null); return vs.length ? signedB(vs.reduce((t, x) => t + x, 0) / vs.length, cur) : "–"; };
+  const row = (label, fn, cls = "") => `<tr class="${cls}"><td class="l">${label}</td>${cols.map(col => `<td>${signedB(fn(col), cur)}</td>`).join("")}<td class="avg">${avg3(fn)}</td></tr>`;
+  const pctRow = fn => { const p = (v, b) => v == null || !b ? "–" : `(${(v / b * 100).toFixed(1)}%)`;
+    const vs = annualCols.map(col => [fn(col), col.rev]).filter(([v, b]) => v != null && b);
+    const av = vs.length ? p(vs.reduce((t, x) => t + x[0], 0) / vs.length, vs.reduce((t, x) => t + x[1], 0) / vs.length) : "–";
+    return `<tr class="pct"><td class="l"></td>${cols.map(col => `<td>${p(fn(col), col.rev)}</td>`).join("")}<td class="avg">${av}</td></tr>`; };
+  const pl = `<table class="cp-pl"><thead><tr><th style="text-align:left">${cur === "KRW" ? "억원" : cur}</th>${cols.map(col => `<th>${col.h}</th>`).join("")}<th class="avg">${annualCols.length}개년 평균</th></tr></thead><tbody>
+    ${row("매출", col => col.rev, "key")}
+    ${row("매출원가", col => col.cogs)}${pctRow(col => col.cogs)}
+    ${row("매출총이익", col => col.gp, "key")}${pctRow(col => col.gp)}
+    ${row("판관비", col => col.sga)}
+    ${row("인건비", col => col.sg?.labor, "sub")}
+    ${row("광고/판촉", col => col.sg?.adpromo, "sub")}
+    ${row("판매수수료", col => col.sg?.commission || null, "sub")}
+    ${row("연구개발비", col => col.sg?.rnd || null, "sub")}
+    ${row("영업이익", col => col.op, "key")}${pctRow(col => col.op)}
+  </tbody></table>`;
+  // 추이 그래프: 매출 막대 + 영업이익률 (누르면 숫자)
+  const tc = cols.filter(col => col.rev != null), unit = cur === "KRW" ? 1e8 : 1e6;
+  const trend = tc.length >= 2 ? colChart(tc.map(col => +(col.rev / unit).toFixed(cur === "KRW" ? 0 : 1)), tc.map(col => col.y), {
+    W: 920, H: 190, colors: tc.map(col => col.ytd ? "#B9C6DA" : c.color), hi: annualCols.length - 1,
+    fmt: v => cur === "KRW" ? nf(v) : v.toFixed(1),
+    subs: tc.map(col => { const m = margin(col.op, col.rev); return m == null || Math.abs(m) > MCAP ? "" : `이익률 ${m < 0 ? "−" : ""}${Math.abs(m).toFixed(1)}%`; }),
+    tips: tc.map(col => { const k = annualCols.indexOf(col), pv = k > 0 ? annualCols[k - 1].rev : null;
+      return [`${c.name} · ${col.y}`, `매출\t${big(col.rev, cur)}`, !col.ytd && pv ? `매출 성장률\t${sgn(growth(col.rev, pv))}` : null,
+        `매출총이익\t${big(col.gp, cur)}`, `영업이익\t${big(col.op, cur)}`, margin(col.op, col.rev) != null ? `영업이익률\t${margin(col.op, col.rev).toFixed(1)}%` : null, `순이익\t${big(col.ni, cur)}`]; }) }) : "";
+  // 부문(사업보고서 부문 정보가 있을 때)
+  const sgm = (() => { const s2 = c.segment; if (!s2?.years) return ""; const k = s2.years.length - 1; if (s2.revenue[k] == null) return "";
+    const ai = ys.indexOf(s2.years[k]), tot = ai >= 0 ? a.revenue?.[ai] : null, share = tot ? s2.revenue[k] / tot * 100 : null;
+    const T0 = s2.revenue[k] / ((share || 100) / 100), others = s2.others || [];
+    const bigO = others.filter(([, v]) => v / T0 >= .02).sort((p, q2) => q2[1] - p[1]), etc = others.filter(([, v]) => v / T0 < .02).reduce((t, [, v]) => t + (v || 0), 0);
+    return `<div class="cp-seg"><span class="main">${esc(s2.name.replace("건강기능식품", "건기식"))} 부문 <b>${big(s2.revenue[k])}</b>${share == null ? "" : ` (${share.toFixed(0)}%)`} · 영업이익 ${signedB(s2.operatingIncome[k])}</span>${bigO.map(([nm, v]) => `<span>${esc(nm)} ${big(v)}</span>`).join("")}${etc ? `<span>기타 ${big(etc)}</span>` : ""}</div>`; })();
+  // 최근 보도(수집 기사 그대로, AI 정리 아님)
+  const news = (D.newsfx?.recent || []).filter(e => e.c === c.id && e.cat !== "market").slice(0, 5);
+  return `<div class="cp-head" style="--cc:${c.color}"><div>
+      <h2 id="coPopTitle"><i></i>${esc(c.name)}${c.listed ? "" : '<span class="tag">비상장</span>'}${c.fs === "OFS" ? '<span class="tag">별도</span>' : ""}</h2>
+      <div class="cp-meta">${capTxt}${lastDisc ? `<span>최근 공시 <a href="${esc(lastDisc.url)}" target="_blank" rel="noopener">${esc(lastDisc.title)}</a> <small>${md(lastDisc.date)}</small></span>` : ""}</div>
+    </div><button class="cp-x" type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="cp-kpis">${kpis}</div>${sgm}
+    ${c.note ? `<p class="note" style="margin:-8px 0 16px">${esc(c.note)}</p>` : ""}
+    ${trend ? `<div class="cp-sec"><h3>매출 추이 <small>${cur === "KRW" ? "억원" : cur + " 백만"} · 이익률 = 영업이익률 · 막대를 누르면 금액</small></h3>${trend}</div>` : ""}
+    <div class="cp-sec"><h3>약식 손익계산서 <small>(%) = 매출 대비 · OpenDART ${a.basis === "OFS" || c.fs === "OFS" ? "별도" : "연결"}</small></h3><div class="cp-tw">${pl}</div></div>
+    ${news.length ? `<div class="cp-sec"><h3>최근 보도 <small>최근 2주</small></h3>${news.map(e => `<a class="cp-n" href="${esc(e.url)}" target="_blank" rel="noopener"><span class="mu">${md(e.d)}</span><span class="tag">${esc(catName(e.cat))}</span><span>${esc(e.title)}</span></a>`).join("")}</div>` : ""}`;
+}
+function openCo(id){
+  const F = fieldCtx(S.field), c = F.cos.find(x => x.id === id); if (!c) return;
+  hideTip();
+  const dlg = $("coPop"); $("coPopBody").innerHTML = coPL(c, F);
+  if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-co]"); if (b){ e.preventDefault(); openCo(b.dataset.co); return; }
+  const d = $("coPop"); if (d?.open && (e.target === d || e.target.closest("[data-close]"))) d.close();
+});
 
 const SUM = {
   /* ---------- 인사이트 ---------- */
@@ -68,7 +168,7 @@ const SUM = {
     const fin = F.cos.filter(c => c.annual?.revenue?.length && (c.annual.currency || "KRW") === "KRW").map(c => { const a = c.annual, k = a.revenue.length - 1; return { c, v: a.revenue[k], y: a.years[k], p: plAt(a, k), py: a.years[k - 1], pv: a.revenue[k - 1] }; }).sort((a, b) => b.v - a.v);
     const c4 = fin.length ? icard(`실적 · ${fin[0].y} 매출(억원)`, `${eok(fin[0].v)}억`, INK, `1위 ${esc(fin[0].c.name)}`,
       barChart(fin.slice(0, 8).map(x => ({ label: x.c.name, color: x.c.color, v: x.v / 1e8,
-        tip: [`${x.c.name} · ${x.y}`, `매출\t${big(x.v)}`, x.pv != null ? `${x.py} 매출\t${big(x.pv)} → ${sgn(x.p.g)}` : null, `영업이익\t${big(x.p.op)}${x.p.opm != null ? ` (${x.p.opm.toFixed(1)}%)` : ""}`] })), { W: 560, row: 30, lab: 120, valW: 70 }),
+        tip: [`${x.c.name} · ${x.y}`, `매출\t${big(x.v)}`, x.p.g != null ? `매출 성장률\t${sgn(x.p.g)}` : null, `영업이익\t${big(x.p.op)}${x.p.opm != null ? ` (${x.p.opm.toFixed(1)}%)` : ""}`] })), { W: 560, row: 30, lab: 120, valW: 70 }),
       { link: href("finance", S.field), more: fold("in-fin", "숫자 보기", tbl(["회사", `${fin[0].y} 매출`, "성장률", "영업이익", "영업이익률"],
         fin.map(x => [coCell(x.c), big(x.v), pct(x.p.g, 1, 0), big(x.p.op), x.p.opm == null ? '<span class="dim">–</span>' : `${x.p.opm.toFixed(1)}%`]), "OpenDART 사업보고서 · 연결 기준")) }) : "";
     const m = F.mk.kr, ser = m?.size?.series?.[0]?.points;
@@ -128,13 +228,13 @@ const SUM = {
       const raw = P.map(p => p[met]), vals = raw.map(v => v == null ? null : cur === "KRW" ? Math.round(v / 1e8) : +(v / 1e6).toFixed(1));
       const unit = cur === "KRW" ? "억" : "M";
       const tips = ks.map((k, j) => { const p = P[j], pv = j ? P[j - 1][met] : k > 0 ? plAt(a, k - 1)[met] : null;
-        return [`${c.name} · ${ys[j]}`, `${MET[met]}\t${big(p[met], cur)}`, pv != null && p[met] != null ? `전년\t${big(pv, cur)} → ${pv > 0 ? sgn(growth(p[met], pv)) : "비교 불가(전년 적자)"}` : null,
+        return [`${c.name} · ${ys[j]}`, `${MET[met]}\t${big(p[met], cur)}`, pv != null && p[met] != null ? `${met === "rv" ? "매출 성장률" : "전년 대비"}\t${pv > 0 ? sgn(growth(p[met], pv)) : "전년 적자"}` : null,
           met !== "rv" ? `매출\t${big(p.rv, cur)}` : null, p.opm != null ? `영업이익률\t${p.opm.toFixed(1)}%` : null]; });
       const plTbl = tbl(["항목", ...ys], [
         ["매출", ...P.map(p => big(p.rv, cur))], ["매출 성장률", ...P.map((p, j) => pct(p.g, 1, 0))], ["매출원가", ...P.map(p => big(p.cs, cur))],
         ["매출총이익", ...P.map(p => big(p.gp, cur))], ["영업이익", ...P.map(p => big(p.op, cur))], ["영업이익률", ...P.map(p => p.opm == null ? "–" : `${p.opm.toFixed(1)}%`)],
         ["당기순이익", ...P.map(p => big(p.ni, cur))]], "", true);
-      return card(`<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</div>
+      return card(`<button type="button" class="cob" data-co="${esc(c.id)}" style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}<span class="cob-h">약식 PL ›</span></button>
         <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(last[met], cur)}</span><span style="font-size:15px;color:${MU}">${ys.at(-1)} ${MET[met]}</span>${met === "rv" ? `<span style="font-size:17px;font-weight:700">${pct(last.g, 1, 0)}</span>` : ""}</div>
         ${colChart(vals, ys, { W: 360, H: 130, colors: vals.map((v, i) => v < 0 ? "#9DB5DD" : i === vals.length - 1 ? c.color : "#D5DCE7"), fmt: v => v == null ? "–" : cur === "KRW" ? nf(v) : (Math.abs(v) < 10 ? v.toFixed(1) : nf(v)) + "M", tips })}
         <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>영업이익률</span><span>${P.map(p => { const v = margin(p.op, p.rv); return capFn(v) == null ? (v == null ? "–" : "매출 미미") : `<b style="color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b>`; }).join(" → ")}</span></div>

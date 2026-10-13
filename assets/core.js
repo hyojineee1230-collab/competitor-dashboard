@@ -293,6 +293,7 @@ function parseHash(){
   if (FIELDS.some(x => x[0] === f)) S.field = f;
 }
 // 상세 = 기존 대시보드(루트). 메뉴·분야에 맞는 기존 탭으로
+const FIELD_TAB = { core: "biz", hff: "hff", microbiome: "microbiome" };
 const LEGACY = (menu, field) => field === "core" ? (menu === "quotes" || menu === "news" ? "biz" : "biz-x") : field;
 const href = (menu, field, view = VIEW) => view === "detail" ? `../#${LEGACY(menu, field)}` : `#${menu}/${field}`;
 function header(){
@@ -302,9 +303,10 @@ function header(){
   const SHORT = { insight: "홈", quotes: "주가", finance: "실적", market: "시장", news: "기사" };
   const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg><span class="nl">${l}</span><span class="ns">${SHORT[k]}</span></a>`).join("");
   const fsw = FIELDS.map(([k, l]) => `<a href="${href(S.menu, k)}"${k === S.field ? ' aria-current="true"' : ""}>${l}</a>`).join("");
-  const vw = [["summary", "Beta"], ["detail", "상세"]].map(([k, l]) => `<a href="${href(S.menu, S.field, k)}"${k === VIEW ? ' aria-current="true"' : ""} data-view="${k}">${l}</a>`).join("");
-  return `<div class="hd"><a class="brand" href="../">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
-    <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r"><div class="sw view" role="group" aria-label="보기">${vw}</div></div></div>`;
+  // 오른쪽: 경쟁사 실적 리포트(기존 보고서 화면, 분야에 맞는 탭)
+  const rep = `<a class="rep" href="../#${FIELD_TAB[S.field] || "hff"}" title="입체 그래프·표 중심의 보고서 화면"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/></svg><span class="rl">경쟁사 실적 리포트</span><span class="rs">리포트</span></a>`;
+  return `<div class="hd"><a class="brand" href="#insight/${S.field}">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
+    <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r">${rep}</div></div>`;
 }
 let PAGES = {};
 async function render(){
