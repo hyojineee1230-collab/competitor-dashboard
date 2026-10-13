@@ -321,7 +321,12 @@ async function render(){
 // 화면 안 전환 버튼: <button data-ui="key=value">
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-ui]"); if (!b) return;
-  const [k, v] = b.dataset.ui.split("="); S.ui[k] = v; render();
+  const [k, v] = b.dataset.ui.split("="); S.ui[k] = v; if (k !== "lim") delete S.ui.lim; render();
+});
+// 화면 안 선택 상자: <select data-uisel="key"> — 회사·유형 등을 바꾸면 '더 보기'는 처음으로
+document.addEventListener("change", e => {
+  const t = e.target.closest?.("[data-uisel]"); if (!t) return;
+  S.ui[t.dataset.uisel] = t.value; delete S.ui.lim; render();
 });
 async function start(pages){
   PAGES = pages;

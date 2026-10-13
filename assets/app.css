@@ -160,6 +160,16 @@ button.co{font-weight:600}
 .cp-n{display:grid;grid-template-columns:48px auto minmax(0,1fr);gap:10px;align-items:baseline;padding:9px 0;border-top:1px solid var(--grid);font-size:15px}
 .cp-n:hover span:last-child{text-decoration:underline}
 
+/* 기사·공시 찾기 */
+.flt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px}
+.flt select{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);max-width:200px}
+.tag.tg-d{background:#E6ECF7;color:var(--accent);font-weight:600}
+.morebtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 18px;font-size:14px;color:var(--accent)}
+.nrow .new{margin-left:6px}
+/* 기업가치 */
+.big1{display:flex;align-items:baseline;gap:10px;margin:-4px 0 10px}.big1 b{font-size:30px;letter-spacing:-.02em}.big1 span{font-size:15px;color:var(--muted)}
+td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-radius:3px;padding:1px 5px;margin:0 4px 0 0}
+
 /* 휴대폰 */
 @media (max-width:760px){
   header{padding:12px 14px}
@@ -203,6 +213,8 @@ button.co{font-weight:600}
   .tw:not(.keep) tbody tr.avg td{background:none}
   .tw:not(.keep) tbody tr.grp{display:block;padding:6px 8px;background:#F6F8FB}
   .tw:not(.keep) tbody tr.grp td{background:none}
+  .flt select{flex:1 1 40%;max-width:none}
+  .flt .seg{width:100%}.flt .seg button{flex:1}
   .rep{padding:7px 11px;font-size:13px}.rep .rl{display:none}.rep .rs{display:inline}
   #coPop{width:100vw;max-width:100vw;max-height:100%;height:100%;border-radius:0;margin:0}
   #coPopBody{padding:16px 14px 40px}
