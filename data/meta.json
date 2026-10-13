@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-13T11:41:06+00:00",
+  "updatedAt": "2026-10-13T12:13:29+00:00",
   "sample": false,
   "dart": true,
   "krx": true,
@@ -21,8 +21,8 @@
     }
   ],
   "errors": [
-    "KRX 지수 KQ: 호출 한도 도달 — 다음 실행에서 이어서",
-    "KRX: 400회 호출"
+    "KRX 인증 거부(401) — kospi_dd_trd 서비스 이용신청 여부 확인",
+    "KRX: 277회 호출"
   ],
   "dartStale": []
 }
