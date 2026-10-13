@@ -1060,6 +1060,11 @@ async function selectGroup(id){
   const g = grp();
   g.mode = g.mode || "full";
   g.companies.forEach((c,i) => { c._ci = i; c.annual = c.annual || c.financials; c.listed = c.listed ?? !!c.ticker; });
+  // 성장 vs 마케팅 강도 차트에만 더 그릴 회사(config growExtra): 다른 탭 데이터에서 가져옴
+  if (g.growExtra?.length && !g._extra){
+    const all = await allCompanies();
+    g._extra = g.growExtra.map(id => all.get(id)).filter(Boolean).map((c, i) => ({ ...c, _ci: g.companies.length + i, _main: c._main || null }));
+  }
   applyBasis(g);
   $("gdesc").textContent = g.description || "";
 
@@ -1123,7 +1128,7 @@ function setMetricButtons(){
 }
 // 연결(기본) ↔ 별도: 다른 기준 값(c.alt)이 있는 회사만 바꿈. 연결 재무제표가 없는 회사는 그대로(본래 별도)
 function applyBasis(g){
-  g.companies.forEach(c => {
+  [...g.companies, ...(g._extra || [])].forEach(c => {
     if (!c._main) c._main = { annual: c.annual, quarterly: c.quarterly, sga: c.sga, segment: c.segment };
     const alt = state.ofs && c.alt ? c.alt : null;
     c.annual = alt ? alt.annual : c._main.annual;
@@ -1218,7 +1223,8 @@ function setGrowTab(k){
 }
 $("growTab").addEventListener("click", e => { const b = e.target.closest("button"); if (b && b.dataset.k !== growTab) setGrowTab(b.dataset.k); });
 function renderGrow(){
-  const rows = comps().map(growRow).filter(Boolean), miss = comps().filter(c => !growRow(c) && c.country === "KR").map(c => c.name);
+  const pool = [...comps(), ...(grp()._extra || [])];
+  const rows = pool.map(growRow).filter(Boolean), miss = pool.filter(c => !growRow(c) && c.country === "KR").map(c => c.name);
   const yc = {}; rows.forEach(r => yc[r.y] = (yc[r.y] || 0) + 1);
   const main = Object.keys(yc).sort((a, b) => yc[b] - yc[a])[0];
   $("growHint").textContent = `${main || "–"}년 · 가로 = 광고/판촉+판매수수료(매출 대비) · 원 크기 = 매출`;

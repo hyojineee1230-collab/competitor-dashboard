@@ -11,6 +11,7 @@
     "cjbs":         { "name": "CJ바이오사이언스", "ticker": "311690.KQ", "dart": "311690", "country": "KR" },
     "ckdhealth":    {"brand": "락토핏",  "name": "종근당건강",       "dart_name": "종근당건강",   "country": "KR" },
     "acebiome":     {"brand": "비에날씬",  "name": "에이스바이옴",     "dart_name": "에이스바이옴", "country": "KR" },
+    "cjwellcare":   {"brand": "바이오코어", "name": "CJ웰케어",       "dart_name": "씨제이웰케어", "country": "KR" },
     "esther":       {"brand": "여에스더",  "name": "에스더포뮬러",     "dart_name": "에스더포뮬러", "country": "KR", "news_names": ["에스더포뮬러", "에스더몰"] },
 
     "kolmarbnh":    { "name": "콜마비앤에이치",   "ticker": "200130.KQ", "dart": "200130", "country": "KR", "segment": "식품" },
@@ -31,16 +32,17 @@
       "name": "요약",
       "mode": "business",
       "description": "핵심 경쟁사 실적·동향",
-      "members": ["ckdhealth", "hpo", "acebiome", "esther", "hem"]
+      "members": ["ckdhealth", "hpo", "acebiome", "esther", "hem"],
+      "growExtra": ["cjwellcare"]
     },
     {
       "id": "hff",
       "name": "건강기능식품",
       "mode": "full",
       "description": "국내 건기식 ODM/브랜드사 및 글로벌 주요 업체",
-      "members": ["ckdhealth", "hpo", "acebiome", "esther", "nutri", "kolmarbnh", "cosmaxnbt", "novarex", "suheung", "bioneer", "herbalife", "usana"],
+      "members": ["ckdhealth", "hpo", "acebiome", "esther", "nutri", "cjwellcare", "kolmarbnh", "cosmaxnbt", "novarex", "suheung", "bioneer", "herbalife", "usana"],
       "segments": [
-        {"key": "brand", "title": "브랜드사", "members": ["ckdhealth", "hpo", "acebiome", "esther", "nutri"]},
+        {"key": "brand", "title": "브랜드사", "members": ["ckdhealth", "hpo", "acebiome", "esther", "nutri", "cjwellcare"]},
         {"key": "odm", "title": "ODM", "members": ["kolmarbnh", "cosmaxnbt", "novarex", "suheung"]},
         {"key": "global", "title": "해외", "members": ["herbalife", "usana"]}
       ],

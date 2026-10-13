@@ -1052,7 +1052,7 @@ def main():
     for g in groups:
         out = {"id": g["id"], "name": g["name"], "mode": g.get("mode", "full"),
                "description": g.get("description", ""), "sections": g.get("sections"), "extras": g.get("extras", []),
-               "segments": g.get("segments"), "valuation": g.get("valuation"), "valuationNotes": g.get("valuationNotes"),
+               "segments": g.get("segments"), "growExtra": g.get("growExtra"), "valuation": g.get("valuation"), "valuationNotes": g.get("valuationNotes"),
                "companies": [results[m] for m in g["members"] if m in results]}
         (DATA_DIR / f"{g['id']}.json").write_text(
             scrub(json.dumps(out, ensure_ascii=False, separators=(",", ":"))), encoding="utf-8")
