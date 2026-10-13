@@ -26,6 +26,7 @@ from dart_audit import decode, extract_income, extract_ad, extract_rnd, extract_
 import krx  # noqa: E402
 import activity  # noqa: E402
 import newsraw  # noqa: E402
+import newsfx  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config" / "companies.json"
@@ -1057,6 +1058,26 @@ def main():
         ix = krx.index_series()
         if ix:
             (DATA_DIR / "index.json").write_text(json.dumps(ix, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+    # 보도 반응 분석(이벤트 스터디) → data/newsfx.json
+    try:
+        fx_cos = []
+        for cid in used:
+            c, e = registry[cid], results.get(cid) or {}
+            if c.get("country", "KR") != "KR":
+                continue
+            disc = [x.get("date") for x in (e.get("disclosures") or []) if x.get("date")]
+            disc += [x["date"] for x in (e.get("activity") or []) if x.get("src") == "공시"]
+            fx_cos.append({"id": cid, "name": c["name"], "names": c.get("news_names") or [c["name"]],
+                           "must": c.get("news_must"), "exclude": c.get("news_exclude"),
+                           "listed": bool(c.get("ticker")), "market": (c.get("ticker") or "")[-2:],
+                           "price": (e.get("price") or {}) if (e.get("price") or {}).get("mcapSource") == "KRX" else {},
+                           "disc": disc})
+        fx = newsfx.build(fx_cos, newsraw.load(), krx.index_series() if krx_data else {})
+        (DATA_DIR / "newsfx.json").write_text(scrub(json.dumps(fx, ensure_ascii=False, separators=(",", ":"))), encoding="utf-8")
+        print(f"보도 반응: 보도 {fx['coverage']['events']}건, 집계 {fx['coverage']['clean']}건")
+    except Exception as ex:
+        log_err(f"보도 반응 분석 실패: {type(ex).__name__}: {ex}")
 
     if listed_total and price_fail >= listed_total:
         print("모든 종목 주가 수집 실패 — 기존 데이터 유지")
