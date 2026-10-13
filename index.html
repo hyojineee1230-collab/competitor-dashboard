@@ -65,7 +65,8 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;display:flex;al
 .theme-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer}
 
 /* 그룹 탭: 화면에서 가장 큰 요소 */
-.tabs{display:flex;border-bottom:2px solid var(--line);margin-bottom:8px;overflow-x:auto}
+.tabs{display:flex;border-bottom:2px solid var(--line);margin-bottom:8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
 .tab{background:none;border:0;padding:14px 22px 12px;font-size:20px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px;white-space:nowrap;text-align:left}
 .tab:hover{color:var(--ink-2)}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand)}
@@ -396,8 +397,11 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
 #discTable th:first-child{width:130px}
 #discTable .nc{display:inline-block;font-size:13px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--tag);color:var(--ink-2);white-space:nowrap}
 #discTable .nc.market{background:none;border:1px dashed var(--line);color:var(--muted)}
-#discTable td.tier{font-size:13.5px;color:var(--ink-2);white-space:nowrap}
-@media (max-width:600px){#discTable td.tier,#discTable th.tier{display:none}}
+#discTable td.md{white-space:nowrap;font-size:14px;text-align:left}
+#discTable td.md b{display:block;font-weight:500;color:var(--ink);max-width:120px;overflow:hidden;text-overflow:ellipsis}
+#discTable td.md small{display:block;font-size:13px;color:var(--muted)}
+#discTable th.md,#discTable td.ty{text-align:left}
+@media (max-width:600px){#discTable td.md,#discTable th.md{display:none}}
 #discGrid{table-layout:fixed;min-width:720px}           /* 내용과 상관없이 분기 열 너비 고정 */
 #discGrid th, #discGrid td{text-align:center}
 #discGrid th:first-child, #discGrid td:first-child{text-align:left;width:34%}
@@ -1238,7 +1242,7 @@ function applyBasis(g){
     c.sga = alt ? (alt.sga || null) : c._main.sga;
     c.segment = alt ? null : c._main.segment;     // 부문 주석은 연결 기준
   });
-  $("fsBtn").hidden = g.mode === "market" || !g.companies.some(c => c.alt);
+  $("fsBtn").hidden = g.mode === "market" || (g.mode === "business" && state.sub === "today") || !g.companies.some(c => c.alt);
   $("fsBtn").setAttribute("aria-pressed", state.ofs);
 }
 $("fsBtn").addEventListener("click", () => {
@@ -2100,6 +2104,7 @@ async function loadNewsCls(){
     tiers: [...(md.tiers || []).map(t => [t.key, t.name]), ["etc", "기타(미분류)"]],
     cat: title => (cats.find(c => c.re.test(title)) || { key: "etc" }).key,
     tier: by => tierOf.get(norm(alias[by] || by)) || "etc",
+    name: by => alias[by] || by,
   };
   return newsCls;
 }
@@ -2194,11 +2199,11 @@ function renderDisc(reset){
     const days = (today - new Date(d.date)) / 864e5;
     return `<tr><td>${d.date.slice(2).replace(/-/g,".")}${days <= 3 ? ' <span class="tag new">NEW</span>' : ""}</td>
       <td>${coCell(d.c, "")}</td>
-      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a>${isNews ? ` <span class="err">${esc(d.by || "")}</span>` : ""}</td>${isNews
-      ? `<td><span class="nc ${d.nc}">${esc(catName[d.nc] || "기타")}</span></td><td class="tier">${esc(tierName[d.tier] || "")}</td>` : ""}</tr>`;
+      ${isNews ? `<td class="md"><b>${esc(K.name(d.by || ""))}</b><small>${esc(tierName[d.tier] || "")}</small></td><td class="ty"><span class="nc ${d.nc}">${esc(catName[d.nc] || "기타")}</span></td>` : ""}
+      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a></td></tr>`;
   }).join("");
   const nCol = isNews ? 5 : 3;
-  $("discTable").innerHTML = `<thead><tr><th>${isNews ? "보도일" : "접수일"}</th><th>회사</th><th>${isNews ? "기사" : "공시명"}</th>${isNews ? `<th>유형</th><th class="tier">매체</th>` : ""}</tr></thead><tbody>${
+  $("discTable").innerHTML = `<thead><tr><th>${isNews ? "보도일" : "접수일"}</th><th>회사</th>${isNews ? `<th class="md">매체</th><th style="text-align:left">유형</th>` : ""}<th>${isNews ? "기사" : "공시명"}</th></tr></thead><tbody>${
     body || `<tr><td colspan="${nCol}" class="empty">${isNews ? (discType || discTier ? "조건에 맞는 기사 없음" : "수집된 기사 없음") : `최근 3년 ${discCat === "ir" ? "IR" : "정기보고서"} 공시 없음`}</td></tr>`}</tbody>`;
   $("discMoreWrap").hidden = rows.length <= discLimit;
   $("discHint").textContent = isNews ? `최근 9개월 기사 ${rows.length}건` : `${discCat === "ir" ? "IR" : "정기보고서"} · 최근 3년 ${rows.length}건`;
