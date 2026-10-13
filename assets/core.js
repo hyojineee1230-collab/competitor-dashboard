@@ -8,11 +8,7 @@ const MENUS = [["insight", "인사이트"], ["quotes", "시세"], ["finance", "�
 const FIELDS = [["core", "핵심 경쟁사", "biz"], ["hff", "건강기능식품", "hff"], ["microbiome", "마이크로바이옴", "microbiome"]];
 const MARKET_OF = { core: "hff", hff: "hff", microbiome: "microbiome" };
 const LS = { view: "cm2-view", field: "cm2-field" };
-// 회사 색: 모든 화면·그래프에서 같은 색
-const COLORS = { ckdhealth: "#1F4E8C", acebiome: "#B8892B", esther: "#7083B8", hpo: "#2B8A7E", nutri: "#9A5A86", cjwellcare: "#6E8F3A",
-  kolmarbnh: "#C0573E", suheung: "#5A6B7E", bioneer: "#3E8FB0", novarex: "#8C6D3F", cosmaxnbt: "#C9668A", herbalife: "#7C8A3A", usana: "#5F7FA8",
-  hem: "#B07A2A", genome: "#1F4E8C", kobiolabs: "#2B8A7E", cellbiotech: "#7083B8", cjbs: "#9A5A86", bifido: "#6E8F3A", seres: "#C0573E", maat: "#5A6B7E" };
-const PAL = ["#1F4E8C", "#B8892B", "#2B8A7E", "#9A5A86", "#7083B8", "#6E8F3A", "#C0573E", "#3E8FB0", "#8C6D3F", "#C9668A"];
+// 회사 색: assets/colors.js (기존 화면과 같은 색)
 const UP = "#D3433A", DN = "#2467C9", INK = "#121B2B", MU = "#6B778A", GR = "#E9EDF3";
 
 const $ = id => document.getElementById(id);
@@ -73,7 +69,7 @@ const MCAP = 1000;   // ±1,000% 넘는 이익률은 '매출 미미'
 function fieldCtx(fid){
   const f = FIELDS.find(x => x[0] === fid) || FIELDS[1];
   const g = D[f[2]] || { companies: [] };
-  const cos = g.companies.map((c, i) => ({ ...c, listed: c.listed ?? !!c.ticker, color: COLORS[c.id] || PAL[i % PAL.length] }));
+  const cos = g.companies.map((c, i) => ({ ...c, listed: c.listed ?? !!c.ticker, color: coColor(c.id, i) }));
   return { id: f[0], name: f[1], gid: f[2], g, cos, mk: (D.market?.groups || {})[MARKET_OF[f[0]]] || {} };
 }
 const isKR = c => /\.(KQ|KS)$/.test(c.ticker || "");
@@ -82,13 +78,17 @@ const coLabel = (c, extra = "") => `<span class="co"><i class="dot" style="backg
 function quoteToday(c){
   const q = c.quote || {}, L = D.live?.quotes?.[c.id], t = todayKST();
   const live = !!(L && L.ts?.slice(0, 10) === t && t > (q.asOf || ""));
-  return { chg: live ? L.chg : q.change1d, cap: live && L.mcap ? L.mcap : q.marketCap, live, ts: live ? L.ts : null, asOf: q.asOf };
+  // 현재가·전일 종가(숫자 확인용): 장중이면 실시간, 아니면 마지막 종가와 그 전날 종가
+  const P = c.price || {}, k = (P.dates || []).lastIndexOf(q.asOf);
+  const prev = live ? L.prev : k > 0 ? P.close[k - 1] : null;
+  return { chg: live ? L.chg : q.change1d, cap: live && L.mcap ? L.mcap : q.marketCap, live, ts: live ? L.ts : null, asOf: q.asOf,
+           price: live ? L.price : q.price, prev, cur: q.currency || "KRW" };
 }
 function marketChg(mk = "KQ"){
   const L = D.live?.index?.[mk];
-  if (L && L.ts?.slice(0, 10) === todayKST()) return { chg: L.chg, live: true, ts: L.ts };
+  if (L && L.ts?.slice(0, 10) === todayKST()) return { chg: L.chg, live: true, ts: L.ts, close: L.close, prev: L.prev };
   const s = D.index?.[mk]; if (!s?.dates?.length) return { chg: null };
-  const n = s.dates.length; return { chg: n > 1 ? (s.close[n - 1] / s.close[n - 2] - 1) * 100 : null, day: s.dates[n - 1] };
+  const n = s.dates.length; return { chg: n > 1 ? (s.close[n - 1] / s.close[n - 2] - 1) * 100 : null, day: s.dates[n - 1], close: s.close[n - 1], prev: n > 1 ? s.close[n - 2] : null };
 }
 function annual(c, ofs){ return ofs && c.alt?.annual ? c.alt.annual : c.annual; }
 function sgaOf(c, ofs){
@@ -140,14 +140,25 @@ function niceTicks(lo, hi, n = 5){
   const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out;
 }
 const fmtPctTick = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(0)}%`;
-// 여러 선: series [{name,color,vals}] (같은 길이), 오른쪽 끝에 이름·값
-function lineChart(series, { W = 1200, H = 360, fmt = fmtPctTick, zero = true, labels = true, labelW = 180 } = {}){
+const sgn = (v, d = 1, suf = "%") => v == null || !isFinite(v) ? "–" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(d)}${suf}`;
+const ymd = s => s ? s.slice(0, 10).replace(/-/g, ".") : "";
+// 숫자 확인 칸: 그래프 위 투명 영역. 마우스를 올리거나 누르면 data-tip 내용이 뜸
+// lines: 첫 줄 = 제목, 나머지 "이름\t값"
+const tipA = lines => ` data-tip="${esc(lines.filter(x => x != null && x !== "").join("\n"))}"`;
+const hit = (x, y, w, h, lines, gx) => `<rect class="hit" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(w, 1).toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}"${tipA(lines)}${gx != null ? ` data-gx="${gx.toFixed(1)}"` : ""}/>`;
+
+// 여러 선: series [{name,color,vals,raw?}] (같은 길이), 오른쪽 끝에 이름·값
+// xs: 각 점의 날짜(YYYY-MM-DD) — 있으면 아래 날짜 눈금과 점마다 숫자 확인
+// rawFmt: raw 값(예: 종가) 표시 형식
+function lineChart(series, { W = 1200, H = 360, fmt = fmtPctTick, zero = true, labels = true, labelW = 180, xs = null, rawFmt = null, tipFmt = null } = {}){
   W = fitW(W); if (PHONE()){ labelW = Math.min(labelW, 118); H = Math.min(H, labels ? 300 : 150); }
-  const L = 52, R = labels ? labelW : 12, Tp = 10, B = 24;
+  const L = 52, R = labels ? labelW : 12, Tp = 10, B = xs ? 28 : 24;
   const all = series.flatMap(s => s.vals).filter(v => v != null); if (!all.length) return '<p class="empty">데이터 없음</p>';
   let lo = Math.min(...all, zero ? 0 : Infinity), hi = Math.max(...all, zero ? 0 : -Infinity); const pad = (hi - lo) * .08 || 1; lo -= pad; hi += pad;
   const n = Math.max(...series.map(s => s.vals.length)), X = i => L + i * (W - L - R) / Math.max(1, n - 1), Y = v => Tp + (hi - v) / (hi - lo) * (H - Tp - B);
   let g = niceTicks(lo, hi).map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="${v === 0 && zero ? "#9AA5B5" : GR}"/>` + T(L - 8, Y(v) + 4, fmt(v), 12.5, MU, "end")).join("");
+  if (xs?.length) [0, Math.floor((n - 1) / 2), n - 1].forEach((i, k) => { if (xs[i]) g += T(X(i), H - 8, md(xs[i]), 12.5, MU, ["start", "middle", "end"][k]); });
+  g += `<line class="guide" x1="-9" x2="-9" y1="${Tp}" y2="${H - B}" stroke="#8C98AB" stroke-dasharray="3 3" style="display:none"/>`;
   const ends = [];
   series.forEach(s => {
     const pts = s.vals.map((v, i) => v == null ? null : `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).filter(Boolean).join(" ");
@@ -161,9 +172,17 @@ function lineChart(series, { W = 1200, H = 360, fmt = fmtPctTick, zero = true, l
     const maxY = H - 6; if (ends.length && ends.at(-1).y > maxY){ ends.at(-1).y = maxY; for (let k = ends.length - 2; k >= 0; k--) if (ends[k + 1].y - ends[k].y < 19) ends[k].y = ends[k + 1].y - 19; }
     ends.forEach(e => { g += `<circle cx="${W - R}" cy="${e.yy.toFixed(1)}" r="3.5" fill="${e.s.color}"/>` + T(W - R + 10, e.y + 5, `${esc(e.s.name.length > 11 ? e.s.name.slice(0, 10) + "…" : e.s.name)} <tspan font-weight="700" fill="${e.s.color}">${fmt(e.v)}</tspan>`, 14, INK); });
   }
+  if (xs?.length){
+    const cw = (W - L - R) / Math.max(1, n - 1);
+    for (let i = 0; i < n; i++){
+      const rows = series.filter(s => s.vals[i] != null).sort((a, b) => b.vals[i] - a.vals[i])
+        .map(s => tipFmt ? tipFmt(s, i) : `${s.name}\t${s.raw && rawFmt ? rawFmt(s.raw[i]) + "  " : ""}${fmt(s.vals[i])}`);
+      if (rows.length) g += hit(X(i) - cw / 2, Tp, cw, H - Tp - B, [ymd(xs[i]), ...rows], X(i));
+    }
+  }
   return `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
-// 가로 막대: items [{label,color,v}], 값은 오른쪽 고정 열, 음수가 있으면 0을 축으로
+// 가로 막대: items [{label,color,v,tip?}], 값은 오른쪽 고정 열, 음수가 있으면 0을 축으로
 function barChart(items, { W = 580, row = 36, lab = 140, valW = 84, fmt = v => nf(v), colorFn = null } = {}){
   W = fitW(W); if (PHONE()){ lab = Math.min(lab, 104); valW = Math.min(valW, 66); row = Math.min(row, 32); }
   if (!items.length) return '<p class="empty">데이터 없음</p>';
@@ -174,12 +193,14 @@ function barChart(items, { W = 580, row = 36, lab = 140, valW = 84, fmt = v => n
     const y = i * row, x1 = lab + (Math.min(it.v, 0) - lo) / span * A, w = Math.abs(it.v) / span * A, c = colorFn ? colorFn(it.v) : it.color;
     const lb = PHONE() && it.label.length > 7 ? it.label.slice(0, 6) + "…" : it.label;
     g += T(0, y + row / 2 + 5, esc(lb), PHONE() ? 13.5 : 15, INK) + `<rect x="${x1.toFixed(1)}" y="${y + 8}" width="${Math.max(w, 2).toFixed(1)}" height="${row - 16}" rx="3" fill="${c}"/>` + T(W - 2, y + row / 2 + 5, fmt(it.v), 15, colorFn ? c : INK, "end", 700);
+    g += hit(0, y, W, row, it.tip || [it.label, `값\t${fmt(it.v)}`]);
   });
   return `<svg width="100%" viewBox="0 0 ${W} ${row * items.length}" role="img">${g}</svg>`;
 }
-// 세로 막대: vals, labels, 마지막 막대 강조
-function colChart(vals, labels, { W = 580, H = 220, colors = null, fmt = v => nf(v), subs = null, hi = null } = {}){
+// 세로 막대: vals, labels, 마지막 막대 강조. tips: 막대별 확인 내용(없으면 값·직전 대비)
+function colChart(vals, labels, { W = 580, H = 220, colors = null, fmt = v => nf(v), subs = null, hi = null, tips = null, unit = "" } = {}){
   W = fitW(W); if (PHONE()) H = Math.min(H, 200);
+  const full = labels.slice();
   if (PHONE() && vals.length > 8) labels = labels.map((l, i) => i % 2 === (vals.length - 1) % 2 ? l : "");
   const n = vals.length; if (!n) return '<p class="empty">데이터 없음</p>';
   const top = Math.max(...vals.map(v => Math.abs(v || 0))) || 1, bw = W / n * .6, base = H - (subs ? 46 : 28);
@@ -189,6 +210,8 @@ function colChart(vals, labels, { W = 580, H = 220, colors = null, fmt = v => nf
     g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${(base - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${c}"/>`;
     g += T(cx, base - h - 7, fmt(v), 14, INK, "middle", i === (hi ?? n - 1) ? 700 : 400) + T(cx, base + 18, esc(labels[i]), 13, MU, "middle");
     if (subs) g += T(cx, base + 38, subs[i] ?? "", 13.5, subs[i]?.startsWith?.("+") ? UP : subs[i]?.startsWith?.("−") ? DN : MU, "middle", 600);
+    const pv = i ? vals[i - 1] : null;
+    g += hit(W / n * i, 0, W / n, H, tips?.[i] || [full[i], `값\t${fmt(v)}${unit}`, pv != null && v != null ? `직전 ${full[i - 1]}\t${fmt(pv)}${unit} → ${sgn(growth(v, pv))}` : null]);
   });
   return `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
@@ -200,7 +223,7 @@ function spark(vals, color, { W = 120, H = 30, dots = false } = {}){
   const d = dots ? pts.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="${color}"/>`).join("") : `<circle cx="${pts.at(-1)[0].toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="2.6" fill="${color}"/>`;
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="vertical-align:middle" aria-hidden="true"><polyline points="${pts.map(p => p.map(n => n.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/>${d}</svg>`;
 }
-// 산점도: pts [{label,color,x,y,r,sub}]
+// 산점도: pts [{label,color,x,y,r,sub,tip?}]
 function scatter(pts, { W = 1200, H = 380, xl = "", yl = "", xMax = null } = {}){
   W = fitW(W); if (PHONE()) H = 320;
   if (pts.length < 2) return '<p class="empty">비교할 회사가 부족합니다</p>';
@@ -212,11 +235,55 @@ function scatter(pts, { W = 1200, H = 380, xl = "", yl = "", xMax = null } = {})
   g += niceTicks(0, xm, 6).map(v => T(X(v), H - 32, `${v}%`, 13, MU, "middle")).join("");
   pts.forEach(p => {
     const right = X(p.x) > W * .7, lx = right ? X(p.x) - p.r - 8 : X(p.x) + p.r + 8, an = right ? "end" : "start";
-    g += `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${p.r.toFixed(1)}" fill="${p.color}" fill-opacity=".85"/>` + T(lx, Y(p.y) - 2, esc(p.label), 15, INK, an, 700) + (p.sub && !PHONE() ? T(lx, Y(p.y) + 16, esc(p.sub), 13, MU, an) : "");
+    g += `<circle class="pt" cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${Math.max(p.r, 12).toFixed(1)}" fill="${p.color}" fill-opacity="${p.r >= 12 ? .85 : 0}"${tipA(p.tip || [p.label, `x\t${p.x.toFixed(1)}%`, `y\t${sgn(p.y)}`])}/>`
+      + (p.r < 12 ? `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${p.r.toFixed(1)}" fill="${p.color}" fill-opacity=".85" pointer-events="none"/>` : "")
+      + T(lx, Y(p.y) - 2, esc(p.label), 15, INK, an, 700) + (p.sub && !PHONE() ? T(lx, Y(p.y) + 16, esc(p.sub), 13, MU, an) : "");
   });
   g += T((W + L) / 2, H - 6, xl, 13.5, MU, "middle") + T(L, 14, yl, 13, MU);
   return `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
+
+/* ---------- 숫자 확인(툴팁) · 펼치는 표 ---------- */
+let tipOn = null;
+function showTip(el, x, y){
+  const t = $("tip"); if (!t) return;
+  const L = el.dataset.tip.split("\n");
+  t.innerHTML = `<b class="tt">${esc(L[0])}</b>` + L.slice(1).map(l => { const [a, b] = l.split("\t"); return b == null ? `<div>${esc(a)}</div>` : `<div class="tr"><span>${esc(a)}</span><b>${esc(b)}</b></div>`; }).join("");
+  t.hidden = false;
+  const r = t.getBoundingClientRect(); let left = x + 14, top = y + 16;
+  if (left + r.width > innerWidth - 8) left = Math.max(8, x - r.width - 14);
+  if (top + r.height > innerHeight - 8) top = Math.max(8, y - r.height - 14);
+  t.style.left = left + "px"; t.style.top = top + "px";
+  if (tipOn && tipOn !== el) unmark(tipOn);
+  tipOn = el; el.classList.add("on");
+  const gl = el.ownerSVGElement?.querySelector(".guide");
+  if (gl && el.dataset.gx){ gl.setAttribute("x1", el.dataset.gx); gl.setAttribute("x2", el.dataset.gx); gl.style.display = ""; }
+}
+function unmark(el){ el.classList.remove("on"); const gl = el.ownerSVGElement?.querySelector(".guide"); if (gl) gl.style.display = "none"; }
+function hideTip(){ const t = $("tip"); if (t) t.hidden = true; if (tipOn) unmark(tipOn); tipOn = null; }
+document.addEventListener("pointermove", e => {
+  if (e.pointerType !== "mouse") return;
+  const el = e.target.closest?.("[data-tip]");
+  if (el) showTip(el, e.clientX, e.clientY); else if (tipOn) hideTip();
+});
+// 누르기(휴대폰): 그 자리에 고정, 다른 곳을 누르면 닫힘
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-tip]");
+  if (el){ e.preventDefault(); showTip(el, e.clientX, e.clientY); }
+  else if (!e.target.closest("#tip")) hideTip();
+});
+addEventListener("scroll", () => { if (tipOn) hideTip(); }, { passive: true });
+
+// 숫자 표: heads [제목], rows [[칸]] — 휴대폰에서는 회사별 카드로 바뀜(data-l = 칸 이름). keep = 연도 열 표처럼 표 그대로
+const plain = s => String(s).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+function tbl(heads, rows, foot = "", keep = false){
+  return `<div class="tw${keep ? " keep" : ""}"><table><thead><tr>${heads.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${
+    rows.map(r => `<tr${r.cls ? ` class="${r.cls}"` : ""}>${r.map((c, i) => `<td data-l="${esc(plain(heads[i] || ""))}">${c ?? "–"}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${foot ? `<p class="note">${foot}</p>` : ""}`;
+}
+// 카드 아래 '숫자 보기' 펼치기 — 펼친 상태는 화면을 다시 그려도 유지
+const OPEN = new Set();
+const fold = (key, label, inner) => `<details class="fold" data-fold="${esc(key)}"${OPEN.has(key) ? " open" : ""}><summary>${label}</summary><div class="fold-b">${inner}</div></details>`;
+document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.fold) d.open ? OPEN.add(d.dataset.fold) : OPEN.delete(d.dataset.fold); }, true);
 
 /* ---------- 라우팅 · 헤더 ---------- */
 const S = { menu: "insight", field: lsGet(LS.field) || "hff", ui: {} };
@@ -247,7 +314,7 @@ async function render(){
   document.title = `${MENUS.find(m => m[0] === S.menu)[1]} · ${F.name} — 경쟁사 모니터`;
   let body;
   try { body = await PAGES[S.menu](F, S.ui); } catch (e) { console.error(e); body = `<div class="card empty">화면을 그리지 못했습니다</div>`; }
-  $("main").innerHTML = freshness(F) + body;
+  hideTip(); $("main").innerHTML = freshness(F) + body;
 }
 // 화면 안 전환 버튼: <button data-ui="key=value">
 document.addEventListener("click", e => {
