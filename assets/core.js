@@ -235,7 +235,7 @@ function header(){
   const SHORT = { insight: "홈", quotes: "주가", finance: "실적", market: "시장", news: "기사" };
   const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg><span class="nl">${l}</span><span class="ns">${SHORT[k]}</span></a>`).join("");
   const fsw = FIELDS.map(([k, l]) => `<a href="${href(S.menu, k)}"${k === S.field ? ' aria-current="true"' : ""}>${l}</a>`).join("");
-  const vw = [["summary", "요약"], ["detail", "상세"]].map(([k, l]) => `<a href="${href(S.menu, S.field, k)}"${k === VIEW ? ' aria-current="true"' : ""} data-view="${k}">${l}</a>`).join("");
+  const vw = [["summary", "Beta"], ["detail", "상세"]].map(([k, l]) => `<a href="${href(S.menu, S.field, k)}"${k === VIEW ? ' aria-current="true"' : ""} data-view="${k}">${l}</a>`).join("");
   return `<div class="hd"><a class="brand" href="../">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
     <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r"><div class="sw view" role="group" aria-label="보기">${vw}</div></div></div>`;
 }

@@ -405,7 +405,7 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
   .core-card .brand-chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 /* 모바일: 표를 회사별 카드로(가로 스크롤 없이). 머리글은 각 칸 앞 작은 이름표(data-l)로 */
 @media (max-width:600px){
-  .tbl-wrap{overflow:visible}
+  .tbl-wrap:not(.keep){overflow:visible}
   table.mc,table.mc tbody{display:block;width:100%;min-width:0 !important}
   table.mc thead{display:none}
   table.mc tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 14px;padding:10px 2px;border-bottom:1px solid var(--grid)}
@@ -830,7 +830,7 @@ td span.err{font-size:13.5px}
       <span id="sampleBadge" class="badge" hidden>샘플 데이터</span>
       <span id="updated"></span>
       <button class="info-btn" id="setBtn" aria-haspopup="dialog" title="자사·섹션 이름 설정 (이 브라우저에만 저장)">⚙ 설정</button>
-      <a class="info-btn" id="sumLink" href="summary/" title="그래프 중심 요약 화면">요약 보기 ›</a>
+      <a class="info-btn" id="sumLink" href="summary/" title="그래프 중심 요약 화면(시험판)">Beta</a>
       <button class="theme-btn" id="themeBtn" aria-label="밝은/어두운 테마 전환">◐</button>
     </div>
     </div>
@@ -1157,6 +1157,9 @@ function sectioned(list, g = grp(), gid = state.group){
 function mcard(t){
   const hr = t.tHead?.rows; if (!hr?.length) return;
   const heads = [...hr[hr.length - 1].cells].flatMap(th => Array(th.colSpan || 1).fill((th.querySelector(".hl") || th).innerText.replace(/\s+/g, " ").replace(/[▲▼]/g, "").trim()));
+  // 연도·분기가 열인 표(추이를 가로로 읽는 표)와 회사 상세 팝업 표는 그대로 둠
+  const periodCols = heads.filter(h => /^(20\d\d|\d\d\.\dQ)/.test(h)).length;
+  if (t.closest("dialog") || periodCols >= 2){ t.classList.remove("mc"); t.closest(".tbl-wrap")?.classList.add("keep"); return; }
   t.classList.add("mc");
   [...(t.tBodies[0]?.rows || [])].forEach(tr => { let k = 0;
     [...tr.cells].forEach(td => { td.dataset.l = td.colSpan > 1 ? "" : heads[k] || ""; if (!td.innerText.trim() || td.innerText.trim() === "–" && !heads[k]) td.classList.add("mc-empty"); k += td.colSpan || 1; }); });
