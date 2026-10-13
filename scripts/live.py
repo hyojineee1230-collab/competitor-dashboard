@@ -106,7 +106,7 @@ def main():
     log = lambda m: (errors.append(m), print(m))
     cos = companies()
     # 1) 뉴스 (매시 실행이라 검색 수를 줄임)
-    newsraw.MAX_QUERIES = 60
+    newsraw.MAX_QUERIES = 120   # 백필이 끝나면 최근 3일·이번 달 검색만 하므로 실제 사용은 훨씬 적음
     try:
         newsraw.update([{"id": cid, "names": c.get("news_names") or [c["name"]]} for cid, (c, e) in cos.items()], log=log)
     except Exception as ex:
