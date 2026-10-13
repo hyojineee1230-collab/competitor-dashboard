@@ -1452,8 +1452,8 @@ function renderFx(){
   const cards = pick.slice(0, 4);
   const lab = r => `${r.name}${({ "키워드": " 기사", "매체 등급": " 보도", "요일": " 발행", "발행 시점": " 발행", "기사 유형": " 기사" })[r.axis] || ""}`;
   $("fxAns").innerHTML = cards.length
-    ? `${esc(lab(cards[0]))} 뒤 3거래일 평균 <span class="${upDown(cards[0].car)}">${arrow(cards[0].car)}</span>${cards[0].vol ? ` <small>(거래량 평소의 ${cards[0].vol.toFixed(1)}배)</small>` : ""}`
-    : `아직 통계적으로 뚜렷한 패턴은 없습니다 <small>· 보도 ${(cv.clean || 0).toLocaleString("ko-KR")}건 분석 중, 2년치 기사가 쌓이면 다시 판단</small>`;
+    ? `${esc(lab(cards[0]))} 뒤 3거래일 평균 <span class="${upDown(cards[0].car)}">${arrow(cards[0].car)}</span><small> · 보도 ${cards[0].n}건${cards[0].vol ? `, 거래량 평소의 ${cards[0].vol.toFixed(1)}배` : ""}</small>`
+    : `아직 통계적으로 뚜렷한 패턴은 없습니다 <small>· 보도 ${(cv.clean || 0).toLocaleString("ko-KR")}건 기준</small>`;
   $("fxCards").innerHTML = cards.length > 1 ? cards.slice(1).map(r => `<div class="fx-card ${r.car < 0 ? "neg" : ""}"><div class="ax">${esc(r.axis)}</div>
       <div class="k">${esc(r.name)}${({ "키워드": " 기사", "매체 등급": " 보도", "요일": " 발행", "발행 시점": " 발행", "기사 유형": " 기사" })[r.axis] || ""}</div>
       <div class="v">3일간 평균 <span class="${upDown(r.car)}">${arrow(r.car)}</span></div>
@@ -1469,7 +1469,7 @@ function renderFx(){
         <span class="c ${upDown(r.car)}">${sgn(r.car, 2)}</span><span class="vr">${r.vol ? r.vol.toFixed(1) + "배" : "–"}</span></div>`; }).join("")
     : `<p class="empty">집계할 보도가 아직 없습니다</p>`;
   const cr = fx.corr?.absAr;
-  $("fxNote").textContent = `${fx.index?.length ? "시장지수 대비 초과수익" : "시장지수 반영 전(종목 수익률)"} · 시세 기사, 공시와 겹친 보도, 3거래일 안에 이어진 보도는 제외 · 흐린 줄은 보도 5건 미만`
+  $("fxNote").textContent = `${fx.index?.length ? "시장지수 대비, 회사 평소 수준을 뺀 초과수익" : "시장지수 반영 전(종목 수익률)"} · 거래량은 중앙값 · 시세 기사, 공시와 겹친 보도, 3거래일 안에 이어진 보도는 제외 · 흐린 줄은 보도 5건 미만`
     + (cr ? ` · 일별 기사 수와 주가 변동폭 상관 r=${cr.r}(n=${cr.n})` : "");
 }
 $("headMore").addEventListener("click", () => { selectGroup(state.group + SUB_ANALYSIS); scrollTo({ top: 0 }); });

@@ -8,7 +8,8 @@
 - 보도(이벤트): 같은 회사, 하루 안팎, 비슷한 제목의 기사 묶음. 실린 매체와 등급을 함께 기록
 - D0: 첫 기사 시각 기준 거래일 (15:30 이후·휴장일 발행은 다음 거래일)
 - 초과수익률 AR = 종목 수익률 − 시장지수 수익률 (지수가 아직 없으면 종목 수익률, 화면에 표시)
-- CAR(0,2) = D0~D+2 AR 합 · 거래량 배수 = D0~D+2 평균 ÷ D-21~D-2 평균
+- CAR(0,2) = D0~D+2 AR 합 − 그 회사의 평소 3거래일 AR(2년 평균) · 거래량 배수 = D0~D+2 평균 ÷ D-21~D-2 평균
+- 축별 거래량은 중앙값(몇 건의 급등이 평균을 끌어올리지 않게)
 - 집계에서 빼는 보도: 시세·증권 기사(주가가 기사를 만든 경우), D-1~D+2에 공시가 있는 보도, 같은 회사 앞 보도와 3거래일 안에 겹치는 보도
 """
 import bisect
@@ -79,10 +80,10 @@ def _stats(vals, vols):
     t = mean / (sd / math.sqrt(n)) if sd > 0 else 0.0
     p = math.erfc(abs(t) / math.sqrt(2)) if n > 1 else 1.0
     s = sorted(vals)
-    vv = [v for v in vols if v is not None]
+    vv = sorted(v for v in vols if v is not None)
     return {"n": n, "car": round(mean, 2), "med": round(s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2, 2),
             "hit": round(sum(v > 0 for v in vals) / n * 100), "p": round(p, 3),
-            "vol": round(sum(vv) / len(vv), 2) if vv else None,
+            "vol": round(vv[len(vv) // 2] if len(vv) % 2 else (vv[len(vv) // 2 - 1] + vv[len(vv) // 2]) / 2, 2) if vv else None,
             "level": "sig" if n >= MIN_N and p < P_SIG else "ref" if n >= 5 and p < P_REF else "none"}
 
 
@@ -163,6 +164,23 @@ def build(companies, raw, index, today=None):
 
     # 2) 주가 반응
     idx = {m: dict(zip(v["dates"], v["close"])) for m, v in (index or {}).items()}
+
+    def daily_ar(c):
+        """회사별 일간 초과수익률(%) 목록 — 평소 수준(기준선) 계산용"""
+        p = c.get("price") or {}
+        ds, cl, mk = p.get("dates") or [], p.get("close") or [], idx.get(c.get("market"), {})
+        out = []
+        for i in range(1, len(ds)):
+            if not (cl[i - 1] and cl[i]):
+                continue
+            r = cl[i] / cl[i - 1] - 1
+            if mk:
+                if not (mk.get(ds[i]) and mk.get(ds[i - 1])):
+                    continue
+                r -= mk[ds[i]] / mk[ds[i - 1]] - 1
+            out.append(r * 100)
+        return out
+    usual = {cid: (3 * sum(v) / len(v) if v else 0.0) for cid, c in byc.items() if c.get("listed") for v in [daily_ar(c)]}
     for e in events:
         media = list(dict.fromkeys(a["by"] for a in e["arts"]))
         e["media"], e["tiers"] = media, sorted({a["tier"] for a in e["arts"]})
@@ -196,7 +214,7 @@ def build(companies, raw, index, today=None):
         e["d0"] = ds[i0]
         e["ar"] = [None if i0 + k >= len(ds) else (lambda v: None if v is None else round(v, 2))(ar(i0 + k)) for k in range(0, 6)]
         if all(v is not None for v in e["ar"][:3]):
-            e["car"] = round(sum(e["ar"][:3]), 2)
+            e["car"] = round(sum(e["ar"][:3]) - usual.get(e["c"], 0.0), 2)
         base = [v for v in vol[i0 - 21:i0 - 1] if v]
         post = [v for v in vol[i0:i0 + 3] if v is not None]
         if base and len(post) == 3:
@@ -318,7 +336,7 @@ def build(companies, raw, index, today=None):
         "coverage": {"from": ds_all[0] if ds_all else None, "to": ds_all[-1] if ds_all else None,
                      "articles": sum(len(v) for v in arts.values()), "events": len(events), "clean": len(clean),
                      "listed": sum(1 for c in companies if c.get("listed")), "companies": len(companies)},
-        "index": sorted(idx), "method": "CAR(0,2) 시장조정 초과수익률 · 거래량 배수 = D0~D+2 ÷ D-21~D-2",
+        "index": sorted(idx), "method": "CAR(0,2) 시장조정 초과수익률(회사 평소 수준 차감) · 거래량 배수 = D0~D+2 ÷ D-21~D-2, 묶음별 중앙값",
         "cats": CAT_NAME, "tiers": tier_names, "axes": axes, "corr": corr,
         "recent": recent, "movers": movers[:30],
         "unknownMedia": [[k, v] for k, v in unknown.most_common(60)],
