@@ -87,20 +87,26 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 .fs-btn[aria-pressed="true"] .sw{background:var(--s1)}
 .fs-btn[aria-pressed="true"] .sw::after{left:16px}
 
-#content > #secPulse{order:-2}
 #content > #secFx{order:-1}
-/* 오늘: 시장 띠 → 이번 주 움직임 → 공시 → 보도 반응 인사이트 → 시총 조회 → 핵심 요약(분석 탭으로) */
+/* 오늘: 시장 띠 → 분야별 블록(건기식 · 마이크로바이옴) → 보도 반응 패턴 → 공시·기사 */
 #content[data-mode="business"][data-sub="today"] > #secTicker{order:-8}
-#content[data-mode="business"][data-sub="today"] > #secPulse{order:-7}
-#content[data-mode="business"][data-sub="today"] > #secVoice{order:-6}
+#content[data-mode="business"][data-sub="today"] > #secDay{order:-7}
 #content[data-mode="business"][data-sub="today"] > #secFx{order:-5}
 #content[data-mode="business"][data-sub="today"] > #secDisc{order:-4}
-#content[data-mode="business"][data-sub="today"] > #secReport{order:-2}
-#content[data-mode="business"][data-sub="today"] > #secHead{order:-1}
-#content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual){display:none !important}
-#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secPulse,#secFx,#secDisc,#secReport){display:none !important}
-#content:not([data-mode="business"]) > :is(#secFx,#secTicker,#secVoice){display:none !important}
-#content[data-mode="business"][data-sub="analysis"] > #secVoice{display:none !important}
+#content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual,#secHead,#secReport){display:none !important}
+#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secDay,#secFx,#secDisc,#secReport){display:none !important}
+#content:not([data-mode="business"]) > :is(#secFx,#secTicker,#secDay){display:none !important}
+.mk-strip{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px 20px}
+.mk-strip .ms-l{margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;font-size:15px}
+.mk-strip .ms-l > span:not(.hint){font-variant-numeric:tabular-nums;font-weight:600}
+.mk-strip .ms-l .hint{font-size:13px;margin:0}
+.day-wrap{display:grid;gap:16px}
+.day h2{font-size:18px}
+.dq{padding-top:16px;margin-top:16px;border-top:1px solid var(--line)}
+.day .ph{margin-bottom:6px}
+.day .ph + .dq{padding-top:0;margin-top:0;border-top:0}
+.dq h3{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--ink-2)}
+.dq .ans{margin-bottom:12px}
 .ans{font-size:17px;font-weight:700;line-height:1.55;margin:2px 0 14px;color:var(--ink)}
 .ans .up,.ans .down{font-weight:800}
 .ans small{font-size:14px;font-weight:500;color:var(--ink-2)}
@@ -126,17 +132,13 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 .vo-cat{display:flex;flex-wrap:wrap;gap:6px}
 .vo-cat span{font-size:14px;padding:4px 10px;border-radius:999px;background:var(--tag);color:var(--ink-2)}
 .vo-cat span b{color:var(--ink);margin-left:4px}
-#content:not([data-sub="today"]) .head-more,#content:not([data-mode="business"]) .head-more{display:none}
-/* 산업 탭: 경쟁사 보기 → 이번 주 → 주가·기업가치 → 공시 → 시장 개요 → 실적 → 판관비 */
-#content[data-mode="full"] > #segBar{order:-9}
-#content[data-mode="full"] > #secPulse{order:-8}
-#content[data-mode="full"] > #secVal{order:-7}
-#content[data-mode="full"] > #secPrice{order:-6}
-#content[data-mode="full"] > #secQuote{order:-5}
-#content[data-mode="full"] > #secDisc{order:-4}
-#content[data-mode="full"] > #secMkt{order:1}
-#content[data-mode="full"] > #secAnnual{order:2}
-#content[data-mode="full"] > #secSga{order:3}
+/* 산업 탭: 보고서 순서 — 시장 개요 → 경쟁사 보기 → 실적·비용 → 기업가치 (주가·기사 같은 빠른 정보는 오늘 탭) */
+#content[data-mode="full"] > #secMkt{order:-9}
+#content[data-mode="full"] > #segBar{order:-8}
+#content[data-mode="full"] > #secAnnual{order:-7}
+#content[data-mode="full"] > #secSga{order:-6}
+#content[data-mode="full"] > #secVal{order:-5}
+#content[data-mode="full"] > :is(#secDisc,#secPrice,#secQuote){display:none !important}
 .tk-grp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:8px 0}
 .tk-grp + .tk-grp{border-top:1px solid var(--grid)}
 .tk-grp > b{font-size:14px;color:var(--ink-2);padding-top:6px;white-space:nowrap;min-width:var(--lw,120px)}
@@ -802,22 +804,13 @@ td span.err{font-size:13.5px}
   <div id="content">
     <!-- 시장 개요 (full) : data/market.json -->
     <!-- 시장 띠 (오늘 탭 맨 위): 국내 상장 경쟁사 등락·시가총액, 장중에는 data/live.json 지연 시세 -->
-    <section class="panel" id="secTicker" hidden>
-      <div class="ph"><div><h2>오늘 경쟁사 주가, 시장보다 강했나?</h2><p class="hint" id="tickHint"></p></div></div>
-      <p class="ans" id="tickAns"></p>
-      <div id="tickBody"></div>
+    <!-- 오늘 탭 맨 위: 시장 띠 한 줄 (코스닥·코스피, 장중이면 data/live.json 지연 지수) -->
+    <section class="panel mk-strip" id="secTicker" hidden>
+      <p class="ms-l"><b>오늘 시장</b><span id="tickMkt"></span><span class="hint" id="tickHint"></span></p>
+      <button class="btn" type="button" id="headMore">경쟁사 분석 ›</button>
     </section>
-    <!-- 이번 주 움직임 · 보도 반응 인사이트 (모든 탭 맨 위, data/newsfx.json) -->
-    <section class="panel" id="secPulse" hidden>
-      <div class="ph"><div><h2>시장과 다르게 움직인 경쟁사, 이유는?</h2><p class="hint" id="pulseHint"></p></div></div>
-      <p class="ans" id="pulseAns"></p>
-      <div id="pulseList"></div>
-    </section>
-    <section class="panel" id="secVoice" hidden>
-      <div class="ph"><div><h2>경쟁사들은 지금 무엇을 알리고 있나?</h2><p class="hint" id="voiceHint"></p></div></div>
-      <p class="ans" id="voiceAns"></p>
-      <div class="vo-grid"><div id="voiceBars"></div><div id="voiceCats"></div></div>
-    </section>
+    <!-- 분야별 블록 (건강기능식품 · 마이크로바이옴): ① 주가 vs 시장 ② 다르게 움직인 곳 ③ 보도 -->
+    <div class="day-wrap" id="secDay" hidden></div>
     <section class="panel" id="secFx" hidden>
       <div class="ph"><div><h2>어떤 보도가 주가를 움직이나?</h2><p class="hint" id="fxHint"></p></div>
         <div class="controls"><div class="seg" id="fxAxis" role="group" aria-label="비교 기준" hidden></div><button class="btn" type="button" id="fxToggle" aria-expanded="false">근거 보기</button></div></div>
@@ -885,8 +878,7 @@ td span.err{font-size:13.5px}
     </section>
     <!-- 한 줄 결론 (요약 탭 맨 위) -->
     <section class="panel head-panel" id="secHead" hidden>
-      <div class="ph"><div><h2>핵심 요약</h2><p class="hint" id="headHint"></p></div>
-        <div class="controls head-more"><button class="btn" type="button" id="headMore">경쟁사 분석 ›</button></div></div>
+      <div class="ph"><div><h2>핵심 요약</h2><p class="hint" id="headHint"></p></div></div>
       <ol class="headline" id="headBody"></ol>
     </section>
     <!-- 벤치마킹 포인트 (요약 탭) -->
@@ -932,6 +924,7 @@ td span.err{font-size:13.5px}
       <div class="ph">
         <div><h2>최근 공시/기사</h2><p class="hint" id="discHint"></p></div>
         <div class="controls">
+          <div class="seg" id="discField" role="group" aria-label="분야" hidden></div>
           <div class="seg" id="discCat" role="group" aria-label="공시 종류"></div>
           <select id="discCo" aria-label="회사 선택"></select>
           <select id="discType" aria-label="기사 유형" hidden></select>
@@ -1305,8 +1298,7 @@ function renderCompanies(){
   if (m !== "market"){ renderAnnual(); renderSga(); }
   if (GROW_GROUPS.includes(g.id)) renderGrow();
   renderDisc(true);
-  if (m !== "market") renderPulse();
-  if (m === "business") renderTicker();
+  if (m === "business") renderToday();
 }
 
 /* ---------- 오늘 탭: 질문 → 답 한 줄 → 근거 (답은 데이터로 규칙에 따라 생성, 매시 갱신) ---------- */
@@ -1331,61 +1323,60 @@ function mktChg(mk, live, day){
   const k = s.dates.indexOf(day); if (k < 1) return null;
   return (s.close[k] / s.close[k - 1] - 1) * 100;
 }
-// ① 오늘 경쟁사 주가, 시장보다 강했나?
-async function renderTicker(){
+// 오늘 탭: 시장 띠 + 분야(산업 탭 그룹)별 블록. 블록마다 ① 주가 vs 시장 ② 다르게 움직인 곳 ③ 보도
+async function renderToday(){
   if ($("content").dataset.mode !== "business") return;
   await briefData();
-  const groups = (state.meta?.groups || []).filter(g => g.mode === "full");
   await allCompanies();
-  const today = todayKST(), seen = new Set(), secs = [], all = [];
+  const today = todayKST(), groups = (state.meta?.groups || []).filter(g => g.mode === "full");
   let live = false, day = null;
-  groups.forEach(g => {
-    const items = (state.data[g.id]?.companies || []).filter(c => /\.(KQ|KS)$/.test(c.ticker || "") && !seen.has(c.id) && c.quote);
-    items.forEach(c => seen.add(c.id));
-    const rows = items.map(c => {
+  const blocks = groups.map(g => {
+    const cos = state.data[g.id]?.companies || [];
+    cos.forEach((c, i) => { c._ci ??= i; c.listed ??= !!c.ticker; });
+    const rows = cos.filter(c => /\.(KQ|KS)$/.test(c.ticker || "") && c.quote).map(c => {
       const q = c.quote, L = liveQ?.quotes?.[c.id], lv = !!(L && L.ts?.slice(0, 10) === today && today > (q.asOf || ""));
       if (lv) live = true; else day = q.asOf || day;
       return { c, mk: c.ticker.slice(-2), chg: lv ? L.chg : q.change1d, w: q.change1w, cap: lv && L.mcap ? L.mcap : q.marketCap, lv, ts: lv ? L.ts : null };
     }).sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99));
-    if (rows.length){ secs.push({ name: g.name, rows }); all.push(...rows); }
-  });
-  $("secTicker").hidden = !secs.length;
-  if (!secs.length) return;
-  all.forEach(r => { const m = mktChg(r.mk, r.lv, day); r.rel = r.chg == null || m == null ? null : r.chg - m; });
+    // 국내 회사만(보도·반응은 국내 수집)
+    const pool = new Map(cos.filter(c => c.country === "KR" || /\.(KQ|KS)$/.test(c.ticker || "") || !c.ticker).map(c => [c.id, c]));
+    return { g, rows, pool };
+  }).filter(b => b.rows.length || b.pool.size);
+  $("secTicker").hidden = $("secDay").hidden = !blocks.length;
+  if (!blocks.length) return;
   const kq = mktChg("KQ", live, day), ks = mktChg("KS", live, day);
-  const avg = mean(all.map(r => r.chg)), up = all.filter(r => r.chg > 0).length;
-  const ts = live ? all.find(r => r.ts)?.ts : null;
+  const ts = live ? blocks.flatMap(b => b.rows).find(r => r.ts)?.ts : null;
+  $("tickMkt").innerHTML = (kq != null ? `<span>코스닥 <b class="${upDown(kq)}">${arrow(kq)}</b></span>` : "") + (ks != null ? `<span>코스피 <b class="${upDown(ks)}">${arrow(ks)}</b></span>` : "");
   $("tickHint").textContent = live ? `장중 지연 시세 ${ts?.slice(11, 16) || ""} 기준(약 15~20분 지연)` : `KRX 종가 ${md(day)} 기준 · 전일 대비`;
-  // 답 한 줄: 평균 vs 코스닥, 시장 대비 가장 강한·약한 곳
+  const fx = newsfx;
+  $("secDay").innerHTML = blocks.map(b => {
+    b.rows.forEach(r => { const m = mktChg(r.mk, r.lv, day); r.rel = r.chg == null || m == null ? null : r.chg - m; });
+    return `<section class="panel day" data-g="${esc(b.g.id)}"><div class="ph"><div><h2>${esc(b.g.name)}</h2></div></div>
+      ${dayTicker(b.rows, kq)}${fx.recent ? dayPulse(b.pool) + dayVoice(b.pool) : ""}</section>`;
+  }).join("");
+  $("secFx").hidden = !fx.axes;
+  if (fx.axes) renderFx();
+}
+$("secDay").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
+// ① 주가, 시장보다 강했나? — 분야 평균 vs 코스닥, 시장 대비 가장 강한·약한 곳
+function dayTicker(rows, kq){
+  if (!rows.length) return "";
+  const avg = mean(rows.map(r => r.chg)), up = rows.filter(r => r.chg > 0).length;
   let verdict = "";
   if (avg != null && kq != null){
     const d = avg - kq;
-    verdict = d >= 1 ? (kq < 0 ? "시장보다 덜 빠졌습니다" : "시장보다 강했습니다") : d <= -1 ? (kq < 0 ? "시장보다 더 빠졌습니다" : "시장보다 약했습니다") : "시장과 비슷하게 움직였습니다";
+    verdict = d >= 1 ? (kq < 0 ? "시장보다 덜 빠졌습니다" : "시장보다 강했습니다") : d <= -1 ? (kq < 0 ? "시장보다 더 빠졌습니다" : "시장보다 약했습니다") : "시장과 비슷했습니다";
   }
-  const rel = all.filter(r => r.rel != null).sort((a, b) => b.rel - a.rel), best = rel[0], worst = rel.at(-1);
-  $("tickAns").innerHTML = `경쟁사 ${all.length}곳 중 ${up ? `${up}곳 상승` : "상승 없음"}, 평균 <span class="${upDown(avg)}">${arrow(avg)}</span>`
-    + (kq != null ? ` <small>(코스닥 ${arrow(kq)}${ks != null ? ` · 코스피 ${arrow(ks)}` : ""})</small>` : "")
-    + (verdict ? ` → ${verdict}` : "")
+  const rel = rows.filter(r => r.rel != null).sort((a, b) => b.rel - a.rel), best = rel[0], worst = rel.at(-1);
+  const ans = `상장 ${rows.length}곳 중 ${up ? `${up}곳 상승` : "상승 없음"}, 평균 <span class="${upDown(avg)}">${arrow(avg)}</span>${verdict ? ` → ${verdict}` : ""}`
     + (best && worst && best !== worst ? `<br><small>시장 대비 가장 강한 곳 <b>${esc(best.c.name)}</b>(${sgn(best.rel)}p) · 가장 약한 곳 <b>${esc(worst.c.name)}</b>(${sgn(worst.rel)}p)</small>` : "");
-  $("tickBody").style.setProperty("--cols", Math.max(...secs.map(x => x.rows.length)));
-  $("tickBody").style.setProperty("--lw", Math.max(...secs.map(x => x.name.length)) * 13 + "px");
-  $("tickBody").innerHTML = secs.map(x => `<div class="tk-grp"><b>${esc(x.name)}</b><div class="tk-row">${x.rows.map((r, i) =>
-    `<button type="button" class="tk" data-id="${esc(r.c.id)}" title="${esc(r.c.name)} 상세"><span class="n"><i style="background:${color(i)}"></i>${esc(r.c.name)}</span>
-      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></button>`).join("")}</div></div>`).join("");
+  return `<div class="dq"><h3>주가, 시장보다 강했나?</h3><p class="ans">${ans}</p><div class="tk-row" style="--cols:${Math.max(rows.length, 6)}">${rows.map(r =>
+    `<button type="button" class="tk" data-id="${esc(r.c.id)}" title="${esc(r.c.name)} 상세"><span class="n"><i style="background:${color(r.c._ci ?? 0)}"></i>${esc(r.c.name)}</span>
+      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></button>`).join("")}</div></div>`;
 }
-$("tickBody").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
-
-// ② 시장과 다르게 움직인 경쟁사, 이유는? — 보도는 회사·반응 시작일로 묶고, 보도 없이 움직인 날도 함께
-async function renderPulse(){
-  await briefData();
-  const fx = newsfx, today = $("content").dataset.sub === "today" && $("content").dataset.mode === "business";
-  const pool = today ? await allCompanies() : new Map(comps().map(c => [c.id, c]));
-  const show = !!fx.recent;
-  $("secPulse").hidden = !show;
-  if (!show){ $("secVoice").hidden = $("secFx").hidden = true; return; }
-  $("secFx").hidden = false;
-  const adj = fx.index?.length ? "시장 대비" : "주가";
-  const grp = new Map();
+// ② 시장과 다르게 움직인 곳, 이유는? — 보도는 회사·반응 시작일로 묶고, 보도 없이 움직인 날도 함께
+function dayPulse(pool){
+  const fx = newsfx, grp = new Map();
   fx.recent.filter(e => pool.has(e.c) && pool.get(e.c).listed).forEach(e => {
     const ar = (e.ar || []).slice(0, 3).filter(v => v != null); if (!ar.length) return;
     const k = e.c + "|" + (e.d0 || e.d);
@@ -1393,53 +1384,45 @@ async function renderPulse(){
     g.items.push(e); grp.set(k, g);
   });
   const rows = [...grp.values()].filter(g => Math.abs(g.r) >= BRIEF.move);
-  // 보도 없이 크게 움직인 날
   (fx.movers || []).filter(m => pool.has(m.c) && Math.abs(m.ar) >= BRIEF.move && !rows.some(g => g.c === m.c && Math.abs(new Date(g.d) - new Date(m.d)) <= 2 * 864e5))
-    .forEach(m => rows.push({ c: m.c, d: m.d, r: m.ar, n: 1, vr: m.vr, items: m.news?.length ? m.news : [], nonews: !m.news?.length }));
+    .forEach(m => rows.push({ c: m.c, d: m.d, r: m.ar, n: 1, vr: m.vr, items: m.news?.length ? m.news : [] }));
   rows.sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
-  // 회사당 가장 큰 움직임 하나만(나머지는 '외 N회')
   const kept = [];
   rows.forEach(g => { const k = kept.find(x => x.c === g.c); if (k) k.more = (k.more || 0) + 1; else kept.push(g); });
-  const top = kept.slice(0, 6);
+  const top = kept.slice(0, 5);
   const why = it => !it ? "관련 보도 없이" : it.cat === "market" ? "증권 기사 외 뚜렷한 보도 없이" : it.cat === "etc" || !fx.cats?.[it.cat] ? "보도 뒤" : `${fx.cats[it.cat]} 보도 뒤`;
   const pick = g => g.items.find(x => x.cat !== "market") || g.items[0];
   const nm = id => pool.get(id)?.name || fx.names?.[id] || id;
-  const upd = fx.updatedAt ? new Date(fx.updatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
-  $("pulseHint").textContent = `최근 2주 · ${adj} ${BRIEF.move}% 이상(보도 후 3거래일) · 갱신 ${upd}`;
-  $("pulseAns").innerHTML = top.length
+  const ans = top.length
     ? top.slice(0, 2).map(g => `${esc(nm(g.c))} <span class="${upDown(g.r)}">${arrow(g.r)}</span> <small>— ${esc(why(pick(g)))}</small>`).join(" · ")
-    : `최근 2주 동안 시장과 다르게 크게(±${BRIEF.move}%) 움직인 경쟁사는 없습니다`;
-  $("pulseList").innerHTML = top.length ? `<div class="mv-list">${top.map(g => { const it = pick(g), c = pool.get(g.c);
+    : `최근 2주 시장 대비 ±${BRIEF.move}% 넘게 움직인 곳 없음`;
+  const list = top.length ? `<div class="mv-list">${top.map(g => { const it = pick(g), c = pool.get(g.c);
     return `<div class="mv-it"><span class="co"><i style="background:${color(c?._ci ?? 0)}"></i>${esc(nm(g.c))}</span><span class="r ${upDown(g.r)}">${arrow(g.r)}</span>
       <span class="why">${it ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : "관련 보도 없음"}
       <small>${md(g.d)}${g.n < 3 ? ` · ${g.n}거래일째` : ""}${g.more ? ` · 2주간 큰 움직임 외 ${g.more}회` : ""}${it?.cat === "market" ? " · 증권 기사(원인 아닐 수 있음)" : it?.cat && it.cat !== "etc" ? ` · ${esc(fx.cats?.[it.cat] || "")}` : ""}${g.items.length > 1 ? ` · 같은 때 보도 ${g.items.length}건` : ""}${g.vr >= BRIEF.hot ? " · 거래량 급증" : ""}</small></span></div>`; }).join("")}</div>` : "";
-  if (today) renderVoice(pool);
-  renderFx();
+  return `<div class="dq"><h3>시장과 다르게 움직인 곳, 이유는? <span class="hint">최근 2주 · 보도 후 3거래일</span></h3><p class="ans">${ans}</p>${list}</div>`;
 }
-// ③ 경쟁사들은 지금 무엇을 알리고 있나? — 이번 주 vs 지난주 보도 건수(같은 보도 묶음, 시세 기사 제외)
-function renderVoice(pool){
-  const fx = newsfx, t = new Date(todayKST());
-  const age = d => (t - new Date(d)) / 864e5;
-  const ev = (fx.recent || []).filter(e => pool.has(e.c) && e.cat !== "market");
+// ③ 지금 무엇을 알리고 있나? — 이번 주 vs 지난주 보도 건수(같은 보도 묶음, 시세 기사 제외)
+function dayVoice(pool){
+  const fx = newsfx, t = new Date(todayKST()), age = d => (t - new Date(d)) / 864e5;
+  const ev = fx.recent.filter(e => pool.has(e.c) && e.cat !== "market");
+  if (!ev.length) return "";
   const wk = ev.filter(e => age(e.d) < 7), pw = ev.filter(e => age(e.d) >= 7 && age(e.d) < 14);
-  $("secVoice").hidden = !ev.length;
-  if (!ev.length) return;
   const cnt = (l, f) => l.reduce((m, e) => (m[f(e)] = (m[f(e)] || 0) + 1, m), {});
   const cw = cnt(wk, e => e.c), cp = cnt(pw, e => e.c), cats = cnt(wk, e => e.cat);
-  const ids = [...new Set([...Object.keys(cw), ...Object.keys(cp)])].sort((a, b) => (cw[b] || 0) - (cw[a] || 0) || (cp[b] || 0) - (cp[a] || 0)).slice(0, 8);
+  const ids = [...new Set([...Object.keys(cw), ...Object.keys(cp)])].sort((a, b) => (cw[b] || 0) - (cw[a] || 0) || (cp[b] || 0) - (cp[a] || 0)).slice(0, 6);
   const mx = Math.max(1, ...ids.map(id => Math.max(cw[id] || 0, cp[id] || 0)));
   const nm = id => pool.get(id)?.name || fx.names?.[id] || id;
   const lead = ids[0] && cw[ids[0]] ? ids[0] : null;
   const leadCat = lead ? Object.entries(cnt(wk.filter(e => e.c === lead && e.cat !== "etc"), e => e.cat)).sort((a, b) => b[1] - a[1])[0] : null;
-  const topCat = Object.entries(cats).filter(([k]) => k !== "etc").sort((a, b) => b[1] - a[1])[0];
   const diff = wk.length - pw.length;
-  $("voiceHint").textContent = "같은 소식을 여러 매체가 실은 경우 1건 · 시세 기사 제외";
-  $("voiceAns").innerHTML = `이번 주 보도 ${wk.length}건 <small>(지난주 ${pw.length}건, ${diff > 0 ? `${diff}건 늘어남` : diff < 0 ? `${-diff}건 줄어듦` : "같음"})</small>`
-    + (lead ? ` · 가장 많이 나온 곳 <b>${esc(nm(lead))}</b> ${cw[lead]}건${leadCat ? ` <small>(주로 ${esc(fx.cats?.[leadCat[0]] || "")})</small>` : ""}` : "")
-    + (topCat ? `<br><small>유형별로는 ${esc(fx.cats?.[topCat[0]] || "")} ${topCat[1]}건이 가장 많습니다</small>` : "");
-  $("voiceBars").innerHTML = `<p class="mk-h">회사별 보도 <span class="u">(막대 = 이번 주, 세로선 = 지난주)</span></p>` + ids.map(id => `<div class="vo-row"><span class="nm">${esc(nm(id))}</span>
-    <span class="tr"><i style="width:${(cw[id] || 0) / mx * 100}%"></i><b style="left:calc(${(cp[id] || 0) / mx * 100}% - 1px)"></b></span><span class="n">${cw[id] || 0}<small> / ${cp[id] || 0}</small></span></div>`).join("");
-  $("voiceCats").innerHTML = `<p class="mk-h">이번 주 보도 유형</p><div class="vo-cat">${Object.entries(cats).sort((a, b) => (a[0] === "etc") - (b[0] === "etc") || b[1] - a[1]).map(([k, v]) => `<span>${esc(fx.cats?.[k] || k)}<b>${v}</b></span>`).join("")}</div>`;
+  const ans = `이번 주 보도 ${wk.length}건 <small>(지난주 ${pw.length}건${diff ? `, ${Math.abs(diff)}건 ${diff > 0 ? "늘어남" : "줄어듦"}` : ""})</small>`
+    + (lead ? ` · 가장 많이 나온 곳 <b>${esc(nm(lead))}</b> ${cw[lead]}건${leadCat ? ` <small>(주로 ${esc(fx.cats?.[leadCat[0]] || "")})</small>` : ""}` : "");
+  const catHtml = Object.entries(cats).sort((a, b) => (a[0] === "etc") - (b[0] === "etc") || b[1] - a[1]).map(([k, v]) => `<span>${esc(fx.cats?.[k] || k)}<b>${v}</b></span>`).join("");
+  return `<div class="dq"><h3>지금 무엇을 알리고 있나? <span class="hint">같은 소식은 1건 · 시세 기사 제외</span></h3><p class="ans">${ans}</p>
+    <div class="vo-grid"><div><p class="mk-h">회사별 보도 <span class="u">(막대 = 이번 주, 세로선 = 지난주)</span></p>${ids.map(id => `<div class="vo-row"><span class="nm">${esc(nm(id))}</span>
+    <span class="tr"><i style="width:${(cw[id] || 0) / mx * 100}%"></i><b style="left:calc(${(cp[id] || 0) / mx * 100}% - 1px)"></b></span><span class="n">${cw[id] || 0}<small> / ${cp[id] || 0}</small></span></div>`).join("")}</div>
+    ${catHtml ? `<div><p class="mk-h">이번 주 보도 유형</p><div class="vo-cat">${catHtml}</div></div>` : ""}</div></div>`;
 }
 function renderFx(){
   const fx = newsfx, A = fx.axes || {}, cv = fx.coverage || {};
@@ -2264,13 +2247,42 @@ function renderGrid(list, today){
   $("discGrid").innerHTML = head + `<tbody>${body}</tbody>`;
   return byCo.reduce((n, x) => n + Object.keys(x.cells).filter(k => k.startsWith(discYear + "-")).length, 0);
 }
+// 오늘 탭의 공시·기사는 분야(산업 탭 그룹)별로: 공시는 그 그룹 데이터, 기사는 뉴스 아카이브(data/news_raw.jsonl)
+let discField = null, newsRaw = null;
+const isTodayTab = () => grp().mode === "business" && state.sub === "today";
+async function loadNewsRaw(){
+  if (newsRaw) return newsRaw;
+  try { const t = await (await fetch("data/news_raw.jsonl", {cache: "no-cache"})).text();
+    newsRaw = t.split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch(e){ return null; } }).filter(Boolean); }
+  catch(e){ newsRaw = []; }
+  return newsRaw;
+}
+function discPool(){
+  if (!isTodayTab()) return comps();
+  const fields = (state.meta?.groups || []).filter(g => g.mode === "full");
+  if (!discField || !fields.some(g => g.id === discField)) discField = fields[0]?.id;
+  return (state.data[discField]?.companies || []).filter(c => c.country === "KR");
+}
+function newsOf(c){
+  if (!isTodayTab() || !newsRaw) return (c.activity || []).filter(x => x.src === "뉴스");
+  const from = new Date(Date.now() - 270 * 864e5).toISOString().slice(0, 10);
+  return newsRaw.filter(x => x.c === c.id && x.d >= from).map(x => ({ date: x.d, title: x.title, url: x.url, by: x.by }));
+}
 function renderDisc(reset){
-  const list = comps().filter(c => c.disclosures || c.activity);
-  const hasNews = comps().some(c => (c.activity || []).some(x => x.src === "뉴스"));
+  const today0 = isTodayTab();
+  if (today0 && (!newsRaw || (state.meta?.groups || []).some(g => g.mode === "full" && !state.data[g.id]))){
+    Promise.all([loadNewsRaw(), allCompanies()]).then(() => renderDisc(reset)); return;
+  }
+  const fields = (state.meta?.groups || []).filter(g => g.mode === "full");
+  const pool = discPool();
+  $("discField").hidden = !today0;
+  if (today0) $("discField").innerHTML = fields.map(g => `<button type="button" data-k="${esc(g.id)}" aria-pressed="${g.id === discField}">${esc(g.name.replace(" 신약", ""))}</button>`).join("");
+  const list = pool.filter(c => c.disclosures?.length || newsOf(c).length);
+  const hasNews = list.some(c => newsOf(c).length);
   const newsBtn = $("discCat").querySelector('[data-k="news"]');
   if (newsBtn) newsBtn.hidden = !hasNews;
   // 탭을 열 때 기본 보기: 오늘 탭은 기사, 그 외는 정기보고서
-  if (reset){ discCat = grp().mode === "business" && state.sub === "today" && hasNews ? "news" : "report"; syncSeg("discCat", discCat); }
+  if (reset){ discCat = today0 && hasNews ? "news" : "report"; syncSeg("discCat", discCat); }
   if (!hasNews && discCat === "news") discCat = "report";
   $("secDisc").hidden = !list.length;
   if (!list.length) return;
@@ -2306,7 +2318,7 @@ function renderDisc(reset){
   }
   const rows = list.filter(c => !pick || c.id === pick)
     .flatMap(c => isNews
-      ? (c.activity || []).filter(x => x.src === "뉴스").map(x => ({...x, c, nc: K.cat(x.title), tier: K.tier(x.by)}))
+      ? newsOf(c).map(x => ({...x, c, nc: K.cat(x.title), tier: K.tier(x.by)}))
       : (c.disclosures || []).filter(d => discCatOf(d) === discCat).map(d => ({...d, c})))
     .filter(d => !isNews || ((!discType || d.nc === discType) && (!discTier || d.tier === discTier)))
     .sort((a,b) => b.date.localeCompare(a.date) || a.c._ci - b.c._ci);
@@ -2333,6 +2345,8 @@ $("discMore").addEventListener("click", () => { discLimit += 30; renderDisc(fals
 $("repToggle").addEventListener("click", () => { const open = $("repBody").hidden;
   $("repBody").hidden = !open; $("repToggle").textContent = open ? "접기" : "펼치기"; $("repToggle").setAttribute("aria-expanded", open); });
 $("discToggle").addEventListener("click", () => { discOpen = !discOpen; renderDisc(false); });
+$("discField").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === discField) return;
+  discField = b.dataset.k; discLimit = 15; discType = discTier = ""; renderDisc(true); });
 
 /* ---------- 설정 (전역: 자사 · 섹션 이름) ---------- */
 const setDlg = $("setDlg");
