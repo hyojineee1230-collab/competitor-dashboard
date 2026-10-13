@@ -198,15 +198,15 @@ small.hot{display:inline-block;font-size:13px;font-weight:600;color:var(--up);ba
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
 #content{display:flex;flex-direction:column;gap:16px}
-/* 요약 탭: 핵심 요약 → 카드 → 벤치마킹 → 성장 vs 마케팅 → 성장 원인 → 주요 활동 → 실적 표 → 공시 → 시가총액 조회 */
+/* 요약 탭: 핵심 요약 → 벤치마킹 → 성장 vs 마케팅 → 성장 원인 → 주요 활동 → 카드 → 실적 표 → 공시 → 시가총액 조회 */
 #content[data-mode="business"] > *{order:20}
 #content[data-mode="business"] > #secHead{order:0}
-#content[data-mode="business"] > #secCore{order:1}
 #content[data-mode="business"] > #secBench{order:2}
 #content[data-mode="business"] > #secGrow{order:3}
 #content[data-mode="business"] > #secAct{order:5}
-#content[data-mode="business"] > #secAnnual{order:6}
-#content[data-mode="business"] > #secDisc{order:7}
+#content[data-mode="business"] > #secCore{order:6}
+#content[data-mode="business"] > #secAnnual{order:7}
+#content[data-mode="business"] > #secDisc{order:8}
 .grow-box{height:440px}
 @media (max-width:600px){.grow-box{height:340px}}
 #content > *{min-width:0}
@@ -1017,7 +1017,7 @@ td span.err{font-size:13.5px}
     </div>
     <div class="cards">
       <div class="card" id="introToday"><b>오늘</b><p>시장 띠 한 줄 → 건강기능식품·마이크로바이옴 블록마다 주가 vs 시장, 다르게 움직인 곳과 이유, 이번 주 보도 → 보도가 주가를 움직인 패턴 → 분야별 공시·기사</p></div>
-      <div class="card"><b>경쟁사 분석</b><p>핵심 요약 → 핵심 경쟁사 카드(누르면 회사 상세) → 벤치마킹 포인트 → 성장 vs 마케팅 강도 → 실적 비교</p></div>
+      <div class="card"><b>경쟁사 분석</b><p>핵심 요약 → 벤치마킹 포인트 → 성장 vs 마케팅 강도 → 핵심 경쟁사 카드(누르면 회사 상세) → 실적 비교</p></div>
       <div class="card"><b>건강기능식품 · 마이크로바이옴</b><p>산업 보고서 순서: 시장 개요(국내·해외) → 경쟁사 보기 → 실적(손익·판관비) → 기업가치(시총·PSR·PER·PBR). 시총 조회는 ⚙ 설정에서</p></div>
       <div class="card"><b>읽는 법</b><p>숫자 옆 <strong>[1]</strong>을 누르면 출처가 열립니다. <strong>추정</strong> 표시는 참고용 계산값이고, 표 머리글을 누르면 정렬됩니다. <strong>└ 부문</strong> 행은 건기식과 결이 다른 사업을 뺀 사업부문 실적입니다</p></div>
     </div>
@@ -2398,11 +2398,18 @@ function vals(f, m, n){
   if (m === "gpm") return Array.from({length:len}, (_,i) => capM(margin(gross(f, i), f.revenue?.[i])));
   return f[m] || [];
 }
+// 연간 표와 같은 행: 같은 회사·같은 순서·부문 줄 자리까지 (분기 전환 때 행이 움직이지 않게)
+function annualRowList(){
+  const list = comps().filter(c => c.annual && c.annual.currency === state.currency);
+  const last = [...new Set(list.flatMap(c => c.annual.years))].sort().at(-1);
+  return { list, last };
+}
 function renderQuarter(){
   const tip = chartBase(), m = state.metric, isPct = PCT_METRICS.has(m);
   const list = comps().filter(c => c.quarterly);
-  const shown = comps().filter(c => c.quarterly || c.listed);     // 분기 공시 대상(상장사)만
-  const excluded = comps().filter(c => !c.quarterly && !c.listed).map(c => c.name);
+  const AR = annualRowList();
+  const shown = [...AR.list, ...list.filter(c => !AR.list.includes(c))];   // 연간 표 회사 + (연간 없는) 분기 회사
+  const excluded = shown.filter(c => !c.quarterly).map(c => c.name);
   const periods = [...new Set(list.flatMap(c => c.quarterly.periods))].sort().slice(-8);
   $("currency").hidden = true;
   $("finHint").textContent = `단위: ${isPct ? "%" : "억원"} · 최근 ${periods.length}개 분기 · ${fsLabel()}`;
@@ -2442,17 +2449,19 @@ function renderQuarter(){
     return { rev, yoy: y < 0 ? null : growth(rev, f.revenue[y]), qoq: i ? growth(rev, f.revenue[i-1]) : null,
              gp, gpm: capM(margin(gp, rev)), op, opm: capM(margin(op, rev)), mc: c.quote?.currency === "KRW" ? c.quote?.marketCap : null };
   };
+  // 연간 부문 줄 자리: 분기 부문 숫자는 없으므로 이름만 두고 칸은 비움
+  const segBlank = c => { const g = bizSeg(c, AR.last); return g ? `<tr class="seg-row" data-id="${esc(c.id)}"><td><span class="seg-lbl">└ ${esc(g.name.replace("건강기능식품", "건기식"))} 부문 <small>${g.share == null ? "" : `매출의 ${g.share.toFixed(0)}%`}</small></span></td>${"<td></td>".repeat(9)}</tr>` : ""; };
   const body = sortRows(shown.map(c => ({ c, v: qv(c) })), "fin").map(({c}) => {
     const f = c.quarterly;
-    if (!f) return `<tr data-id="${esc(c.id)}"><td>${coCell(c)}</td><td colspan="8" class="err" style="text-align:left">${esc(waitMsg(c, c.error || "분기 데이터 없음"))}</td></tr>`;
+    if (!f) return `<tr data-id="${esc(c.id)}"><td>${coCell(c, "")}</td>${"<td></td>".repeat(9)}</tr>${segBlank(c)}`;
     const i = f.periods.length - 1, p = f.periods[i];
     const yoyIdx = f.periods.indexOf(`${+p.slice(0,4) - 1}${p.slice(4)}`);
     const rev = f.revenue[i], op = f.operatingIncome[i];
-    return `<tr data-id="${esc(c.id)}"><td>${coCell(c)}</td><td>${qLabel(p)}</td><td>${fmtBig(rev,"KRW")}</td>
+    return `<tr data-id="${esc(c.id)}"><td>${coCell(c, "")}</td><td>${qLabel(p)}</td><td>${fmtBig(rev,"KRW")}</td>
       <td>${fmtPct(yoyIdx < 0 ? null : growth(rev, f.revenue[yoyIdx]))}</td><td>${fmtPct(i ? growth(rev, f.revenue[i-1]) : null)}</td>
       <td>${signed(gross(f, i), f.currency)}</td><td>${fmtMargin(margin(gross(f, i), rev))}</td>
       <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td>
-      <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>`;
+      <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>${segBlank(c)}`;
   }).join("");
   const peers = shown.filter(c => c.quarterly && !isSelf(c)).map(qv);
   const A = k => mean(peers.map(r => r[k]));
@@ -2465,7 +2474,7 @@ function renderQuarter(){
 
   const src = [...new Set(list.map(c => c.quarterly.source))].join(", ");
   const notes = [`출처: ${src || "–"}`];
-  if (excluded.length) notes.push(`${excluded.join("·")}는 분기 실적 미공시`);
+  if (excluded.length) notes.push(`빈 칸: ${excluded.join("·")} — 분기 실적 미공시(비상장)·미수집`);
   const staleHere = shown.filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
   const noCost = comps().filter(c => c.country === "KR" && (c.annual || c.quarterly) && !(c.annual?.costOfSales || c.quarterly?.costOfSales)).map(c => c.name);
   if (noCost.length && (state.meta?.dartStale || []).length) notes.push(`매출원가 수집 대기: ${noCost.join(", ")}`);
