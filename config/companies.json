@@ -54,6 +54,7 @@
       "name": "마이크로바이옴 신약",
       "mode": "full",
       "description": "마이크로바이옴 기반 치료제 개발사 및 프로바이오틱스 소재사",
+      "extras": ["rnd"],
       "members": ["genome", "kobiolabs", "hem", "cellbiotech", "cjbs", "bifido", "seres", "maat"]
     }
   ]
