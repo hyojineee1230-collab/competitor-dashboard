@@ -1,0 +1,27 @@
+{
+  "updatedAt": "2026-10-13T06:51:26+00:00",
+  "sample": false,
+  "dart": true,
+  "krx": true,
+  "groups": [
+    {
+      "id": "biz",
+      "name": "요약",
+      "mode": "business"
+    },
+    {
+      "id": "hff",
+      "name": "건강기능식품",
+      "mode": "full"
+    },
+    {
+      "id": "microbiome",
+      "name": "마이크로바이옴 신약",
+      "mode": "full"
+    }
+  ],
+  "errors": [
+    "KRX: 2회 호출"
+  ],
+  "dartStale": []
+}

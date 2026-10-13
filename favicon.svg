@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>.a{fill:#1f4e89}.b{fill:#c59a2e}.s{stroke:#1f4e89}.sb{stroke:#c59a2e}
+  @media (prefers-color-scheme:dark){.a{fill:#8fb4e6}.b{fill:#e0bd66}.s{stroke:#8fb4e6}.sb{stroke:#e0bd66}}</style>
+  <circle class="s" cx="26" cy="26" r="19" fill="none" stroke-width="7"/>
+  <path class="sb" d="M40 40 L58 58" stroke-width="9" stroke-linecap="round"/>
+  <rect class="a" x="15.5" y="27" width="6" height="9" rx="1"/>
+  <rect class="a" x="23" y="20" width="6" height="16" rx="1"/>
+  <rect class="b" x="30.5" y="14" width="6" height="22" rx="1"/>
+</svg>
