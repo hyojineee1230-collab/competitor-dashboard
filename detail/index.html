@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경쟁사 모니터</title>
+<script>
+// 예전 /detail/#메뉴/분야 주소 → 기존 대시보드(루트)의 맞는 탭
+(function(){
+  var p = location.hash.replace(/^#\/?/, "").split("/"), m = p[0] || "", f = p[1] || "";
+  var tab = f === "hff" || f === "microbiome" ? f : (m === "quotes" || m === "news" ? "biz" : "biz-x");
+  location.replace("../#" + tab);
+})();
+</script>
+</head>
+<body><p style="font-family:sans-serif;padding:24px"><a href="../">경쟁사 모니터 열기</a></p></body>
+</html>
