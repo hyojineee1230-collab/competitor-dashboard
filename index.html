@@ -93,8 +93,8 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 #content[data-mode="business"][data-sub="today"] > #secDay{order:-7}
 #content[data-mode="business"][data-sub="today"] > #secFx{order:-5}
 #content[data-mode="business"][data-sub="today"] > #secDisc{order:-4}
-#content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual,#secHead,#secReport){display:none !important}
-#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secDay,#secFx,#secDisc,#secReport){display:none !important}
+#content[data-mode="business"][data-sub="today"] > :is(#secCore,#secBench,#secGrow,#secAnnual,#secHead){display:none !important}
+#content[data-mode="business"][data-sub="analysis"] > :is(#secTicker,#secDay,#secFx,#secDisc){display:none !important}
 #content:not([data-mode="business"]) > :is(#secFx,#secTicker,#secDay){display:none !important}
 .mk-strip{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px 20px}
 .mk-strip .ms-l{margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;font-size:15px}
@@ -136,7 +136,6 @@ header .fs-btn .sw{background:rgba(255,255,255,.28)}
 #content[data-mode="full"] > #secMkt{order:-9}
 #content[data-mode="full"] > #segBar{order:-8}
 #content[data-mode="full"] > #secAnnual{order:-7}
-#content[data-mode="full"] > #secSga{order:-6}
 #content[data-mode="full"] > #secVal{order:-5}
 #content[data-mode="full"] > :is(#secDisc,#secPrice,#secQuote){display:none !important}
 .tk-grp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:8px 0}
@@ -206,7 +205,6 @@ small.hot{display:inline-block;font-size:13px;font-weight:600;color:var(--up);ba
 #content[data-mode="business"] > #secAct{order:5}
 #content[data-mode="business"] > #secAnnual{order:6}
 #content[data-mode="business"] > #secDisc{order:7}
-#content[data-mode="business"] > #secReport{order:8}
 .grow-box{height:440px}
 @media (max-width:600px){.grow-box{height:340px}}
 #content > *{min-width:0}
@@ -342,6 +340,7 @@ tr.sec td:first-child{background:var(--page)}
 .mk-split.one .mk-brands{columns:3}
 @media (max-width:1100px){.mk-split.one .mk-brands{columns:2}}
 @media (max-width:900px){.mk-split{grid-template-columns:1fr}.mk-split > div + div{border-left:0;padding-left:0;border-top:1px solid var(--grid);padding-top:16px}.mk-brands{columns:1}}
+@media (max-width:600px){.mk-split.one .mk-brands{columns:1}}
 .mk-pct{display:grid;gap:14px;margin-top:4px}
 .mk-tk3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .mk-tk3 div{display:grid;gap:2px}
@@ -426,6 +425,9 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
 .core-card[aria-pressed="true"] .go .sw::after{left:16px}
 #finTable tbody tr.sel td, #finTable tbody tr.sel td:first-child{background:color-mix(in srgb, var(--selc, var(--brand)) 14%, var(--surface))}
 .cap-tool .hint{margin:0}
+.set-capview{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.set-capview h3{margin:0 0 10px;font-size:14px;font-weight:600}
+.set-capview h3 .hint{display:inline;margin-left:6px;font-weight:400}
 #discTable td.t{white-space:normal;text-align:left;min-width:280px}
 #discTable td.t a{color:var(--ink);text-decoration:none;font-weight:500}
 #discTable td.t a:hover{color:var(--brand);text-decoration:underline}
@@ -734,19 +736,12 @@ td span.err{font-size:13.5px}
 }
 
 /* 성장 원인 매트릭스 */
-#whyTable th{text-align:center}
-#whyTable th:first-child{text-align:left}
-#whyTable td{text-align:center;vertical-align:middle;padding:8px 6px}
-#whyTable td:first-child{text-align:left}
-#whyTable td .gr{display:block;font-size:13.5px;font-weight:500;margin-top:2px}
 .why-cell{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px;cursor:pointer;font:inherit;font-size:14px;color:var(--ink-2);white-space:nowrap}
 .why-cell i{width:9px;height:9px;border-radius:50%;border:2px solid var(--cc);flex:none}
 .why-cell.lv2 i{background:var(--cc)}
 .why-cell.lv2{border-color:color-mix(in srgb,var(--cc) 55%,var(--line));background:color-mix(in srgb,var(--cc) 10%,var(--surface));color:var(--ink);font-weight:600}
 .why-cell[aria-pressed="true"]{background:var(--cc);border-color:var(--cc);color:#fff}
 .why-cell[aria-pressed="true"] i{border-color:#fff;background:#fff}
-#whyTable td.none{color:var(--axis)}
-#whyTable tbody tr.sel td, #whyTable tbody tr.sel td:first-child{background:color-mix(in srgb, var(--cc) 14%, var(--surface))}
 .why-key{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
 .why-key i{width:9px;height:9px;border-radius:50%;border:2px solid var(--muted);display:inline-block}
 .why-key i.f{background:var(--muted)}
@@ -831,10 +826,6 @@ td span.err{font-size:13.5px}
     <!-- 기업가치 (valuation: table) -->
     <section class="panel" id="secVal" hidden>
       <div class="ph"><div><h2>기업가치</h2><p class="hint" id="valHint"></p></div></div>
-      <div class="val-ch" id="valChartTitle"><p class="mk-h" id="valChartName">1년 주가 흐름 <span class="u">(1년 전 = 0%)</span></p>
-        <div class="seg" id="valView" role="group" aria-label="차트 보기"><button type="button" data-k="rel" aria-pressed="true">상대 수익률</button><button type="button" data-k="mcap" aria-pressed="false">시가총액</button></div></div>
-      <div class="chart-box" style="height:260px"><canvas id="valChart" role="img" aria-label="1년 주가 흐름"></canvas></div>
-      <div class="legend" id="valLegend" style="margin-bottom:18px"></div>
       <div class="tbl-wrap"><table id="valTable"></table></div>
       <div id="valNotes"></div>
     </section>
@@ -869,12 +860,9 @@ td span.err{font-size:13.5px}
     </section>
     <!-- 성장 근거 (요약 탭): 성장 vs 마케팅 강도 차트 / 성장 원인 매트릭스를 탭으로 -->
     <section class="panel" id="secGrow" hidden>
-      <div class="ph"><div><h2>성장 근거</h2><p class="hint" id="growHint"></p><p class="hint" id="whyHint" hidden></p></div>
-        <div class="controls"><div class="seg" id="growTab" role="tablist" aria-label="성장 근거 보기"><button type="button" data-k="grow" aria-pressed="true">성장 vs 마케팅 강도</button><button type="button" data-k="why" aria-pressed="false">성장 원인</button></div></div></div>
+      <div class="ph"><div><h2>성장 vs 마케팅 강도</h2><p class="hint" id="growHint"></p></div></div>
       <div id="growPane"><div class="chart-box grow-box"><canvas id="growChart"></canvas></div>
       <div id="growNotes"></div></div>
-      <div id="whyPane" hidden><div class="tbl-wrap"><table id="whyTable"></table></div>
-      <div id="whyDetail" class="why-detail" hidden></div></div>
     </section>
     <!-- 한 줄 결론 (요약 탭 맨 위) -->
     <section class="panel head-panel" id="secHead" hidden>
@@ -891,21 +879,23 @@ td span.err{font-size:13.5px}
       <div class="ph">
         <div><h2 id="finTitle">연간 실적 비교</h2><p class="hint" id="finHint"></p></div>
         <div class="controls">
+          <div class="seg" id="finView" role="group" aria-label="실적 보기" hidden><button type="button" data-k="pl" aria-pressed="true">손익</button><button type="button" data-k="sga" aria-pressed="false">판관비</button></div>
           <div class="seg" id="finPeriod" role="group" aria-label="실적 기간" hidden></div>
           <div class="seg" id="metrics" role="group" aria-label="실적 지표"></div>
           <select id="currency" aria-label="통화"></select>
         </div>
       </div>
+      <div id="finPane">
       <div class="chart-box"><canvas id="finChart" role="img" aria-label="연간 실적 차트"></canvas></div>
       <div class="tbl-wrap" style="margin-top:16px"><table id="finTable"></table></div>
       <div id="finNotes"></div>
-    </section>
-
-    <!-- 주요 계정 세부 (판관비 묶음) -->
-    <section class="panel" id="secSga">
-      <div class="ph"><div><h2>주요 계정 세부</h2><p class="hint" id="sgaHint"></p></div></div>
+      </div>
+      <!-- 판관비 구성 (산업 탭: 손익/판관비 전환) -->
+      <div id="sgaPane" hidden>
+      <span id="sgaHint" hidden></span>
       <div class="tbl-wrap"><table id="sgaTable"></table></div>
       <div id="sgaNotes"></div>
+      </div>
     </section>
 
     <section class="panel" id="secAct">
@@ -939,22 +929,6 @@ td span.err{font-size:13.5px}
       <div style="margin-top:12px" id="discMoreWrap"><button class="btn" id="discMore">더 보기</button></div>
       </div>
     </section>
-    <!-- 일자별 시가총액 조회 (요약 탭): 대상은 ⚙ 설정(이 브라우저)에서 지정 -->
-    <section class="panel" id="secReport" hidden>
-      <div class="ph">
-        <div><h2>일자별 시가총액 조회</h2><p class="hint" id="repHint"></p></div>
-        <div class="controls"><button class="btn" id="repToggle" aria-expanded="false">펼치기</button></div>
-      </div>
-      <div id="repBody" hidden>
-        <div class="cap-tool" id="capTool">
-          <span class="hint">기준일</span>
-          <input type="date" id="capDate" aria-label="기준일">
-          <button class="btn" id="capCopy" title="종목(코드)과 시가총액(억원, 원 단위까지)을 엑셀에 붙여넣을 수 있게 복사">시총 복사</button>
-          <span class="toast" id="capToast" role="status"></span>
-        </div>
-        <div id="capPreview" class="cap-grid"></div>
-      </div>
-    </section>
   </div>
 
   <footer>
@@ -967,6 +941,16 @@ td span.err{font-size:13.5px}
     <h2 id="setTitle">설정</h2>
     <p class="lead">자사 표시, 섹션 이름, 시총 복사 목록은 모든 탭에 적용되며 <b>이 브라우저에만 저장</b>됩니다. 사이트·저장소에는 올라가지 않으니 PC와 휴대폰에서 각각 한 번 지정하세요.</p>
     <div class="set-grid" id="setFields"></div>
+    <div class="set-capview">
+      <h3>일자별 시가총액 조회 <span class="hint" id="repHint"></span></h3>
+      <div class="cap-tool" id="capTool">
+        <span class="hint">기준일</span>
+        <input type="date" id="capDate" aria-label="기준일">
+        <button type="button" class="btn" id="capCopy" title="종목(코드)과 시가총액(억원, 원 단위까지)을 엑셀에 붙여넣을 수 있게 복사">시총 복사</button>
+        <span class="toast" id="capToast" role="status"></span>
+      </div>
+      <div id="capPreview" class="cap-grid"></div>
+    </div>
     <div class="intro-foot">
       <span><button type="button" class="btn" id="setReset">초기화</button> <span class="toast" id="setToast" role="status"></span></span>
       <span><button type="button" class="btn" id="setCancel">닫기</button> <button type="submit" class="btn primary">저장</button></span>
@@ -1213,17 +1197,16 @@ async function selectGroup(tabId){
   const m = g.mode;
   $("secAct").hidden = true;   // 주요 활동은 카드 팝업(최근 동향)과 같은 내용이라 표시하지 않음
   $("secCore").hidden = m !== "business";
-  $("secReport").hidden = m !== "business";
   // 요약 탭의 실적 비교는 표만
   document.querySelector("#secAnnual .chart-box").hidden = m === "business";
   $("metrics").hidden = m === "business";
   $("secAnnual").hidden = m === "market";
-  $("secSga").hidden = m !== "full";
+  state.finView = "pl";
   $("secGrow").hidden = !GROW_GROUPS.includes(g.id);
   $("content").dataset.mode = m;
   $("content").dataset.gid = g.id;
   $("secHead").hidden = $("secBench").hidden = m !== "business";
-  const valTable = g.valuation === "table";
+  const valTable = g.valuation === "table" || m === "full";
   $("secVal").hidden = !valTable;
   $("secPrice").hidden = m === "business" || valTable;
   $("secQuote").hidden = m === "business" || valTable;
@@ -1284,6 +1267,18 @@ $("fsBtn").addEventListener("click", () => {
   closeCo(); Object.values(state.data).forEach(g => g?.companies && applyBasis(g)); state.currency = null; setCurrency(); renderCompanies();
 });
 const fsLabel = () => state.ofs ? "별도 기준" : "연결 기준";
+// 산업 탭 실적 섹션: 손익(차트+표) ↔ 판관비 구성 표
+function applyFinView(){
+  const full = grp().mode === "full", sga = full && state.finView === "sga";
+  $("finView").hidden = !full;
+  syncSeg("finView", sga ? "sga" : "pl");
+  $("finPane").hidden = sga; $("sgaPane").hidden = !sga;
+  $("metrics").hidden = sga || grp().mode === "business";
+  if (sga){ $("currency").hidden = true; $("finHint").textContent = $("sgaHint").textContent; }
+  else if (full) $("currency").hidden = $("currency").options.length < 2;
+}
+$("finView").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === state.finView) return;
+  state.finView = b.dataset.k; applyFinView(); if (b.dataset.k === "pl") renderAnnual(); else { renderSga(); applyFinView(); } });
 function renderAll(){
   if (grp().mode === "full") renderMkt();
   renderCompanies();
@@ -1292,13 +1287,13 @@ function renderAll(){
 function renderCompanies(){
   const g = grp(), m = g.mode, sg = segOf(g);
   $("segHint").textContent = g.segments?.length ? `${comps().length}개사` : "";
-  if (g.valuation === "table") renderVal();
-  if (m !== "business" && g.valuation !== "table"){ renderPrice(); renderLegend(); renderRank(); renderQuotes(); }
-  if (m === "business"){ coreSel = null; renderHead(); renderCore(); renderWhy(); renderBench(); renderAct(true); renderCapTool(true); }
-  if (m !== "market"){ renderAnnual(); renderSga(); }
+  const valTable = g.valuation === "table" || m === "full";
+  if (valTable) renderVal();
+  if (m !== "business" && !valTable){ renderPrice(); renderLegend(); renderRank(); renderQuotes(); }
+  if (m === "business"){ coreSel = null; renderHead(); renderCore(); renderBench(); renderAct(true); }
+  if (m !== "market"){ renderAnnual(); renderSga(); applyFinView(); }
   if (GROW_GROUPS.includes(g.id)) renderGrow();
-  renderDisc(true);
-  if (m === "business") renderToday();
+  if (m === "business"){ renderDisc(true); renderToday(); }
 }
 
 /* ---------- 오늘 탭: 질문 → 답 한 줄 → 근거 (답은 데이터로 규칙에 따라 생성, 매시 갱신) ---------- */
@@ -1513,15 +1508,6 @@ function growRow(c){
   const ad = d.adpromo?.[k] || 0, mk = ad + (comm || 0);
   return { c, y, rev, gr, mk: mk / rev * 100, ad: ad / rev * 100, comm: (comm || 0) / rev * 100, opm: margin(a.operatingIncome?.[i], rev), gpm: margin(gross(a, i), rev) };
 }
-let growTab = "grow";
-function setGrowTab(k){
-  growTab = k;
-  $("growTab").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k));
-  $("growPane").hidden = $("growHint").hidden = k !== "grow";
-  $("whyPane").hidden = $("whyHint").hidden = k !== "why";
-  if (k === "grow") renderGrow();   // 숨긴 상태에서 그린 차트는 크기가 0이라 보일 때 다시 그림
-}
-$("growTab").addEventListener("click", e => { const b = e.target.closest("button"); if (b && b.dataset.k !== growTab) setGrowTab(b.dataset.k); });
 function renderGrow(){
   const pool = [...comps(), ...(grp()._extra || [])];
   const rows = pool.map(growRow).filter(Boolean), miss = pool.filter(c => !growRow(c) && c.country === "KR").map(c => c.name);
@@ -1785,9 +1771,8 @@ async function renderCapTool(reset){
   const secs = await capSecs(), dates = capDates(secs), inp = $("capDate");
   $("capCopy").disabled = !dates.length;
   const n = secs.reduce((t, x) => t + x.items.length, 0);
-  $("repHint").textContent = n ? `${n}개사` : "대상 미지정";
-  if (reset){ $("repBody").hidden = true; $("repToggle").textContent = "펼치기"; $("repToggle").setAttribute("aria-expanded", "false"); }
-  if (!n){ $("capPreview").innerHTML = `<p class="empty">⚙ 설정에서 시총 복사 목록을 지정하세요</p>`; return; }
+  $("repHint").textContent = n ? `${n}개사 · 저장한 목록 기준` : "";
+  if (!n){ $("capPreview").innerHTML = `<p class="empty">위 시총 복사 목록을 저장하면 표시됩니다</p>`; return; }
   if (!dates.length){ $("capPreview").innerHTML = `<p class="empty">시가총액 데이터 없음</p>`; return; }
   inp.min = dates[0]; inp.max = dates.at(-1);
   if (reset || !inp.value) inp.value = dates.at(-1);
@@ -1833,50 +1818,25 @@ async function renderVal(){
     return { c, est: true, lo, hi, n: peers.length, v: { mcap: lo == null || !L.rev ? null : L.rev * (lo + hi) / 2, rev: L.rev, psr: null }, L };
   });
   const sa = k => sortAttr("val", k);
-  const head = `<thead><tr><th${sa("name")}>종목</th><th${sa("mcap")}>시가총액</th><th${sa("rev")}>매출(최근 연간)</th><th${sa("psr")}${abbrTitle("PSR")}>PSR</th><th${sa("per")}${abbrTitle("PER")}>PER</th><th${sa("pbr")}${abbrTitle("PBR")}>PBR</th><th${sa("r1m")}>1개월</th><th${sa("r3m")}>3개월</th><th${sa("r1y")}>1년</th></tr></thead>`;
+  const head = `<thead><tr><th${sa("name")}>종목</th><th${sa("mcap")}>시가총액</th><th${sa("rev")}>매출(최근 연간)</th><th${sa("psr")}${abbrTitle("PSR")}>PSR</th><th${sa("per")}${abbrTitle("PER")}>PER</th><th${sa("pbr")}${abbrTitle("PBR")}>PBR</th></tr></thead>`;
   const body = sortRows(rows, "val").map(r => {
     if (r.est){
       const v = r.lo == null || !r.L.rev ? "–" : r.lo === r.hi ? `약 ${fmtBig(r.L.rev * r.lo, "KRW")}` : `${fmtBig(r.L.rev * r.lo, "KRW")} ~ ${fmtBig(r.L.rev * r.hi, "KRW")}`;
       const note = g.valuationNotes?.[r.c.id], ref = note && refG?.get(note.ref);
       return `<tr><td>${coCell(r.c, "")}</td><td class="est"><span class="est-tag">추정</span><b>${v}</b></td><td>${fmtBig(r.L.rev, r.L.cur)}</td>
-        <td class="est" title="같은 묶음 상장사 ${r.n}곳의 PSR 범위">${r.lo == null ? "–" : r.lo === r.hi ? `피어 ${xv(r.lo)}` : `피어 ${r.lo.toFixed(2)}~${xv(r.hi)}`}</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>` +
-        (ref?.quote?.marketCap ? `<tr class="sub-row"><td colspan="9" class="err" style="padding-left:30px">참고: ${esc(note.text)} ${fmtBig(ref.quote.marketCap, "KRW")}</td></tr>` : "");
+        <td class="est" title="같은 묶음 상장사 ${r.n}곳의 PSR 범위">${r.lo == null ? "–" : r.lo === r.hi ? `피어 ${xv(r.lo)}` : `피어 ${r.lo.toFixed(2)}~${xv(r.hi)}`}</td><td>–</td><td>–</td></tr>` +
+        (ref?.quote?.marketCap ? `<tr class="sub-row"><td colspan="6" class="err" style="padding-left:30px">참고: ${esc(note.text)} ${fmtBig(ref.quote.marketCap, "KRW")}</td></tr>` : "");
     }
     return `<tr><td>${coCell(r.c, "")}</td><td>${fmtBig(r.q.marketCap, r.q.currency)}</td><td>${fmtBig(r.L.rev, r.L.cur)}</td><td>${xv(r.v.psr)}</td>
-      <td>${r.q.per == null ? "–" : r.q.per.toFixed(1) + "배"}</td><td>${r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배"}</td><td>${fmtPct(r.q.change1m)}</td><td>${fmtPct(r.q.change3m)}</td><td>${fmtPct(r.q.change1y)}</td></tr>`;
+      <td>${r.q.per == null ? "–" : r.q.per.toFixed(1) + "배"}</td><td>${r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배"}</td></tr>`;
   }).join("");
-  $("valTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="9" class="empty">데이터 없음</td></tr>`}</tbody>`;
+  $("valTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="6" class="empty">데이터 없음</td></tr>`}</tbody>`;
   bindSort("valTable", "val", renderVal);
-  // 1년 주가 흐름(상장사): 약 250거래일 전 종가 = 0%
-  const lst = list.filter(c => c.listed && c.price?.close?.length);
-  $("valChartTitle").hidden = $("valLegend").hidden = !lst.length;
-  document.querySelector("#secVal .chart-box").hidden = !lst.length;
-  const isM = state.valView === "mcap";
-  $("valChartName").innerHTML = isM ? `1년 시가총액 <span class="u">(억원 · 원화 상장사)</span>` : `1년 주가 흐름 <span class="u">(1년 전 = 0%)</span>`;
-  $("valView").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === state.valView));
-  if (lst.length){
-    const ser = (isM ? lst.filter(mcapEligible) : lst).map(c => { const p = c.price, n = p.dates.length, s0 = Math.max(0, n - 251), base = p.close[s0];
-      return { c, dates: p.dates.slice(s0), v: isM ? p.mcap.slice(s0).map(x => x == null ? null : Math.round(x / 1e8))
-                                                   : p.close.slice(s0).map(x => x == null || !base ? null : +((x / base - 1) * 100).toFixed(1)) }; });
-    const labels = [...new Set(ser.flatMap(x => x.dates))].sort();
-    const tip = chartBase();
-    draw("val", "valChart", { type: "line",
-      data: { labels, datasets: ser.map(x => { const m = new Map(x.dates.map((d, i) => [d, x.v[i]]));
-        return { label: x.c.name, data: labels.map(d => m.get(d) ?? null), borderColor: color(x.c._ci), backgroundColor: color(x.c._ci), borderWidth: 2, pointRadius: 0, tension: .15, spanGaps: true }; }) },
-      options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: "index", intersect: false },
-        plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: x => isM ? ` ${x.dataset.label}  ${fmtBig(x.parsed.y * 1e8, "KRW")}` : ` ${x.dataset.label}  ${x.parsed.y > 0 ? "+" : ""}${x.parsed.y}%` } } },
-        scales: { x: { grid: { display: false }, border: { color: css("--axis") }, ticks: { maxTicksLimit: 7, callback(v){ const d = this.getLabelForValue(v); return d ? d.slice(2, 7).replace("-", ".") : ""; } } },
-                  y: { grid: { color: ctx => !isM && ctx.tick.value === 0 ? css("--axis") : css("--grid") }, border: { display: false }, ticks: { maxTicksLimit: 6, callback: v => isM ? `${v.toLocaleString("ko-KR")}억` : `${v > 0 ? "+" : ""}${v}%` } } } } });
-    $("valLegend").innerHTML = ser.map(x => { const last = x.v.filter(v => v != null).at(-1);
-      return isM ? `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b style="font-weight:600">${last == null ? "–" : fmtBig(last * 1e8, "KRW")}</b></span>`
-                 : `<span class="lg"><i style="background:${color(x.c._ci)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
-  }
-  const hasEst = rows.some(r => r.est);
-  $("valHint").textContent = `최근 거래일 기준`;
+  const asOf = list.map(c => c.quote?.asOf).filter(Boolean).sort().at(-1);
+  $("valHint").textContent = `시가총액 ${asOf ? md(asOf) : "최근 거래일"} 기준 · 매출은 최근 사업연도` + (rows.some(r => r.est) ? " · 비상장사는 같은 묶음 상장사 PSR로 추정" : "");
   $("valNotes").innerHTML = "";
 }
 
-$("valView").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === state.valView) return; state.valView = b.dataset.k; renderVal(); });
 
 /* ---------- 핵심 경쟁사 카드 (요약 탭): 최근 사업연도 실적 + 대표 동향 한 줄 ---------- */
 async function renderCore(){
@@ -1902,7 +1862,7 @@ async function renderCore(){
 // 카드 = 켜고 끄는 선택 버튼. 켜면 실적 표 행 강조·주요 활동·공시 회사가 그 회사로, 끄면 원래대로
 function applyCoreSel(){
   const c = comps().find(x => x.id === coreSel);
-  document.querySelectorAll("#finTable tbody tr[data-id], #whyTable tbody tr[data-id]").forEach(r => r.classList.toggle("sel", r.dataset.id === coreSel));
+  document.querySelectorAll("#finTable tbody tr[data-id]").forEach(r => r.classList.toggle("sel", r.dataset.id === coreSel));
   if (c) $("finTable").style.setProperty("--selc", color(c._ci));
 }
 function setCoreSel(id){
@@ -2105,34 +2065,7 @@ async function renderBench(){
 
 /* ---------- 성장 원인 매트릭스: 회사 × 동인(제품·채널·해외·마케팅·수익구조·제휴/M&A), 칸을 누르면 근거 ---------- */
 const WHY_KEYS = [["product","제품·브랜드"],["channel","채널"],["global","해외"],["mkt","마케팅"],["margin","수익구조"],["mna","제휴·M&A"]];
-let whySel = null;
-async function renderWhy(){
-  const S = await loadSummaries(), D = S.drivers || {};
-  const list = comps().filter(c => D[c.id]).map(c => { const a = c.annual, i = (a?.years?.length || 0) - 1;
-    return { c, gr: i > 0 ? growth(a.revenue[i], a.revenue[i - 1]) : null, y: a?.years?.[i] }; }).sort((p, q) => (q.gr ?? -999) - (p.gr ?? -999));
-  $("growTab").querySelector('[data-k="why"]').hidden = !list.length;
-  if (!list.length){ if (growTab === "why") setGrowTab("grow"); return; }
-  $("whyHint").innerHTML = `AI 정리 · ${esc(S.updatedAt || "–")} 기준 · <span class="why-key"><i class="f"></i>핵심 동인</span> <span class="why-key"><i></i>보조</span> · 칸을 누르면 근거`;
-  const head = `<thead><tr><th>회사 <small style="font-weight:400">(매출 성장률)</small></th>${WHY_KEYS.map(([, l]) => `<th>${l}</th>`).join("")}</tr></thead>`;
-  const body = list.map(({ c, gr, y }) => `<tr data-id="${esc(c.id)}" class="${coreSel === c.id ? "sel" : ""}" style="--cc:${color(c._ci)}"><td>${coCell(c, "")}<span class="gr">${y || ""} ${fmtPct(gr)}</span></td>${WHY_KEYS.map(([k]) => {
-      const d = (D[c.id] || []).find(x => x.k === k);
-      return d ? `<td><button type="button" class="why-cell lv${d.lv}" data-co="${esc(c.id)}" data-k="${k}" aria-pressed="${whySel === c.id + ":" + k}"><i aria-hidden="true"></i>${esc(d.tag)}</button></td>` : `<td class="none">–</td>`; }).join("")}</tr>`).join("");
-  $("whyTable").innerHTML = head + `<tbody>${body}</tbody>`;
-  showWhy();
-}
-function showWhy(){
-  const box = $("whyDetail");
-  if (!whySel){ box.hidden = true; return; }
-  const [cid, k] = whySel.split(":"), c = comps().find(x => x.id === cid), d = (summaries?.drivers?.[cid] || []).find(x => x.k === k);
-  if (!c || !d){ box.hidden = true; return; }
-  box.hidden = false; box.style.setProperty("--cc", color(c._ci));
-  box.innerHTML = `<b>${esc(c.name)} · ${esc(WHY_KEYS.find(x => x[0] === k)[1])} — ${esc(d.tag)}</b><p>${esc(d.d)}</p>
-    <div class="act-src">${(d.s || []).map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.t)} ↗</a>`).join("")}</div>`;
-}
-$("whyTable").addEventListener("click", e => { const b = e.target.closest(".why-cell"); if (!b) return;
-  const key = b.dataset.co + ":" + b.dataset.k; whySel = whySel === key ? null : key;
-  $("whyTable").querySelectorAll(".why-cell").forEach(x => x.setAttribute("aria-pressed", x.dataset.co + ":" + x.dataset.k === whySel));
-  showWhy(); });
+
 
 /* ---------- 주요 활동 (사업현황): 회사별 3대 동향 요약 ---------- */
 let summaries = null, actCo = null, coreSel = null;
@@ -2342,8 +2275,6 @@ $("discType").addEventListener("change", e => { discType = e.target.value; discL
 $("discTier").addEventListener("change", e => { discTier = e.target.value; discLimit = 15; renderDisc(false); });
 $("discYear").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; discYear = +b.dataset.k; renderDisc(false); });
 $("discMore").addEventListener("click", () => { discLimit += 30; renderDisc(false); });
-$("repToggle").addEventListener("click", () => { const open = $("repBody").hidden;
-  $("repBody").hidden = !open; $("repToggle").textContent = open ? "접기" : "펼치기"; $("repToggle").setAttribute("aria-expanded", open); });
 $("discToggle").addEventListener("click", () => { discOpen = !discOpen; renderDisc(false); });
 $("discField").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.k === discField) return;
   discField = b.dataset.k; discLimit = 15; discType = discTier = ""; renderDisc(true); });
@@ -2362,6 +2293,7 @@ async function openSettings(){
     secGroups.map(({g, secs}) => `<h3>${esc(g.name)} 탭 섹션 이름</h3>` + secs.map((x, i) =>
       `<label>섹션 ${i + 1}<input type="text" data-sec="${esc(secKey(i, g.id))}" value="${esc(labels.sections?.[secKey(i, g.id)] || "")}" placeholder="${esc(x.title || "")} (기본값)"></label>`).join("")).join("") +
     `<label class="set-cap">시총 복사 목록<textarea id="setCap" rows="9" spellcheck="false" placeholder="# 섹션 이름&#10;회사 이름 또는 종목코드&#10;…">${esc(capText(all))}</textarea></label><p class="set-err" id="setCapErr"></p>`;
+  renderCapTool(true);
   if (typeof setDlg.showModal === "function") setDlg.showModal(); else setDlg.setAttribute("open", "");
 }
 // 시총 복사 목록 ↔ 글: "# 제목" 줄은 섹션, 나머지는 회사 이름 또는 6자리 종목코드 (상장사만)
