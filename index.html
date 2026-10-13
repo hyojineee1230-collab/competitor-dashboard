@@ -104,17 +104,18 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;display:flex;al
 #content[data-mode="full"] > #secMkt{order:1}
 #content[data-mode="full"] > #secAnnual{order:2}
 #content[data-mode="full"] > #secSga{order:3}
-.tk-grp{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start;padding:8px 0}
+.tk-grp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:8px 0}
 .tk-grp + .tk-grp{border-top:1px solid var(--grid)}
-.tk-grp > b{font-size:14px;color:var(--ink-2);padding-top:6px}
-.tk-row{display:flex;flex-wrap:wrap;gap:8px}
-.tk{display:grid;gap:1px;border:1px solid var(--line);border-radius:8px;padding:6px 12px;min-width:150px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:inherit}
+.tk-grp > b{font-size:14px;color:var(--ink-2);padding-top:6px;white-space:nowrap;min-width:var(--lw,120px)}
+.tk-row{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:6px}
+@media (max-width:1100px){.tk-row{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+.tk{display:grid;gap:1px;min-width:0;border:1px solid var(--line);border-radius:8px;padding:6px 7px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:inherit}
 .tk:hover{border-color:var(--axis)}
-.tk .n{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
-.tk .n i{width:8px;height:8px;border-radius:50%}
+.tk .n{font-size:13.5px;letter-spacing:-.01em;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk .n i{width:8px;height:8px;border-radius:50%;flex:none}
 .tk .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
-.tk .s{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-@media (max-width:600px){.tk-grp{grid-template-columns:1fr;gap:6px}.tk-grp > b{padding-top:0}.tk{min-width:0;flex:1 1 140px}}
+.tk .s{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;justify-content:space-between;gap:4px}
+@media (max-width:600px){.tk-grp{grid-template-columns:1fr;gap:6px}.tk-grp > b{padding-top:0}.tk-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #pulseMoveWrap{margin-bottom:16px}
 .mv-chips{display:flex;flex-wrap:wrap;gap:10px}
 .pr-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
@@ -1281,10 +1282,12 @@ async function renderTicker(){
   const col = (c, i) => color(i);
   const core = new Set(comps().map(c => c.id));
   $("tickHint").textContent = liveTs ? `장중 지연 시세 ${liveTs.slice(11, 16)} 기준(약 15~20분 지연) · 1주·시가총액은 최근 값` : `KRX 종가 ${krxDay ? krxDay.slice(5).replace("-", ".") : ""} 기준 · 전일 대비`;
+  $("tickBody").style.setProperty("--cols", Math.max(...secs.map(x => x.rows.length)));
+  $("tickBody").style.setProperty("--lw", Math.max(...secs.map(x => x.name.length)) * 13 + "px");
   $("tickBody").innerHTML = secs.map(x => `<div class="tk-grp"><b>${esc(x.name)}</b><div class="tk-row">${x.rows.map((r, i) =>
     { const pop = core.has(r.c.id), tag = pop ? "button" : "div";
       return `<${tag} ${pop ? `type="button" title="${esc(r.c.name)} 상세"` : ""} class="tk" data-id="${esc(r.c.id)}"${pop ? "" : ' style="cursor:default"'}><span class="n"><i style="background:${col(r.c, i)}"></i>${esc(r.c.name)}</span>
-      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s">1주 ${sgn(r.w)} · ${fmtBig(r.cap, "KRW")}</span></${tag}>`; }).join("")}</div></div>`).join("");
+      <span class="v ${upDown(r.chg)}">${sgn(r.chg, 2)}</span><span class="s"><span>1주 ${sgn(r.w)}</span><span>${fmtBig(r.cap, "KRW")}</span></span></${tag}>`; }).join("")}</div></div>`).join("");
 }
 $("tickBody").addEventListener("click", e => { const b = e.target.closest("button.tk"); if (b) openCo(b.dataset.id); });
 
