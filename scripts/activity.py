@@ -28,7 +28,7 @@ CATEGORIES = [
 ]
 NOISE = re.compile(r"특정증권등\s*소유상황보고서|소유상황보고서|대량보유상황보고서|주식등의\s*대량보유|공정공시\s*기타|증권발행실적보고서")
 # 회사 활동과 무관한 반복성 기사 (앱 퀴즈 정답, 자동 생성 시세·투자 분석 등)
-NEWS_NOISE = re.compile(r"캐시워크|돈\s*버는\s*퀴즈|퀴즈\s*정답|토스\s*행운|오퀴즈|투자\s*분석\s*20\d\d|주가\s*분석\s*20\d\d|운세|채용|블로그|카페\s*글")
+NEWS_NOISE = re.compile(r"캐시워크|캐시닥|돈\s*버는\s*퀴즈|용돈\s*퀴즈|퀴즈\s*정답|퀴즈\s*문제|토스\s*행운|오퀴즈|투자\s*분석\s*20\d\d|주가\s*분석\s*20\d\d|운세|채용|블로그|카페\s*글")
 _CAT_RE = [(k, n, re.compile(p, re.I)) for k, n, p in CATEGORIES]
 CAT_NAME = {k: n for k, n, _ in CATEGORIES} | {"etc": "기타"}
 

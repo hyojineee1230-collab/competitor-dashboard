@@ -39,6 +39,11 @@ NEWS_CATS = [
     ("gov", "인사·지배구조", r"대표|사장|임원|선임|사임|취임|주주총회|주총|이사회|소송|제재|조사|배당"),
     ("csr", "사회공헌", r"기부|기탁|봉사|사회공헌|ESG|상생|나눔"),
 ]
+# 규칙 원본은 config/news_cats.json (화면과 공유). 파일이 없으면 위 기본값
+try:
+    NEWS_CATS = [(c["key"], c["name"], c["pattern"]) for c in json.loads((Path(__file__).resolve().parent.parent / "config" / "news_cats.json").read_text(encoding="utf-8"))["cats"]]
+except Exception:
+    pass
 _CATS = [(k, re.compile(p, re.I)) for k, _, p in NEWS_CATS]
 CAT_NAME = {k: n for k, n, _ in NEWS_CATS} | {"etc": "기타"}
 TIMING = [("pre", "장 시작 전"), ("open", "장중"), ("post", "장 마감 후"), ("off", "휴장일")]

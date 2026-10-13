@@ -394,6 +394,10 @@ input[type=date]{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;b
 #discTable td.t a:hover{color:var(--brand);text-decoration:underline}
 #discTable tr.co-row td{background:var(--page);padding:8px 10px}
 #discTable th:first-child{width:130px}
+#discTable .nc{display:inline-block;font-size:13px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--tag);color:var(--ink-2);white-space:nowrap}
+#discTable .nc.market{background:none;border:1px dashed var(--line);color:var(--muted)}
+#discTable td.tier{font-size:13.5px;color:var(--ink-2);white-space:nowrap}
+@media (max-width:600px){#discTable td.tier,#discTable th.tier{display:none}}
 #discGrid{table-layout:fixed;min-width:720px}           /* 내용과 상관없이 분기 열 너비 고정 */
 #discGrid th, #discGrid td{text-align:center}
 #discGrid th:first-child, #discGrid td:first-child{text-align:left;width:34%}
@@ -884,6 +888,8 @@ td span.err{font-size:13.5px}
         <div class="controls">
           <div class="seg" id="discCat" role="group" aria-label="공시 종류"></div>
           <select id="discCo" aria-label="회사 선택"></select>
+          <select id="discType" aria-label="기사 유형" hidden></select>
+          <select id="discTier" aria-label="매체 등급" hidden></select>
           <button class="btn" id="discToggle" hidden>펼치기</button>
         </div>
       </div>
@@ -2080,6 +2086,24 @@ $("actCopy").addEventListener("click", async () => {
 /* ---------- 최근 공시 (정기보고서 · IR) ---------- */
 const DISC_CATS = [["report","정기보고서"],["ir","IR"],["news","기사"]];
 let discCat = "report", discLimit = 15, discOpen = true;
+// 기사 유형·매체 등급: 보도 반응 분석과 같은 규칙 파일을 읽음
+let newsCls = null;
+async function loadNewsCls(){
+  if (newsCls) return newsCls;
+  const [nc, md] = await Promise.all([loadJSON("config/news_cats.json").catch(() => ({cats: []})), loadJSON("config/media.json").catch(() => ({tiers: []}))]);
+  const norm = t => String(t || "").replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase();
+  const tierOf = new Map(), alias = md.aliases || {};
+  (md.tiers || []).forEach(t => t.members.forEach(m => tierOf.set(norm(m), t.key)));
+  const cats = (nc.cats || []).map(c => ({ ...c, re: new RegExp(c.pattern, "i") }));
+  newsCls = {
+    cats: [...cats.map(c => [c.key, c.name]), ["etc", "기타"]],
+    tiers: [...(md.tiers || []).map(t => [t.key, t.name]), ["etc", "기타(미분류)"]],
+    cat: title => (cats.find(c => c.re.test(title)) || { key: "etc" }).key,
+    tier: by => tierOf.get(norm(alias[by] || by)) || "etc",
+  };
+  return newsCls;
+}
+let discType = "", discTier = "";
 // 예전 데이터(cat 없음) 호환: 제목으로 분류
 const discCatOf = d => d.cat || (/사업보고서|반기보고서|분기보고서|감사보고서/.test(d.title) ? "report" : /IR|기업설명회/.test(d.title) ? "ir" : null);
 // 정기보고서 제목 → {year, q}  예) "반기보고서 (2026.06)" → 2026, 2 / "사업보고서 (2025.12)" → 2025, 4
@@ -2150,26 +2174,39 @@ function renderDisc(reset){
     $("discHint").textContent = `${discYear ?? ""}년 정기보고서 ${n}건`;
     return;
   }
-  // IR·기사: 최근순 목록 (회사 선택 시 그 회사만)
+  // IR·기사: 최근순 목록 (회사 선택 시 그 회사만). 기사는 유형·매체 등급을 붙이고 필터
   const isNews = discCat === "news";
+  const K = isNews ? newsCls : null;
+  if (isNews && !K){ loadNewsCls().then(() => renderDisc(false)); return; }
+  $("discType").hidden = $("discTier").hidden = !isNews || !discOpen;
+  if (isNews){
+    const opt = (sel, items, cur, all) => { sel.innerHTML = `<option value="">${all}</option>` + items.map(([k, n]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${esc(n)}</option>`).join(""); };
+    opt($("discType"), K.cats, discType, "전체 유형"); opt($("discTier"), K.tiers, discTier, "전체 매체");
+  }
   const rows = list.filter(c => !pick || c.id === pick)
     .flatMap(c => isNews
-      ? (c.activity || []).filter(x => x.src === "뉴스").map(x => ({...x, c}))
+      ? (c.activity || []).filter(x => x.src === "뉴스").map(x => ({...x, c, nc: K.cat(x.title), tier: K.tier(x.by)}))
       : (c.disclosures || []).filter(d => discCatOf(d) === discCat).map(d => ({...d, c})))
+    .filter(d => !isNews || ((!discType || d.nc === discType) && (!discTier || d.tier === discTier)))
     .sort((a,b) => b.date.localeCompare(a.date) || a.c._ci - b.c._ci);
+  const catName = isNews ? Object.fromEntries(K.cats) : {}, tierName = isNews ? Object.fromEntries(K.tiers) : {};
   const body = rows.slice(0, discLimit).map(d => {
     const days = (today - new Date(d.date)) / 864e5;
     return `<tr><td>${d.date.slice(2).replace(/-/g,".")}${days <= 3 ? ' <span class="tag new">NEW</span>' : ""}</td>
       <td>${coCell(d.c, "")}</td>
-      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a>${isNews ? ` <span class="err">${esc(d.by || "")}</span>` : ""}</td></tr>`;
+      <td class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a>${isNews ? ` <span class="err">${esc(d.by || "")}</span>` : ""}</td>${isNews
+      ? `<td><span class="nc ${d.nc}">${esc(catName[d.nc] || "기타")}</span></td><td class="tier">${esc(tierName[d.tier] || "")}</td>` : ""}</tr>`;
   }).join("");
-  $("discTable").innerHTML = `<thead><tr><th>${isNews ? "보도일" : "접수일"}</th><th>회사</th><th>${isNews ? "기사" : "공시명"}</th></tr></thead><tbody>${
-    body || `<tr><td colspan="3" class="empty">${isNews ? "수집된 기사 없음" : `최근 3년 ${discCat === "ir" ? "IR" : "정기보고서"} 공시 없음`}</td></tr>`}</tbody>`;
+  const nCol = isNews ? 5 : 3;
+  $("discTable").innerHTML = `<thead><tr><th>${isNews ? "보도일" : "접수일"}</th><th>회사</th><th>${isNews ? "기사" : "공시명"}</th>${isNews ? `<th>유형</th><th class="tier">매체</th>` : ""}</tr></thead><tbody>${
+    body || `<tr><td colspan="${nCol}" class="empty">${isNews ? (discType || discTier ? "조건에 맞는 기사 없음" : "수집된 기사 없음") : `최근 3년 ${discCat === "ir" ? "IR" : "정기보고서"} 공시 없음`}</td></tr>`}</tbody>`;
   $("discMoreWrap").hidden = rows.length <= discLimit;
   $("discHint").textContent = isNews ? `최근 9개월 기사 ${rows.length}건` : `${discCat === "ir" ? "IR" : "정기보고서"} · 최근 3년 ${rows.length}건`;
 }
 segment("discCat", DISC_CATS, () => discCat, v => { discCat = v; discLimit = 15; renderDisc(false); });
 $("discCo").addEventListener("change", () => { discLimit = 15; renderDisc(false); });
+$("discType").addEventListener("change", e => { discType = e.target.value; discLimit = 15; renderDisc(false); });
+$("discTier").addEventListener("change", e => { discTier = e.target.value; discLimit = 15; renderDisc(false); });
 $("discYear").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; discYear = +b.dataset.k; renderDisc(false); });
 $("discMore").addEventListener("click", () => { discLimit += 30; renderDisc(false); });
 $("repToggle").addEventListener("click", () => { const open = $("repBody").hidden;
