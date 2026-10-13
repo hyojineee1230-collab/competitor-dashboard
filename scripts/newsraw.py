@@ -1,7 +1,8 @@
 """
 뉴스 원본 아카이브 — 보도 반응(주가·거래량) 분석용. 같은 보도자료라도 매체마다 한 줄씩 남긴다(묶지 않음).
 
-- Google News RSS 검색. 이번 달은 매 실행 다시 검색하고, 지난 2년은 달 단위로 실행마다 조금씩 채운다(백필).
+- Google News RSS 검색. 최근 3일(발행 시각 포함)과 이번 달은 매 실행 다시 검색하고, 지난 2년은 달 단위로 실행마다 조금씩 채운다(백필).
+- 기간 지정 검색은 날짜만 온다(한국 16:00·17:00로 보임) — 분석 단계(newsfx)에서 날짜를 보정하고 시각 미상으로 처리
 - 한 기간 검색 결과가 상한(100건)에 닿으면 기간을 반으로 나눠 다시 검색한다.
 - 저장: data/news_raw.jsonl (한 줄 = 기사 1건, 회사·날짜순이라 git diff가 작음), 진행 상태: data/news_state.json
 - 동명이인·무관 기사 거르기(config news_must·news_exclude)는 분석 단계에서 다시 적용하므로 여기서는 넓게 모은다.
@@ -34,8 +35,9 @@ class Throttled(Exception):
     pass
 
 
-def _search(names, after, before):
-    q = " OR ".join(f'"{n}"' for n in names) + f" after:{after} before:{before}"
+def _search(names, after=None, before=None, when=None):
+    """기간 지정(after/before)은 시각 없이 날짜만 오고, when:Nd는 발행 시각까지 온다"""
+    q = " OR ".join(f'"{n}"' for n in names) + (f" when:{when}d" if when else f" after:{after} before:{before}")
     url = RSS + "?" + urllib.parse.urlencode({"q": q, "hl": "ko", "gl": "KR", "ceid": "KR:ko"})
     r = requests.get(url, timeout=30, headers=UA)
     if r.status_code in (429, 503):
@@ -121,6 +123,14 @@ def update(targets, log=print):
     months = list(_months(start, today))
     cur_month = months[-1]
     try:
+        # 0) 최근 3일: 발행 시각까지 받기(같은 기사의 날짜만 있는 행을 덮어씀)
+        for t in targets:
+            if budget <= 0:
+                break
+            got = _search(t["names"], when=3)
+            budget -= 1
+            put(_items(got, t["id"], t["names"]))
+            time.sleep(0.6)
         # 1) 이번 달: 매 실행 (새 기사)
         for t in targets:
             if budget <= 0:

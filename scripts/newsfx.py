@@ -46,7 +46,7 @@ except Exception:
     pass
 _CATS = [(k, re.compile(p, re.I)) for k, _, p in NEWS_CATS]
 CAT_NAME = {k: n for k, n, _ in NEWS_CATS} | {"etc": "기타"}
-TIMING = [("pre", "장 시작 전"), ("open", "장중"), ("post", "장 마감 후"), ("off", "휴장일")]
+TIMING = [("pre", "장 시작 전"), ("open", "장중"), ("post", "장 마감 후"), ("off", "휴장일"), ("unk", "시각 미상")]
 REACH = [("1", "매체 1곳"), ("2-4", "매체 2~4곳"), ("5+", "매체 5곳 이상")]
 WEEK = "월화수목금토일"
 KW_STOP = set("출시 진행 기업 대표 관련 올해 지난해 국내 위해 통해 이번 오늘 최대 확대 강화 나선다 선보여 선봬 기념 개최 참가 제공 공개 추진 돌입 성공 기록 전년 대비 억원 만원 조원 이상 업계 시장 제품 브랜드 건강 건강기능식품 건기식 주식 종목 뉴스 단독 종합 인터뷰 신제품 론칭 지원 현장 최초 연속 성장 전략 가속 돌파 달성 눈길 주목 발표 체결 협약 업무 the and for".split())
@@ -99,7 +99,17 @@ def _pearson(xs, ys):
     return {"r": round(r, 3), "n": n, "p": round(math.erfc(abs(t) / math.sqrt(2)), 3)}
 
 
+def _date_only(x):
+    """기간 지정 검색(백필)은 시각 없이 날짜만 옴: 미국 서부 자정 = 한국 16:00/17:00.
+    이런 기사는 한국 시간 그날 16시~다음 날 16시 사이에 나온 것이라 날짜를 하루 뒤로 보고 시각은 미상으로 둔다"""
+    if x.get("t") in ("16:00", "17:00"):
+        d = (datetime.strptime(x["d"], "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        return {**x, "d": d, "t": ""}
+    return x
+
+
 def _tokens(title, strip):
+    title = re.sub(r"\s[-|]\s[^-|]{1,20}$", "", title)        # 제목 끝 ' - 매체명' 꼬리
     t = re.sub(r"\[[^\]]*\]|['\"‘’“”…·,.!?()<>\-/|:~+&%]", " ", title)
     for s in strip:
         t = t.replace(s, " ")
@@ -125,6 +135,7 @@ def build(companies, raw, index, today=None):
     # 1) 회사별 기사 필터(동명이인·무관 기사) → 보도 묶기
     arts = defaultdict(list)
     for x in raw:
+        x = _date_only(x)
         c = byc.get(x["c"])
         if not c:
             continue
@@ -159,7 +170,7 @@ def build(companies, raw, index, today=None):
         e["reach"] = "1" if e["n"] == 1 else "2-4" if e["n"] <= 4 else "5+"
         wd = datetime.strptime(e["d"], "%Y-%m-%d").weekday()
         e["wd"] = WEEK[wd]
-        e["timing"] = "off" if wd >= 5 else "pre" if e["t"] < "09:00" else "open" if e["t"] <= "15:30" else "post"
+        e["timing"] = "unk" if not e["t"] else "off" if wd >= 5 else "pre" if e["t"] < "09:00" else "open" if e["t"] <= "15:30" else "post"
         c = byc[e["c"]]
         p = c.get("price") or {}
         ds = p.get("dates") or []
@@ -232,8 +243,8 @@ def build(companies, raw, index, today=None):
     axes = {
         "cat": agg(lambda e: [e["cat"]], CAT_NAME),
         "tier": agg(lambda e: e["tiers"], tier_names),
-        "timing": agg(lambda e: [e["timing"]], dict(TIMING)),
-        "weekday": agg(lambda e: [e["wd"]], {w: w + "요일" for w in WEEK}),
+        "timing": agg(lambda e: [e["timing"]] if e["timing"] != "unk" else [], dict(TIMING)),
+        "weekday": agg(lambda e: [e["wd"]] if e["timing"] != "unk" else [], {w: w + "요일" for w in WEEK}),
         "reach": agg(lambda e: [e["reach"]], dict(REACH)),
         "company": agg(lambda e: [e["c"]], names_c),
         "keyword": kw[:30],
