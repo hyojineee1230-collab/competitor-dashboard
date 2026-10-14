@@ -2580,7 +2580,7 @@ function renderQuarter(){
 }
 
 /* ---------- 연간 실적 ---------- */
-// 광고선전비/매출 = 광고선전비 ÷ 매출액 · 연구비/판관비 = 연구개발비(간접비 포함) ÷ 판매비와관리비 합계
+// 광고선전비/매출 = 광고선전비 ÷ 매출액 · 연구비/판관비 = 연구개발비(간접비 포함) ÷ 판매비와 관리비 합계
 const ratio = (a, r) => (a != null && r) ? a / r * 100 : null;
 function extraSeries(c, m){
   if (m === "adr" && c.ad) return { years: c.ad.years, v: c.ad.years.map((_, i) => ratio(c.ad.ad?.[i], c.ad.revenue?.[i])) };
@@ -2680,8 +2680,8 @@ function renderExtra(m){
   }
   $("finTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`}</tbody>`;
   const notes = isAd
-    ? ["비교 기준: 광고선전비/매출 = 판매비와관리비 주석의 광고선전비 ÷ 매출액 (상장사 연결 기준, 비상장사 감사보고서 기준). 판매촉진비·판매수수료는 포함하지 않습니다."]
-    : ["비교 기준: 연구비/판관비 = 연구개발비 ÷ 판매비와관리비 합계(같은 보고서 주석).",
+    ? ["비교 기준: 광고선전비/매출 = 판매비와 관리비 주석의 광고선전비 ÷ 매출액 (상장사 연결 기준, 비상장사 감사보고서 기준). 판매촉진비·판매수수료는 포함하지 않습니다."]
+    : ["비교 기준: 연구비/판관비 = 연구개발비 ÷ 판매비와 관리비 합계(같은 보고서 주석).",
        "연구개발비는 사업보고서 '연구개발비용' 표의 합계(인건비 등 간접비, 개발비 자산화분 포함)이며, 이 표가 없는 비상장사는 판관비 주석의 경상연구개발비입니다. 자산화·제조원가 처리분이 있으면 100%를 넘을 수 있습니다.",
        "해외 기업은 Yahoo Finance의 R&D ÷ SG&A입니다."];
   const staleHere = comps().filter(c => (state.meta?.dartStale || []).includes(c.name)).map(c => c.name);
@@ -2879,7 +2879,10 @@ async function renderMkt(){
   const tk = d.shift?.ticket;
   const tkHtml = tk ? `<div class="mk-sub"><p class="mk-h" style="margin:0 0 8px">${esc(tk.title)}${ref(tk.s)}</p>
       <div class="mk-tk3">${tk.items.map(([n, v]) => `<div><span class="n">${esc(n)}</span><b>${v.toFixed(1)}<small>${esc(tk.unit)}</small></b></div>`).join("")}</div>${note(d.shift.note)}</div>` : "";
-  if (ch) blocks.push(card(`${esc(ch.title)}${ref(ch.s)}`, pie("mktChC", ch.items) + tkHtml, ch.note));
+  // 기타·그 외 조각이 여럿이면 하나로(구성은 이름 아래 작은 글씨)
+  const chItems = ch ? (() => { const rest = ch.items.filter(([n]) => isRest(n) || /기타/.test(n));
+    return rest.length < 2 ? ch.items : [...ch.items.filter(x => !rest.includes(x)), ["그 외", rest.reduce((t, x) => t + x[1], 0), rest.map(([n, v]) => `${n.replace(/\(.*\)/, "")} ${v.toFixed(1)}%`).join(" · ")]]; })() : [];
+  if (ch) blocks.push(card(`${esc(ch.title)}${ref(ch.s)}`, pie("mktChC", chItems) + tkHtml, ch.note));
   if (blocks.length){
     if (blocks.length % 2) blocks.push(`<div></div>`);
     for (let i = 0; i < blocks.length; i += 2) h += `<div class="mk-two">${blocks[i]}${blocks[i + 1]}</div>`;

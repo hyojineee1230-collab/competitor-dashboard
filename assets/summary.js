@@ -307,7 +307,7 @@ function sgaCard(cos){
 // 셀 상세 팝업: 구성 계정 · 3개년 · 같은 계정 회사 비교
 function openSga(id, key){
   const F = fieldCtx(S.field), all = sgaRows(F.cos.filter(c => !SGA_IDS || SGA_IDS.includes(c.id))), x = all.find(r => r.c.id === id); if (!x) return;
-  const lab = key === "tot" ? "판매비와관리비" : SGA_G.find(g => g[0] === key)[1];
+  const lab = key === "tot" ? "판매비와 관리비" : SGA_G.find(g => g[0] === key)[1];
   const amt = key === "tot" ? x.tot : x.grp[key], r1 = v => v == null ? "–" : `${v.toFixed(1)}%`;
   const peers = all.map(r => ({ r, v: key === "tot" ? margin(r.tot, r.rev) : r.grp[key] == null ? null : margin(r.grp[key], r.rev) })).filter(p => p.v != null && Math.abs(p.v) < MCAP);
   const av = peers.length >= 2 ? mean(peers.map(p => p.v)) : null;
@@ -587,7 +587,9 @@ const SUM = {
       trend = card(`<h2>시장 규모 추이<small>${esc(m.size.unit || "")} · ${esc(ser.name)}</small></h2>${colChart(v, ser.points.map(p => p[0]), { H: 300, unit: u, subs: v.map((x, i) => i ? (() => { const g = growth(x, v[i - 1]); return `${g > 0 ? "+" : g < 0 ? "−" : ""}${Math.abs(g).toFixed(1)}%`; })() : "") })}`);
     }
     const CH_PAL = ["#2B5CA8", "#2B8A7E", "#D08A3C", "#7A5AD0", "#C46A6A", "#5B7DB1", "#8AA34B"], isRestCh = n => /(기타|그 외|미공개)/.test(n);
-    const chs = m.channels?.items?.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${donut(m.channels.items.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`] })))}`, "dn-card") : "";
+    const chItems = (() => { const it = m.channels?.items || [], rest = it.filter(([n]) => isRestCh(n));
+      return rest.length < 2 ? it : [...it.filter(([n]) => !isRestCh(n)), ["그 외", rest.reduce((t, x) => t + x[1], 0), rest.map(([n, v]) => `${n} ${v.toFixed(1)}%`).join(" · ")]]; })();
+    const chs = chItems.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${donut(chItems.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v, sub], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`, sub || null] })))}`, "dn-card") : "";
     const sh = m.share?.items?.length ? card(`<h2>품목 비중<small>${esc(m.share.title || "")}</small></h2><div style="display:flex;height:40px;border-radius:6px;overflow:hidden;font-size:15px;font-weight:700">${m.share.items.map((x, i) => `<span${tipA([x.name, `비중\t${x.pct}%`])} style="width:${x.pct}%;background:${["#A0522D", "#2B8A7E", "#D3DAE5"][i] || "#B4BFCF"};color:${i < 2 ? "#fff" : "#4A5568"};display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden">${esc(x.name.length > 22 ? x.name.slice(0, 20) + "…" : x.name)} ${x.pct}%</span>`).join("")}</div>`) : "";
     const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;
