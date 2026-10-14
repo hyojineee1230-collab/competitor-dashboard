@@ -74,9 +74,25 @@ CSS = """
 .is-d:first-of-type{border-top:0}
 .is-d small{color:var(--muted);margin-right:6px}
 .is-d a{color:var(--ink)}
-.is-bar{display:grid;grid-template-columns:118px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:14px;padding:3px 0}
-.is-bar i{display:block;height:10px;border-radius:3px;background:var(--brand)}
-.is-bar b{text-align:right}
+/* 기간 중 보도: 3D 원형 + 범례 */
+.is-pie{display:grid;gap:10px}
+.is-pie .c{width:min(190px,80%);justify-self:center}
+.is-pie .c svg{display:block;width:100%;height:auto;overflow:visible}
+.is-pie .c text{font-size:13px;font-weight:700;pointer-events:none}
+.is-leg{display:grid;gap:1px;font-size:14px}
+.is-leg > div{display:grid;grid-template-columns:10px minmax(0,1fr) auto 40px;gap:8px;align-items:center;padding:3px 0;border-top:1px solid var(--line)}
+.is-leg > div:first-child{border-top:0}
+.is-leg b{width:10px;height:10px;border-radius:2px}
+.is-leg span:first-of-type{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.is-leg span:nth-of-type(2){font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.is-leg span:nth-of-type(3){color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+/* 연간 실적 비교 막대: 윗면·옆면을 덧대 입체로 (리포트 양식) */
+.fr-row .tr{overflow:visible}
+.fr-row .tr i{border-radius:0}
+.fr-row .tr i::before{content:"";position:absolute;left:0;right:0;top:-5px;height:5px;background:inherit;filter:brightness(1.35);transform:skewX(-45deg);transform-origin:bottom left}
+.fr-row .tr i::after{content:"";position:absolute;left:100%;top:0;width:5px;height:100%;background:inherit;filter:brightness(.7);transform:skewY(-45deg);transform-origin:top left}
+.fr-row .tr i.cut::before,.fr-row .tr i.cut::after{display:none}
+.fr-row{padding:7px 0}
 .upd{margin:0 0 10px;font-size:13px;font-weight:600;display:inline-block;border-radius:999px;padding:2px 10px}
 .upd.new{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
 .upd.same{background:var(--tag);color:var(--muted)}
@@ -101,7 +117,7 @@ CSS = """
   body.printing #printRoot{display:block;zoom:.8}
   header{border-radius:0 !important;margin:0 0 10px !important;break-after:avoid}
   .hdr-r .meta > *:not(#updated), #themeBtn, #fsBtn, .pm, #introBtn, #setBtn{display:none !important}
-  .pgrp + .pgrp{break-before:page}
+  .pgrp + .pgrp{margin-top:18px}
   .pgrp-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--brand);padding:2px 2px 6px;margin:0 0 12px;break-after:avoid}
   .pgrp-h b{font-size:20px}
   .pgrp-h span{font-size:13px;color:var(--muted)}
@@ -114,6 +130,8 @@ CSS = """
   #printRoot img.pimg{display:block;width:100%;height:auto;max-height:430px;object-fit:contain;object-position:left top}
   #printRoot .panel{break-inside:auto;box-shadow:none !important;margin-bottom:12px !important}
   #printRoot .panel:has(img.pimg){break-inside:avoid}   /* 그래프가 있는 구역은 제목·그래프를 한 쪽에 */
+  #printRoot .pgrp-h + *{break-before:avoid}
+  #printRoot .is-pie .c{width:150px}
   #printRoot .panel h2, #printRoot .panel h3, #printRoot .upd, #printRoot .hint{break-after:avoid}
   #printRoot .chart-box, #printRoot img.pimg, #printRoot .core-card, #printRoot tr, #printRoot li, #printRoot .is-box, #printRoot .card{break-inside:avoid}
   #printRoot .is-grid{grid-template-columns:1fr 1.4fr 1fr !important}
@@ -192,7 +210,10 @@ async function renderIssue(){
   const moves = (dg.moves || []).map(x => `<div class="is-row"><span><i class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:${col(x.c)}"></i>${esc(nm(x.c))}</span><b class="${x.m1 > 0 ? "up" : x.m1 < 0 ? "down" : ""}">${arrow(x.m1)}</b></div>`).join("");
   const disc = (dg.disc || []).slice(0, 8).map(x => `<div class="is-d"><small>${d2(x.d)}</small><b>${esc(nm(x.c))}</b> <a href="${esc(x.url || "#")}" target="_blank" rel="noopener">${esc(x.t)}</a></div>`).join("");
   const nw = Object.entries(dg.news || {}).sort((a, b) => b[1] - a[1]), mx = nw[0]?.[1] || 1, nt = nw.reduce((t, x) => t + x[1], 0);
-  const news = nw.slice(0, 8).map(([id, n]) => `<div class="is-bar"><span>${esc(nm(id))}</span><span><i style="width:${(n / mx * 100).toFixed(0)}%;background:${col(id)}"></i></span><b>${n}</b></div>`).join("");
+  const top = nw.slice(0, 7), rest = nw.slice(7).reduce((t, x) => t + x[1], 0);
+  const pieIt = [...top.map(([id, n]) => [nm(id), n, col(id)]), ...(rest ? [["그 외", rest, css("--axis")]] : [])];
+  const news = nt ? `<div class="is-pie"><div class="c">${pie3d(pieIt.map(([n, v, c]) => [n, v / nt * 100, c, ""]))}</div>
+      <div class="is-leg">${pieIt.map(([n, v, c], i) => `<div data-i="${i}"><b style="background:${c}"></b><span>${esc(n)}</span><span>${v}건</span><span>${(v / nt * 100).toFixed(0)}%</span></div>`).join("")}</div></div>` : "";
   $("secIssue").innerHTML = `<div class="is-hd"><div><span class="is-k">${esc(R.title || "")}${R.pilot ? " · 시범호" : ""}</span><h2>${FIELD_NAME[F] || ""} · 이번 달 인사이트</h2>
       <p class="hint">기준일 ${d2(R.asOf)} · 주가 ${d2(R.close)} 종가 · 기간 ${d2(R.window?.[0])} ~ ${d2(R.window?.[1])} · 재무는 OpenDART, 주가는 KRX·Yahoo</p></div></div>
     ${ins?.items?.length ? `<ul class="is-ins">${ins.items.map(x => `<li><b>${esc(x.h)}</b><ul>${String(x.d || "").split(/(?<=\.)\s+(?=\S)/).filter(Boolean).map(z => `<li>${esc(z)}</li>`).join("")}</ul>${srcLinks(x.s)}</li>`).join("")}</ul>` : `<p class="is-none">이번 호 인사이트를 작성 중입니다.</p>`}

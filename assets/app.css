@@ -413,3 +413,16 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 /* 제목 옆 기준 설명(ⓘ) */
 .ii{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:8px;border:1.5px solid var(--muted);border-radius:50%;background:none;color:var(--muted);font:700 11.5px/1 Georgia,serif;font-style:italic;cursor:help;vertical-align:2px;padding:0;flex:none}
 .ii:hover,.ii.on,.ii:focus-visible{border-color:var(--ink);color:var(--ink)}
+/* 비중 도넛 + 범례 */
+.dn{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center;max-width:620px}
+.dn svg{width:100%;height:auto;display:block}
+.dn circle{cursor:pointer}
+.dn-l{display:grid;gap:2px}
+.dn-r{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grid);font-size:14.5px}
+.dn-r:last-child{border-bottom:0}
+.dn-r i{width:12px;height:12px;border-radius:3px}
+.dn-r b{font-variant-numeric:tabular-nums}
+@media (max-width:760px){ .dn{grid-template-columns:1fr;gap:14px} .dn svg{width:170px;justify-self:center} }
+.dn-r span,.dn-r b{color:var(--ink)}
+.dn-card{align-self:stretch;display:flex;flex-direction:column}
+.dn-card .dn{flex:1;align-content:center}

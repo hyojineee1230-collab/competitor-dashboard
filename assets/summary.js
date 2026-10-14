@@ -206,6 +206,14 @@ function valCard(F){
     ${split(`${med != null ? `<div class="big1"><b>${xv(med)}</b><span>상장 ${lst.length}개사 PSR 중앙값</span></div>` : ""}${lst.length ? chart : '<p class="empty">상장사 없음</p>'}`, `<div class="val-t">${t}</div>`, "wide")}`);
 }
 
+/* ---------- 비중 도넛: items [{label, v(%), color, tip}] — 조각과 범례(이름·%) ---------- */
+function donut(items, center = ""){
+  const R0 = 70, C = 2 * Math.PI * R0, tot = items.reduce((t, x) => t + x.v, 0) || 1; let off = 0;
+  const segs = items.map(x => { const len = x.v / tot * C, d = `<circle r="${R0}" cx="90" cy="90" fill="none" stroke="${x.color}" stroke-width="30" stroke-dasharray="${Math.max(len - 1.5, .5).toFixed(2)} ${(C - Math.max(len - 1.5, .5)).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 90 90)"${tipA(x.tip || [x.label, `비중\t${x.v.toFixed(1)}%`])}/>`; off += len; return d; }).join("");
+  const leg = items.map(x => `<div class="dn-r"${tipA(x.tip || [x.label, `비중\t${x.v.toFixed(1)}%`])}><i style="background:${x.color}"></i><span>${esc(x.label)}</span><b>${x.v.toFixed(1)}%</b></div>`).join("");
+  return `<div class="dn"><svg viewBox="0 0 180 180" role="img" aria-label="비중 도넛">${segs}${center ? `<text x="90" y="90" dy=".35em" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">${esc(center)}</text>` : ""}</svg><div class="dn-l">${leg}</div></div>`;
+}
+
 /* ---------- 연구개발 회수 (마이크로바이옴) ----------
    연구개발비 = 사업보고서 '연구개발비용' 표 합계(원가 처리분 포함, c.rnd), 없으면 판관비 주석 연구개발비(c.sga.rnd)
    회수율 = 3개년 누적 매출총이익 ÷ 3개년 누적 연구개발비 · 회수기간 = 3개년 누적 연구개발비 ÷ 최근 연간 매출총이익
@@ -294,7 +302,7 @@ function sgaCard(cos){
   const part = rows.filter(x => x.partial).map(x => x.c.name);
   const foot = `${main}년 사업보고서 판관비 주석 · OpenDART ${basisLbl()} · 셀 = 매출액 대비 비중, 색은 계정마다 가장 낮은 회사(연함) ~ 가장 높은 회사(진함)${part.length ? ` · ${part.join("·")}: 계정 목록 미공시로 일부 묶음만` : ""}`;
   const t = tbl(["회사", ...cols.map(([, l]) => l)], body);
-  return card(`<h2>판매비와관리비<small>${main} 사업연도 · 계정별 매출액 대비 비중</small>${infoI(foot)}</h2><div class="hmt">${t}</div>`);
+  return card(`<h2>판관비 세부<small>${main} 사업연도 · 계정별 매출액 대비 비중</small>${infoI(foot)}</h2><div class="hmt">${t}</div>`);
 }
 // 셀 상세 팝업: 구성 계정 · 3개년 · 같은 계정 회사 비교
 function openSga(id, key){
@@ -578,7 +586,8 @@ const SUM = {
       const v = ser.points.map(p => p[1]), u = m.size.unit ? ` ${m.size.unit}` : "";
       trend = card(`<h2>시장 규모 추이<small>${esc(m.size.unit || "")} · ${esc(ser.name)}</small></h2>${colChart(v, ser.points.map(p => p[0]), { H: 300, unit: u, subs: v.map((x, i) => i ? (() => { const g = growth(x, v[i - 1]); return `${g > 0 ? "+" : g < 0 ? "−" : ""}${Math.abs(g).toFixed(1)}%`; })() : "") })}`);
     }
-    const chs = m.channels?.items?.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${barChart(m.channels.items.slice().sort((a, b) => (/(기타|그 외|미공개)/.test(a[0])) - (/(기타|그 외|미공개)/.test(b[0])) || b[1] - a[1]).map(([n, v]) => ({ label: n.replace(/\(.*\)/, ""), color: /(기타|그 외|미공개)/.test(n) ? "#C3CEDF" : v > 50 ? "#2B5CA8" : "#7C97C2", v, tip: [n, `비중\t${v.toFixed(1)}%`] })), { row: 42, lab: 120, valW: 70, fmt: v => `${v.toFixed(1)}%` })}`) : "";
+    const CH_PAL = ["#2B5CA8", "#2B8A7E", "#D08A3C", "#7A5AD0", "#C46A6A", "#5B7DB1", "#8AA34B"], isRestCh = n => /(기타|그 외|미공개)/.test(n);
+    const chs = m.channels?.items?.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${donut(m.channels.items.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`] })))}`, "dn-card") : "";
     const sh = m.share?.items?.length ? card(`<h2>품목 비중<small>${esc(m.share.title || "")}</small></h2><div style="display:flex;height:40px;border-radius:6px;overflow:hidden;font-size:15px;font-weight:700">${m.share.items.map((x, i) => `<span${tipA([x.name, `비중\t${x.pct}%`])} style="width:${x.pct}%;background:${["#A0522D", "#2B8A7E", "#D3DAE5"][i] || "#B4BFCF"};color:${i < 2 ? "#fff" : "#4A5568"};display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden">${esc(x.name.length > 22 ? x.name.slice(0, 20) + "…" : x.name)} ${x.pct}%</span>`).join("")}</div>`) : "";
     const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;
