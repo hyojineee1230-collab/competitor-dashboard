@@ -267,7 +267,11 @@ function sgaGroups(c){
   return { c, y, rev, gp, op: ak >= 0 ? a.operatingIncome?.[ak] : null, g: ak > 0 ? growth(rev, a.revenue[ak - 1]) : null, tot: d.total[i], grp: g, it, partial: !items.length, link: d.links?.[y], d, i };
 }
 const sgaRows = cos => cos.filter(c => (c.annual?.currency || "KRW") === "KRW").map(sgaGroups).filter(x => x?.rev > 0);
-const heat = (v, mx) => v == null || !mx ? "" : `background:rgba(43,92,168,${(.06 + .5 * Math.min(1, Math.max(0, v) / mx)).toFixed(2)})`;
+// 열 안 최솟값~최댓값을 연한 하늘색 → 진한 남색으로(진한 칸은 흰 글씨)
+const HM_LO = [241, 245, 251], HM_HI = [24, 66, 140];
+const heat = (v, lo, hi) => { if (v == null || hi == null) return "";
+  const t = hi > lo ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))) : .5, e = Math.pow(t, .85), c = HM_LO.map((a, i) => Math.round(a + (HM_HI[i] - a) * e));
+  return `background:rgb(${c.join(",")});color:${e > .62 ? "#fff" : "var(--ink)"}`; };
 let SGA_IDS = null;
 function sgaCard(cos){
   const rows = sgaRows(cos); if (!rows.length) return "";
@@ -277,16 +281,16 @@ function sgaCard(cos){
   const cols = [["tot", "판관비 합계"], ...SGA_G.map(([k, l]) => [k, l])];
   const pv = (x, k) => { const v = k === "tot" ? x.tot : x.grp[k]; return v == null ? null : margin(v, x.rev); };
   const srt = rows.slice().sort((a, b) => pv(b, "tot") - pv(a, "tot"));
-  const mx = {}, avg = {}; cols.forEach(([k]) => { const vs = srt.map(x => pv(x, k)).filter(v => v != null && Math.abs(v) < MCAP); mx[k] = Math.max(...vs.map(v => Math.abs(v)), 0); avg[k] = vs.length ? mean(vs) : null; });
+  const lo = {}, hi = {}, avg = {}; cols.forEach(([k]) => { const vs = srt.map(x => pv(x, k)).filter(v => v != null && Math.abs(v) < MCAP); lo[k] = vs.length ? Math.min(...vs) : null; hi[k] = vs.length ? Math.max(...vs) : null; avg[k] = vs.length ? mean(vs) : null; });
   const cellOf = (x, k) => { const v = pv(x, k);
     if (v == null) return '<span class="dim">–</span>';
     if (Math.abs(v) >= MCAP) return '<span class="dim">매출 미미</span>';
-    return `<button type="button" class="hm" data-sga="${esc(x.c.id)}|${k}" style="${heat(v, mx[k])}"${k === "tot" ? ' data-b="1"' : ""}>${v.toFixed(1)}%</button>`; };
+    return `<button type="button" class="hm" data-sga="${esc(x.c.id)}|${k}" style="${heat(v, lo[k], hi[k])}"${k === "tot" ? ' data-b="1"' : ""}>${v.toFixed(1)}%</button>`; };
   const body = srt.map(x => [coCell(x.c) + (x.y !== main ? `<small>${x.y}년</small>` : ""), ...cols.map(([k]) => cellOf(x, k))]);
   if (srt.length >= 2){ const r = [`<b>비교 평균</b><small>${srt.length}개사</small>`, ...cols.map(([k]) => avg[k] == null ? "–" : `<b>${avg[k].toFixed(1)}%</b>`)]; r.cls = "avg"; body.push(r); }
   const part = rows.filter(x => x.partial).map(x => x.c.name);
   const t = tbl(["회사", ...cols.map(([, l]) => l)], body,
-    `${main}년 사업보고서 판관비 주석 · OpenDART ${basisLbl()} · 셀 = 매출액 대비 비중, 색 진하기는 열(계정)마다 상대 비교 · 셀을 누르면 구성 계정·3개년 추이${part.length ? ` · ${part.join("·")}: 계정 목록 미공시로 일부 묶음만` : ""}`);
+    `${main}년 사업보고서 판관비 주석 · OpenDART ${basisLbl()} · 셀 = 매출액 대비 비중, 색은 계정마다 가장 낮은 회사(연함) ~ 가장 높은 회사(진함) · 셀을 누르면 구성 계정·3개년 추이${part.length ? ` · ${part.join("·")}: 계정 목록 미공시로 일부 묶음만` : ""}`);
   return card(`<h2>판매비와관리비<small>${main} 사업연도 · 계정별 매출액 대비 비중</small></h2><div class="hmt">${t}</div>`);
 }
 // 셀 상세 팝업: 구성 계정 · 3개년 · 같은 계정 회사 비교
