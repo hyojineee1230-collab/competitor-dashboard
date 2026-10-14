@@ -342,13 +342,13 @@ function openIntro(){
   // 숫자는 수집 데이터에서 바로 계산 (회사 수·기사 수·갱신 시각)
   const nCo = allCos().size, cov = D.newsfx?.coverage || {}, live = D.live?.updatedAt ? mdh(D.live.updatedAt) : upd;
   const ST = [[`${nCo}개사`, "모니터링 경쟁사"], ["3개 분야", "핵심·건기식·마이크로바이옴"], [cov.articles ? `${nf(cov.articles)}건` : "–", "기사 2년 누적"], [live, "최근 갱신"]];
-  const FL = [["수집", "KRX · OpenDART · 뉴스 · 시장 조사", "평일 매시 자동"], ["계산", "이익률 · 시장 대비 · 이례적 변동", "코드 자동 · 원자료 그대로"]];
+  const FL = [["수집·분석", "KRX · OpenDART · 뉴스 · 시장 조사", "평일 매시 자동"]];
   d.innerHTML = `<div class="in-hero"><span class="in-k">COMPETITOR MONITOR</span><h2 id="introTitle">경쟁사 동향을 한 화면에서</h2><p>건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도</p></div>
     <div class="in-in">
       <div class="in-st">${ST.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>
       <div class="in-fl">${FL.map(([t, a, b], i) => `<div class="in-f"><i>${i + 1}</i><b>${t}</b><span>${a}</span><em>${b}</em></div>`).join('<span class="in-ar" aria-hidden="true"></span>')}<span class="in-ar" aria-hidden="true"></span>
-        <div class="in-out"><div class="in-o"><i>3</i><b>대시보드</b><span>숫자 확인</span><em>상시 · 자동 갱신</em></div>
-          <a class="in-o rp" href="${SITE}report/"><i>4</i><b>월간 리포트 ›</b><span>인사이트·해석</span><em>매월 · 기준일 고정</em></a></div></div>
+        <div class="in-out"><div class="in-o"><i>2</i><b>대시보드</b><span>숫자 확인</span><em>상시 · 자동 갱신</em></div>
+          <a class="in-o rp" href="${SITE}report/"><i>3</i><b>월간 리포트 ›</b><span>인사이트·해석</span><em>매월 · 기준일 고정</em></a></div></div>
       <div class="in-foot"><small>공개 자료 기반 · 투자 판단의 근거로 사용하지 마십시오</small><button type="button" class="in-go" data-intro-x>시작하기</button></div></div>`;
   d.showModal();
   lsSet(INTRO_KEY, "1");
