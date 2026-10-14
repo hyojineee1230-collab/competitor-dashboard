@@ -556,7 +556,7 @@ const SUM = {
     const when = per === "q" ? `최근 5개 분기${lastQ ? ` (~${lastQ.slice(2, 4)}.${lastQ.slice(5)}Q)` : ""}` : `${yr} 사업연도`;
     return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()} 기준 · OpenDART</span><span class="r">${perBtn}${metBtn}${segBtn}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
-      ${F.id === "microbiome" ? rndCard(cos) : adCard(cos, ui)}
+      ${F.id === "microbiome" ? rndCard(cos) + adCard(cos, ui) : ""}
       ${sgaCard(cos)}`;
   },
 
