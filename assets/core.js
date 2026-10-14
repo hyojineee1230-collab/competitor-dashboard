@@ -339,24 +339,15 @@ function openIntro(){
   let d = $("intro");
   if (!d){ d = document.createElement("dialog"); d.id = "intro"; d.setAttribute("aria-labelledby", "introTitle"); document.body.appendChild(d); }
   const upd = D.meta?.updatedAt ? (() => { const k = KST(D.meta.updatedAt).toISOString(); return `${k.slice(0, 10).replace(/-/g, ". ")} ${k.slice(11, 16)}`; })() : "–";
-  const C = [["홈", "당일 주가(코스닥 대비) → 이례적 주가 변동과 관련 보도 → 최근 실적 → 시장 규모 → 최근 7일 보도"],
-             ["시세 · 재무", "주가 흐름·당일 시세·기업가치(PSR·PER·PBR) → 연간·분기 실적, 판매비와관리비, 연구개발 투자 회수 · 회사 카드를 누르면 약식 손익계산서"],
-             ["시장 · 공시·기사", "시장 규모·판매 채널·품목 비중(국내·해외) → 주별 보도 추이, 정기보고서·IR·기사 목록"],
-             ["경쟁사 실적 리포트", "매월 기준일 숫자를 고정해 이번 달 인사이트·공시·보도·주가를 한 호로 발행"]];
-  d.innerHTML = `<div class="in-in"><h2 id="introTitle">경쟁사 모니터, 이런 대시보드입니다</h2>
-    <p class="in-lead">건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도를 공개 자료로 모아 비교합니다. 자료는 자동으로 받아 그대로 보여 주는 영역과, 수집 자료를 바탕으로 정리하는 영역으로 나뉩니다.</p>
+  d.innerHTML = `<div class="in-in"><h2 id="introTitle">경쟁사 모니터</h2>
+    <p class="in-lead">경쟁사 주가·재무·시장·보도를 공개 자료로 자동 취합합니다.</p>
     <div class="in-src">
-      <div class="in-s a"><p class="h"><span>①</span>자동 수집<em>평일 매시 · 하루 3회</em></p>
-        <dl><dt>출처</dt><dd>KRX·OpenDART·해외 시세 오픈 API, 뉴스 기사 목록</dd>
-        <dt>화면</dt><dd>주가·시총, 실적·판관비·연구개발비, 기업가치, 공시·기사</dd>
-        <dt>성격</dt><dd>원자료 그대로, 비율 계산(PSR·이익률 등)만 코드가 수행</dd></dl></div>
-      <div class="in-s b"><p class="h"><span>②</span>정리·분석<em>월 1회 · 자료 발표 시</em></p>
-        <dl><dt>재료</dt><dd>수집된 공시·보도, 협회 조사·시장 리포트</dd>
-        <dt>화면</dt><dd>월간 리포트 인사이트, 시장 개요</dd>
-        <dt>성격</dt><dd>정해진 작성 규칙으로 갱신, 재무 숫자는 DART 값만 사용, 출처·기준일 표기</dd></dl></div>
+      <div class="in-s a"><p class="h"><span>①</span>자동 수집<em>평일 매시</em></p>
+        <dl><dt>출처</dt><dd>KRX · OpenDART · 뉴스</dd><dt>내용</dt><dd>주가 · 실적 · 공시 · 보도</dd><dt>방식</dt><dd>원자료 그대로, 비율만 자동 계산</dd></dl></div>
+      <div class="in-s b"><p class="h"><span>②</span>정리·분석<em>월 1회</em></p>
+        <dl><dt>재료</dt><dd>수집 자료 · 시장 조사</dd><dt>내용</dt><dd>월간 리포트 · 시장 개요</dd><dt>방식</dt><dd>재무 숫자는 DART 값만, 출처 표기</dd></dl></div>
     </div>
-    <div class="in-cards">${C.map(([t, x]) => `<div class="in-c"><b>${t}</b><p>${x}</p></div>`).join("")}</div>
-    <div class="in-foot"><small>데이터 업데이트 ${upd} · 투자 판단의 근거로 사용하지 마십시오</small><button type="button" class="in-go" data-intro-x>시작하기</button></div></div>`;
+    <div class="in-foot"><small>업데이트 ${upd} · 투자 판단의 근거로 사용하지 마십시오</small><button type="button" class="in-go" data-intro-x>시작하기</button></div></div>`;
   d.showModal();
   lsSet(INTRO_KEY, "1");
 }
