@@ -407,3 +407,6 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .adt .ib2{min-width:0}
   .adt .ib2 .trk{width:auto;flex:1 1 auto;max-width:90px}
 }
+/* 연구개발 투자 회수 표: 회수율 칸 막대 · 모바일에서 회수율 한 줄 */
+.rdt td a{white-space:nowrap}
+@media (max-width:760px){ .rdt .tw:not(.keep) tbody td:nth-child(6){grid-column:1/-1} }

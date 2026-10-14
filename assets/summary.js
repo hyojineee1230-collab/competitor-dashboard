@@ -224,17 +224,18 @@ function rndOf(c){
 function rndCard(cos){
   const R = cos.map(rndOf).filter(Boolean); if (!R.length) return "";
   const yr = R.map(r => r.L.y).sort().at(-1);
-  const srt = R.slice().sort((a, b) => (b.rec ?? -1e9) - (a.rec ?? -1e9)), best = srt.find(r => r.rec != null);
-  const chart = barChart(R.slice().sort((a, b) => b.cr - a.cr).map(r => ({ label: r.c.name, color: r.c.color, v: r.cr / 1e8,
-    tip: [`${r.c.name} · ${r.rows[0].y}~${r.L.y}`, ...r.rows.map(x => `${x.y} 연구개발비\t${big(x.rnd)}`), `누적 매출총이익\t${big(r.cg)}`, r.rec != null ? `회수율\t${r.rec.toFixed(0)}%` : null] })),
-    { lab: 150, fmt: v => `${nf(v)}억` });
+  const srt = R.slice().sort((a, b) => (b.rec ?? -1e9) - (a.rec ?? -1e9)), rmx = Math.max(...srt.map(r => r.rec || 0), 1);
+  const pctC = v => v == null ? "–" : v > 999 ? '<span class="dim">매출 미미</span>' : `${v.toFixed(0)}%`;
   const payTxt = r => r.pay != null ? `${r.pay < 10 ? r.pay.toFixed(1) : nf(r.pay)}년` : `<span class="dn">${r.L.gp == null ? "–" : "매출총손실"}</span>`;
-  const body = srt.map(r => [coCell(r.c) + `<small>${r.L.y !== yr ? `${r.L.y}년 · ` : ""}${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.src)} ↗</a>` : esc(r.src)}</small>`, big(r.L.rnd), r.ratio == null ? "–" : r.ratio > 999 ? "매출 미미" : `${r.ratio.toFixed(0)}%`,
-    `${big(r.cr)}<small>${r.n}개년</small>`, signedB(r.cg), r.rec == null ? "–" : `<b class="${r.rec >= 100 ? "up" : r.rec < 0 ? "dn" : ""}">${r.rec.toFixed(0)}%</b>`, payTxt(r), signedB(r.L.op)]);
-  const t = tbl(["회사", `연구개발비<small>최근 연간</small>`, "매출 대비", "누적<small>연구개발비</small>", "누적<small>매출총이익</small>", "회수율<small>GP ÷ R&D</small>", "회수기간<small>R&D ÷ 연간 GP</small>", "영업이익"], body,
-    `OpenDART ${basisLbl()} · 누적 = 최근 3개 사업연도(자료가 있는 해만) · 연구개발비는 사업보고서 연구개발비용 표(원가 처리분 포함), 없으면 판관비 주석 연구개발비 · 회사 단위 지표이며 파이프라인별 투입·회수는 공시되지 않음`);
-  return card(`<h2>연구개발 투자 회수<small>${yr} 사업연도 기준 · 그래프 = 누적 연구개발비(억원)</small></h2>
-    ${split(`${best ? `<div class="big1"><b>${best.rec.toFixed(0)}%</b><span>회수율 최고 ${esc(best.c.name)} · 비교 대상 ${R.length}개사</span></div>` : ""}${chart}`, `<div class="sga-t">${t}</div>`, "wide")}`);
+  const recC = r => r.rec == null ? "–" : `<span class="ib2"${tipA([`${r.c.name} · ${r.rows[0].y}~${r.L.y}`, ...r.rows.map(x => `${x.y} 연구개발비\t${big(x.rnd)}`), `누적 매출총이익\t${big(r.cg)}`, `회수율\t${r.rec.toFixed(0)}%`])}><span class="trk"><i style="width:${(Math.max(0, r.rec) / rmx * 100).toFixed(1)}%;background:${r.c.color}"></i></span><b>${r.rec.toFixed(0)}%</b></span>`;
+  const rndC = r => r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.src)} 원문">${big(r.L.rnd)} ↗</a>` : big(r.L.rnd);
+  const body = srt.map(r => [coCell(r.c) + (r.L.y !== yr || r.n < 3 ? `<small>${r.L.y !== yr ? `${r.L.y}년` : ""}${r.L.y !== yr && r.n < 3 ? " · " : ""}${r.n < 3 ? `누적 ${r.n}개년` : ""}</small>` : ""),
+    rndC(r), pctC(r.ratio), big(r.cr), signedB(r.cg), recC(r), payTxt(r), signedB(r.L.op)]);
+  if (srt.length >= 2){ const av = k => mean(srt.map(r => r[k]).filter(v => v != null)), ar = av("rec"), ap = mean(srt.map(r => r.pay).filter(v => v != null));
+    const row = [`<b>비교 평균</b><small>${srt.length}개사</small>`, "", "", "", "", `<b>${ar == null ? "–" : `${ar.toFixed(0)}%`}</b>`, `<b>${ap == null ? "–" : `${ap < 10 ? ap.toFixed(1) : nf(ap)}년`}</b>`, ""]; row.cls = "avg"; body.push(row); }
+  const t = tbl(["회사", "연구개발비", "매출 대비", "누적 연구개발비", "누적 매출총이익", "회수율", "회수기간", "영업이익"], body,
+    `OpenDART ${basisLbl()} · 누적 = 최근 3개 사업연도 · 회수율 = 누적 매출총이익 ÷ 누적 연구개발비 · 회수기간 = 누적 연구개발비 ÷ 최근 연간 매출총이익 · 연구개발비는 사업보고서 연구개발비용 표(원가 처리분 포함), 없으면 판관비 주석 · 회사 단위 지표`);
+  return card(`<h2>연구개발 투자 회수<small>${yr} 사업연도 기준</small></h2><div class="hmt adt rdt">${t}</div>`);
 }
 
 /* ---------- 판관비: 계정 × 회사 히트맵 ----------
@@ -560,7 +561,7 @@ const SUM = {
     const when = per === "q" ? `최근 5개 분기${lastQ ? ` (~${lastQ.slice(2, 4)}.${lastQ.slice(5)}Q)` : ""}` : `${yr} 사업연도`;
     return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()} 기준 · OpenDART</span><span class="r">${perBtn}${metBtn}${segBtn}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
-      ${F.id === "microbiome" ? rndCard(cos) + adCard(cos, ui) : ""}
+      ${F.id === "microbiome" ? rndCard(cos) : F.id === "hff" ? adCard(cos, ui) : ""}
       ${sgaCard(cos)}`;
   },
 
