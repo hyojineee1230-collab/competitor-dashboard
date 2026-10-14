@@ -339,15 +339,15 @@ function openIntro(){
   let d = $("intro");
   if (!d){ d = document.createElement("dialog"); d.id = "intro"; d.setAttribute("aria-labelledby", "introTitle"); document.body.appendChild(d); }
   const upd = D.meta?.updatedAt ? (() => { const k = KST(D.meta.updatedAt).toISOString(); return `${k.slice(0, 10).replace(/-/g, ". ")} ${k.slice(11, 16)}`; })() : "–";
-  d.innerHTML = `<div class="in-in"><h2 id="introTitle">경쟁사 모니터</h2>
-    <p class="in-lead">경쟁사 주가·재무·시장·보도를 공개 자료로 자동 취합합니다.</p>
-    <div class="in-src">
-      <div class="in-s a"><p class="h"><span>①</span>자동 수집<em>평일 매시</em></p>
-        <dl><dt>출처</dt><dd>KRX · OpenDART · 뉴스</dd><dt>내용</dt><dd>주가 · 실적 · 공시 · 보도</dd><dt>방식</dt><dd>원자료 그대로, 비율만 자동 계산</dd></dl></div>
-      <div class="in-s b"><p class="h"><span>②</span>정리·분석<em>월 1회</em></p>
-        <dl><dt>재료</dt><dd>수집 자료 · 시장 조사</dd><dt>내용</dt><dd>월간 리포트 · 시장 개요</dd><dt>방식</dt><dd>재무 숫자는 DART 값만, 출처 표기</dd></dl></div>
-    </div>
-    <div class="in-foot"><small>업데이트 ${upd} · 투자 판단의 근거로 사용하지 마십시오</small><button type="button" class="in-go" data-intro-x>시작하기</button></div></div>`;
+  // 숫자는 수집 데이터에서 바로 계산 (회사 수·기사 수·갱신 시각)
+  const nCo = allCos().size, cov = D.newsfx?.coverage || {}, live = D.live?.updatedAt ? mdh(D.live.updatedAt) : upd;
+  const ST = [[`${nCo}개사`, "모니터링 경쟁사"], ["3개 분야", "핵심·건기식·마이크로바이옴"], [cov.articles ? `${nf(cov.articles)}건` : "–", "기사 2년 누적"], [live, "최근 갱신"]];
+  const FL = [["수집", "KRX · OpenDART · 뉴스 · 시장 조사", "평일 매시 자동"], ["계산", "이익률 · 시장 대비 · 이례적 변동", "코드 자동 · 원자료 그대로"], ["공유", "대시보드 · 월간 리포트", "상시 · 매월 기준일 고정"]];
+  d.innerHTML = `<div class="in-hero"><span class="in-k">COMPETITOR MONITOR</span><h2 id="introTitle">경쟁사 동향을 한 화면에서</h2><p>건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도</p></div>
+    <div class="in-in">
+      <div class="in-st">${ST.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+      <div class="in-fl">${FL.map(([t, a, b], i) => `<div class="in-f"><i>${i + 1}</i><b>${t}</b><span>${a}</span><em>${b}</em></div>`).join('<span class="in-ar" aria-hidden="true"></span>')}</div>
+      <div class="in-foot"><small>공개 자료 기반 · 투자 판단의 근거로 사용하지 마십시오</small><button type="button" class="in-go" data-intro-x>시작하기</button></div></div>`;
   d.showModal();
   lsSet(INTRO_KEY, "1");
 }
