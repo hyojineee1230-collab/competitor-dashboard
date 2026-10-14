@@ -345,8 +345,9 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .in-k{font-size:12px;font-weight:700;letter-spacing:.14em;color:#8FB0E3}
 .in-hero h2{margin:6px 0 6px;font-size:28px;letter-spacing:-.02em}
 .in-hero p{margin:0;font-size:15px;color:var(--navy-ink)}
-.in-in{padding:22px 32px 22px}
-.in-st{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;margin:0 0 22px}
+.in-in{padding:20px 32px 22px}
+.in-sh{margin:0 0 8px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.in-st{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;margin:0 0 20px}
 .in-st > div{padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .in-st > div + div{border-left:1px solid var(--line)}
 .in-st b{font-size:22px;letter-spacing:-.02em;white-space:nowrap}

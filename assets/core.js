@@ -345,7 +345,9 @@ function openIntro(){
   const FL = [["수집·분석", "KRX · OpenDART · 뉴스 · 시장 조사", "평일 매시 자동"]];
   d.innerHTML = `<div class="in-hero"><span class="in-k">COMPETITOR MONITOR</span><h2 id="introTitle">경쟁사 동향을 한 화면에서</h2><p>건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도</p></div>
     <div class="in-in">
+      <p class="in-sh">취합 데이터 현황</p>
       <div class="in-st">${ST.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+      <p class="in-sh">운영 방식</p>
       <div class="in-fl">${FL.map(([t, a, b], i) => `<div class="in-f"><i>${i + 1}</i><b>${t}</b><span>${a}</span><em>${b}</em></div>`).join('<span class="in-ar" aria-hidden="true"></span>')}<span class="in-ar" aria-hidden="true"></span>
         <div class="in-out"><div class="in-o"><i>2</i><b>대시보드</b><span>숫자 확인</span><em>상시 · 자동 갱신</em></div>
           <a class="in-o rp" href="${SITE}report/"><i>3</i><b>월간 리포트 ›</b><span>인사이트·해석</span><em>매월 · 기준일 고정</em></a></div></div>
