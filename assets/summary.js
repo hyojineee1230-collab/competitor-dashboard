@@ -384,7 +384,7 @@ const SUM = {
     } else if (m?.size?.kpis?.length){
       c5 = icard(`시장 · ${esc(m.label || "")}`, esc(m.size.kpis[0].value), INK, esc(m.size.kpis[0].label), "", { sub: esc(m.size.kpis[0].sub || ""), link: href("market", S.field) });
     }
-    return `<p class="hint">그래프를 누르면 그 지점의 숫자가 보입니다</p><div class="g2 home"><div class="col">${c1}${c2}</div><div class="col">${c4}${c5}${c3}</div></div>`;
+    return `<div class="g2 home"><div class="col">${c1}${c2}</div><div class="col">${c4}${c5}${c3}</div></div>`;
   },
 
   /* ---------- 시세 ---------- */

@@ -132,7 +132,7 @@ function freshness(F){
   items.push(["#1F8A78", `재무 ${qs ? qs.slice(2, 4) + "년 " + qs.slice(5) + "Q" : ys ? ys + "년" : "–"}`]);
   const ser = F.mk.kr?.size?.series?.[0]?.points; items.push(["#C98A1B", `시장 ${ser?.length ? ser.at(-1)[0] + "년" : D.market?.updatedAt ? md(D.market.updatedAt) : "–"}`]);
   if (VIEW === "detail" && D.summaries?.updatedAt) items.push(["#7A5AD0", `AI 정리 ${md(D.summaries.updatedAt)}`]);
-  return `<div class="fresh">${items.map(([c, s]) => `<span><i style="background:${c}"></i>${esc(s)}</span>`).join("")}<span class="fr">다음 갱신 시세·기사 ${nextHourly()}<button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결)">별도 재무제표<i aria-hidden="true"></i></button></span></div>`;
+  return `<div class="fresh">${items.map(([c, s]) => `<span><i style="background:${c}"></i>${esc(s)}</span>`).join("")}<span class="fr">다음 갱신 시세·기사 ${nextHourly()}<button type="button" class="ib" data-intro>이용 안내</button><button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결)">별도 재무제표<i aria-hidden="true"></i></button></span></div>`;
 }
 
 /* ---------- 그래프 (SVG 문자열) ---------- */
@@ -333,6 +333,37 @@ async function render(){
   hideTip(); $("main").innerHTML = freshness(F) + body;
   requestAnimationFrame(balanceCols);
 }
+/* ---------- 이용 안내: 처음 방문 때 한 번 자동, 이후 '이용 안내' 버튼 ---------- */
+const INTRO_KEY = "cm2-intro-v1";
+function openIntro(){
+  let d = $("intro");
+  if (!d){ d = document.createElement("dialog"); d.id = "intro"; d.setAttribute("aria-labelledby", "introTitle"); document.body.appendChild(d); }
+  const M = [["홈", "오늘의 요약", "주가·실적·시장·보도"], ["시세", "주가 흐름", "당일 시세·기업가치"], ["재무", "실적·판관비·연구개발", "카드 선택 시 약식 손익"],
+             ["시장", "시장 규모", "채널·품목 비중"], ["공시·기사", "보도 추이", "공시·기사 목록"]];
+  d.innerHTML = `<div class="in-in"><div class="adm-hd"><h2 id="introTitle">이용 안내</h2><button class="cp-x" type="button" data-intro-x aria-label="닫기">✕</button></div>
+    <p class="in-lead">건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도를 공개 자료로 자동 수집해 비교합니다.</p>
+    <div class="in-grid">${M.map(([t, a1, a2]) => `<div class="in-m"><b>${t}</b><span>${a1}</span><span>${a2}</span></div>`).join("")}</div>
+    <div class="in-row"><span><b>분야</b> 오른쪽 위에서 전환</span><span><b>별도 재무제표</b> 기본은 연결</span><span><b>리포트</b> 월간 경쟁사 실적</span><span><b>숫자 확인</b> 그래프에 마우스 올리기·선택</span></div>
+    <details class="fold"><summary>용어·계산 기준</summary><div class="fold-b"><dl class="in-dl">
+      <dt>코스닥 대비</dt><dd>등락률 − 코스닥 등락률(%p). 코스피 상장사는 제외</dd>
+      <dt>이례적 주가 변동</dt><dd>시장·업종 영향을 뺀 등락률이 최근 60거래일 하루 변동폭의 2배 이상, 또는 거래량이 평소의 3배 이상</dd>
+      <dt>추정</dt><dd>비상장사 기업가치 = 같은 묶음 상장사 PSR 범위 × 매출(참고값)</dd>
+      <dt>매출 미미</dt><dd>매출이 매우 작아 이익률이 ±1,000%를 넘는 경우, 평균에서 제외</dd>
+      <dt>회수율·회수기간</dt><dd>누적 매출총이익 ÷ 누적 연구개발비 · 누적 연구개발비 ÷ 연간 매출총이익</dd></dl></div></details>
+    <details class="fold"><summary>데이터 출처·갱신</summary><div class="fold-b"><dl class="in-dl">
+      <dt>주가·시가총액</dt><dd>KRX(종가, 다음 영업일 08:30) · Yahoo Finance(장중 15~20분 지연, 평일 08~20시 매시)</dd>
+      <dt>재무·공시</dt><dd>OpenDART · 평일 08:30·16:40, 화~토 06:40</dd>
+      <dt>보도</dt><dd>Google 뉴스 기사 목록 · 평일 08~20시 매시</dd>
+      <dt>시장 규모</dt><dd>협회·기관 조사 자료(화면에 출처 표기) · 새 자료 발표 시</dd></dl></div></details>
+    <p class="in-foot">공시·거래소 공개 자료 기반 · 투자 판단의 근거로 사용하지 마십시오</p></div>`;
+  d.showModal();
+  lsSet(INTRO_KEY, "1");
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-intro]")){ openIntro(); return; }
+  const d = $("intro"); if (d?.open && (e.target === d || e.target.closest("[data-intro-x]"))) d.close();
+});
+
 /* ---------- 좌우 열 끝 맞추기 (웹 화면 홈) ----------
    짧은 열 안의 늘릴 수 있는 그래프(data-grow, GROW[키] = 높이 → 그래프)를 모자란 만큼 키우고, 남는 차이는 마지막 카드가 늘어나 흡수 */
 let GROW = {};
@@ -375,6 +406,7 @@ async function start(pages){
   $("main").innerHTML = '<div class="empty">불러오는 중…</div>';
   await loadBase();
   addEventListener("hashchange", () => { S.ui = {}; render(); });
+  if (!lsGet(INTRO_KEY)) setTimeout(openIntro, 400);
   let ph = PHONE(); addEventListener("resize", () => { if (PHONE() !== ph){ ph = PHONE(); render(); } });
   render();
 }
