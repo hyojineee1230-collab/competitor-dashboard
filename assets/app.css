@@ -331,3 +331,8 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .val-t td:first-child{white-space:normal}.val-t td:first-child small{max-width:300px}
 .hb.hbdot .hb-v{background:var(--surface);padding:0 3px;z-index:2}
 .sig-t td:last-child{min-width:150px}.sig-t td,.sig-t th{padding-left:6px;padding-right:6px}
+/* 홈: 웹에서 좌우 열의 끝을 맞춤(짧은 열의 마지막 카드가 늘어남) */
+.g2.home{align-items:stretch}
+.g2.home > .col{display:flex;flex-direction:column}
+.g2.home > .col > .card:last-child{flex:1 1 auto}
+.g2.home.measure > .col > .card:last-child{flex:none}

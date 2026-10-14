@@ -329,6 +329,7 @@ async function discPanel(F, ui){
 const SUM = {
   /* ---------- 인사이트 ---------- */
   async insight(F){
+    GROW = {};
     const { rows, mk } = todayRows(F);
     const tsLive = rows.find(r => r.ts)?.ts;
     let c1 = "";
@@ -355,8 +356,8 @@ const SUM = {
           return [md(k.d), coCell(x), pct(k.idio, 1, 0), `${k.z.toFixed(1)}배<small>±${k.sd.toFixed(1)}%</small>`, whyLink(k)]; }),
         "고유 등락률 = 시장·업종 영향을 제외한 등락률 · 변동 배수 = 고유 등락률 ÷ 최근 60거래일 하루 변동폭(표준편차)");
       c2 = icard(`이례적 주가 변동 · 최근 2주${kept.length > 1 ? ` · 외 ${kept.length - 1}개사` : ""}`, arrow(s.idio), colOf(s.idio), esc(c.name),
-        lineChart([{ name: c.name, color: c.color, raw: cl, vals: cl.map(x => x && b ? (x / b - 1) * 100 : null) }],
-          { W: 560, H: 150, labels: false, xs: ds, tipFmt: (sr, i) => `${sr.name}\t${won(sr.raw[i], cur)}  ${sgn(sr.vals[i])}` }),
+        (GROW.sig = H => lineChart([{ name: c.name, color: c.color, raw: cl, vals: cl.map(x => x && b ? (x / b - 1) * 100 : null) }],
+          { W: 560, H, labels: false, xs: ds, tipFmt: (sr, i) => `${sr.name}\t${won(sr.raw[i], cur)}  ${sgn(sr.vals[i])}` }), `<div data-grow="sig" data-h0="150">${GROW.sig(150)}</div>`),
         { sub: `${md(s.d)} 시장·업종 영향을 제외한 등락률 ${sgn(s.idio)} — 평소 하루 변동폭(±${s.sd.toFixed(1)}%)의 ${s.z.toFixed(1)}배${s.vr ? ` · 거래량 평소의 ${s.vr.toFixed(1)}배` : ""}<br>${whyLink(s)}`,
           link: href("quotes", S.field), more: fold("in-sig", `상세 · ${kept.length}개사`, `<div class="wrapcells sig-t">${sigTbl}</div>`) });
     } else c2 = icard("이례적 주가 변동 · 최근 2주", "없음", INK, "평소 변동폭 범위 내 등락", "", { link: href("quotes", S.field) });
@@ -379,11 +380,11 @@ const SUM = {
     if (ser?.length){
       const v = ser.map(p => p[1]), g = growth(v.at(-1), v.at(-2)), u = m.size.unit ? ` ${m.size.unit}` : "";
       c5 = icard(`시장 · ${esc(m.size.series[0].name.split("(")[0].trim())} (${esc(m.size.unit || "")})`, pct(g, 1, 0).replace(/<[^>]+>/g, ""), colOf(g), `${esc(m.size.kpis?.[0]?.value || "")}`,
-        colChart(v, ser.map(p => p[0]), { W: 560, H: 160, unit: u }), { link: href("market", S.field) });
+        (GROW.mkt = H => colChart(v, ser.map(p => p[0]), { W: 560, H, unit: u }), `<div data-grow="mkt" data-h0="160">${GROW.mkt(160)}</div>`), { link: href("market", S.field) });
     } else if (m?.size?.kpis?.length){
       c5 = icard(`시장 · ${esc(m.label || "")}`, esc(m.size.kpis[0].value), INK, esc(m.size.kpis[0].label), "", { sub: esc(m.size.kpis[0].sub || ""), link: href("market", S.field) });
     }
-    return `<p class="hint">그래프를 누르면 그 지점의 숫자가 보입니다</p><div class="g2"><div class="col">${c1}${c2}${c3}</div><div class="col">${c4}${c5}</div></div>`;
+    return `<p class="hint">그래프를 누르면 그 지점의 숫자가 보입니다</p><div class="g2 home"><div class="col">${c1}${c2}</div><div class="col">${c4}${c5}${c3}</div></div>`;
   },
 
   /* ---------- 시세 ---------- */

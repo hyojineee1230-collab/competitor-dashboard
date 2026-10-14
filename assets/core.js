@@ -331,7 +331,28 @@ async function render(){
   let body;
   try { body = await PAGES[S.menu](F, S.ui); } catch (e) { console.error(e); body = `<div class="card empty">화면을 그리지 못했습니다</div>`; }
   hideTip(); $("main").innerHTML = freshness(F) + body;
+  requestAnimationFrame(balanceCols);
 }
+/* ---------- 좌우 열 끝 맞추기 (웹 화면 홈) ----------
+   짧은 열 안의 늘릴 수 있는 그래프(data-grow, GROW[키] = 높이 → 그래프)를 모자란 만큼 키우고, 남는 차이는 마지막 카드가 늘어나 흡수 */
+let GROW = {};
+function balanceCols(){
+  if (PHONE()) return;
+  document.querySelectorAll(".g2.home").forEach(g => {
+    const cols = [...g.children]; if (cols.length !== 2) return;
+    const h = c => [...c.children].reduce((t, x) => t + x.offsetHeight, 0) + (c.children.length - 1) * 18;
+    g.classList.add("measure");   // 늘어나기 전 원래 높이로 비교
+    const [a, b] = cols.map(h), short = a < b ? cols[0] : cols[1], gap = Math.abs(a - b);
+    g.classList.remove("measure");
+    if (gap < 24) return;
+    const el = [...short.querySelectorAll("[data-grow]")].find(x => GROW[x.dataset.grow]); if (!el) return;
+    const f = GROW[el.dataset.grow], svg = el.querySelector("svg"); if (!svg) return;
+    const vb = svg.viewBox.baseVal, scale = vb.width / svg.getBoundingClientRect().width || 1;
+    el.innerHTML = f(Math.min(vb.height + gap * scale, vb.height + 320));
+  });
+}
+addEventListener("toggle", e => { if (e.target.dataset?.fold) requestAnimationFrame(() => { GROW_RESET(); }); }, true);
+function GROW_RESET(){ document.querySelectorAll(".g2.home [data-grow]").forEach(el => { const f = GROW[el.dataset.grow]; if (f && el.dataset.h0) el.innerHTML = f(+el.dataset.h0); }); requestAnimationFrame(balanceCols); }
 // 화면 안 전환 버튼: <button data-ui="key=value">
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-ui]"); if (!b) return;
