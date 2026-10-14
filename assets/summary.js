@@ -95,19 +95,20 @@ function coPL(c, F){
   const annualCols = cols.filter(col => !col.ytd);
   const avg3 = fn => { const vs = annualCols.map(col => fn(col)).filter(v => v != null); return vs.length ? signedB(vs.reduce((t, x) => t + x, 0) / vs.length, cur) : "–"; };
   const row = (label, fn, cls = "") => `<tr class="${cls}"><td class="l">${label}</td>${cols.map(col => `<td>${signedB(fn(col), cur)}</td>`).join("")}<td class="avg">${avg3(fn)}</td></tr>`;
-  const pctRow = fn => { const p = (v, b) => v == null || !b ? "–" : `(${(v / b * 100).toFixed(1)}%)`;
+  const pctRow = (fn, cls = "") => { const p = (v, b) => v == null || !b ? "–" : `(${(v / b * 100).toFixed(1)}%)`;
     const vs = annualCols.map(col => [fn(col), col.rev]).filter(([v, b]) => v != null && b);
     const av = vs.length ? p(vs.reduce((t, x) => t + x[0], 0) / vs.length, vs.reduce((t, x) => t + x[1], 0) / vs.length) : "–";
-    return `<tr class="pct"><td class="l"></td>${cols.map(col => `<td>${p(fn(col), col.rev)}</td>`).join("")}<td class="avg">${av}</td></tr>`; };
+    if (cols.every(col => fn(col) == null)) return "";   // 값이 하나도 없는 계정은 % 줄 생략
+    return `<tr class="pct ${cls}"><td class="l"></td>${cols.map(col => `<td>${p(fn(col), col.rev)}</td>`).join("")}<td class="avg">${av}</td></tr>`; };
   const pl = `<table class="cp-pl"><thead><tr><th style="text-align:left">${cur === "KRW" ? "억원" : cur}</th>${cols.map(col => `<th>${col.h}</th>`).join("")}<th class="avg">${annualCols.length}개년 평균</th></tr></thead><tbody>
     ${row("매출", col => col.rev, "key")}
     ${row("매출원가", col => col.cogs)}${pctRow(col => col.cogs)}
     ${row("매출총이익", col => col.gp, "key")}${pctRow(col => col.gp)}
-    ${row("판관비", col => col.sga)}
-    ${row("인건비", col => col.sg?.labor, "sub")}
-    ${row("광고/판촉", col => col.sg?.adpromo, "sub")}
-    ${row("판매수수료", col => col.sg?.commission || null, "sub")}
-    ${row("연구개발비", col => col.sg?.rnd || null, "sub")}
+    ${row("판관비", col => col.sga)}${pctRow(col => col.sga)}
+    ${row("인건비", col => col.sg?.labor, "sub")}${pctRow(col => col.sg?.labor, "sub")}
+    ${row("광고/판촉", col => col.sg?.adpromo, "sub")}${pctRow(col => col.sg?.adpromo, "sub")}
+    ${row("판매수수료", col => col.sg?.commission || null, "sub")}${pctRow(col => col.sg?.commission || null, "sub")}
+    ${row("연구개발비", col => col.sg?.rnd || null, "sub")}${pctRow(col => col.sg?.rnd || null, "sub")}
     ${row("영업이익", col => col.op, "key")}${pctRow(col => col.op)}
   </tbody></table>`;
   // 비용 구조: 매출액 대비 원가·판관비 계정·영업이익 비중 (연도별 한 줄). 영업손실이면 비용이 100%를 넘음

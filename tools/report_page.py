@@ -104,6 +104,7 @@ CSS = """
 .pm-m button{all:unset;cursor:pointer;padding:9px 12px;border-radius:7px;font-size:14px;color:var(--ink);white-space:nowrap}
 .pm-m button:hover,.pm-m button:focus-visible{background:var(--tag)}
 #printRoot{display:none}
+#pOverlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--page) 88%,transparent);font-size:17px;font-weight:700;color:var(--ink);backdrop-filter:blur(2px)}
 /* ---------- 인쇄: A4 보고서 서식 ----------
    화면에서 그린 그래프는 그림으로 바꿔 담고(잘림 방지), 넓은 화면 배치를 0.8배로 줄여 담음 */
 @media print{
@@ -142,7 +143,20 @@ rep("</style>\n</head>", CSS + "</style>\n</head>")
 PRINT_JS = r"""/* ---------- 인쇄: 분야별로 그려 그래프는 그림으로 담음 ---------- */
 const PTABS = () => [...document.querySelectorAll("#tabs .tab")].map(b => [b.dataset.id, (b.childNodes[0]?.textContent || b.textContent).trim()]);
 const pWait = ms => new Promise(r => setTimeout(r, ms)), pFrames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-let PRINT_RESTORE = null;
+let PRINT_RESTORE = null, P_PENDING = 0;
+{ const f0 = window.fetch.bind(window);   // 진행 중인 데이터 요청 수
+  window.fetch = (...a) => { P_PENDING++; return f0(...a).finally(() => { P_PENDING--; }); }; }
+async function pReady(){   // 요청이 0건인 상태가 0.5초 이어지면 그리기 끝으로 봄(최대 10초)
+  let calm = 0;
+  for (let t = 0; t < 10000 && calm < 500; t += 100){ await pWait(100); calm = P_PENDING ? 0 : calm + 100; }
+  await pFrames();
+}
+function pOverlay(msg){
+  let o = $("pOverlay");
+  if (!msg){ o?.remove(); return; }
+  if (!o){ o = document.createElement("div"); o.id = "pOverlay"; o.setAttribute("role", "status"); document.body.append(o); }
+  o.textContent = msg;
+}
 function snapGroup(name){
   const src = $("content"), cl = src.cloneNode(true);
   // 화면에서 안 보이는 구역(#content 규칙으로 숨긴 것 포함)은 사본에서도 숨김
@@ -162,29 +176,35 @@ async function buildPrint(all){
   PRINT_RESTORE = { cur, theme: document.documentElement.dataset.theme };
   document.documentElement.dataset.theme = "light";   // 그래프를 밝은 서식으로 다시 그림
   const root = $("printRoot"); root.innerHTML = "";
-  for (const [id, name] of (all ? PTABS() : PTABS().filter(t => t[0] === cur))){
-    await selectGroup(id); await pWait(900); await pFrames();
+  const list = all ? PTABS() : PTABS().filter(t => t[0] === cur);
+  for (const [k, [id, name]] of list.entries()){
+    pOverlay(`인쇄 준비 중 ${k + 1}/${list.length} · ${name}`);
+    await selectGroup(id); await pReady();
     root.append(snapGroup(name));
   }
+  pOverlay("");
   document.body.classList.add("printing");
 }
 function endPrint(){
   const r = PRINT_RESTORE; PRINT_RESTORE = null;
-  document.body.classList.remove("printing"); $("printRoot").innerHTML = "";
+  document.body.classList.remove("printing");
   if (!r) return;
   if (r.theme) document.documentElement.dataset.theme = r.theme; else delete document.documentElement.dataset.theme;
   if (r.rerender) selectGroup(r.cur);
 }
 // Ctrl+P로 바로 인쇄: 지금 화면(현재 분야)을 같은 서식으로
 addEventListener("beforeprint", () => {
-  if (document.body.classList.contains("printing")) { if (PRINT_RESTORE) PRINT_RESTORE.rerender = true; return; }
+  if (document.body.classList.contains("printing") && $("printRoot").children.length) { if (PRINT_RESTORE) PRINT_RESTORE.rerender = true; return; }
   const cur = location.hash.slice(1) || PTABS()[0][0], t = PTABS().find(x => x[0] === cur);
   PRINT_RESTORE = { cur, theme: document.documentElement.dataset.theme, rerender: true };
   document.documentElement.dataset.theme = "light";   // 종이는 밝은 서식(그래프는 다음 화면에서 다시 그림)
   $("printRoot").innerHTML = ""; $("printRoot").append(snapGroup(t ? t[1] : ""));
   document.body.classList.add("printing");
 });
-addEventListener("afterprint", endPrint);
+addEventListener("afterprint", () => {
+  const go = () => { ["pointermove", "keydown", "touchstart", "wheel"].forEach(ev => removeEventListener(ev, go, true)); endPrint(); };
+  setTimeout(() => ["pointermove", "keydown", "touchstart", "wheel"].forEach(ev => addEventListener(ev, go, { capture: true, once: true })), 800);
+});
 document.addEventListener("click", async e => {
   const m = $("printMenu"), b = e.target.closest("#printBtn"), it = e.target.closest("#printMenu [data-p]");
   if (b){ m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); return; }
