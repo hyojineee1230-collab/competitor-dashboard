@@ -507,7 +507,7 @@ const SUM = {
       ser.filter(s => s.all.length).sort((a, b) => (b.vals.at(-1) ?? -1e9) - (a.vals.at(-1) ?? -1e9)).map(s => { const cur = s.c.quote?.currency || "KRW", q = s.c.quote || {};
         return [coCell(s.c), won(s.b, cur), won(s.all.at(-1), cur), pct(s.b ? (s.all.at(-1) / s.b - 1) * 100 : null, 1, 0), won(Math.max(...s.all), cur), won(Math.min(...s.all), cur),
           q.low52w != null ? `${won(q.low52w, cur)} ~ ${won(q.high52w, cur)}` : "–"]; }), "종가 기준 · 해외 상장사는 현지 통화");
-    return `<div class="ph"><h1>시세</h1><span class="m">${tsLive ? `장중 ${tsLive.slice(11, 16)}(15~20분 지연)` : `종가 ${md(rows[0]?.c.quote?.asOf)}`} · KRX 종가는 다음 영업일 08:30 반영 · KRX, Yahoo</span><span class="r"><span class="seg">${seg}</span></span></div>
+    return `<div class="ph"><h1>시세</h1><span class="m">${tsLive ? `장중 ${tsLive.slice(11, 16)}` : `종가 ${md(rows[0]?.c.quote?.asOf)}`}${infoI(`${tsLive ? "장중 시세 = Yahoo 지연 시세(15~20분)" : "종가 = KRX"} · KRX 종가는 다음 영업일 08:30 반영 · 해외 상장사는 Yahoo`)}</span><span class="r"><span class="seg">${seg}</span></span></div>
       ${card(`<h2>${perL} 주가 흐름<small>시작일 = 0% · 그래프를 누르면 그날 종가</small></h2>${lineChart(ser, { W: 1200, H: 400, xs, tipFmt: (s, i) => `${s.name}\t${won(s.raw[i], s.c.quote?.currency || "KRW")}  ${sgn(s.vals[i])}` })}${fold("q-per", "숫자 보기 · 시작 → 현재 종가", perTbl)}`)}
       ${dayCard(rows, mk, tsLive)}
       ${valCard(F)}`;
@@ -528,8 +528,8 @@ const SUM = {
     const rateNum = (num, rv) => { const v = capFn(margin(num, rv)); return v == null ? "" : `<span style="font-size:15px;color:${MU};white-space:nowrap">이익률 <b style="font-size:17px;color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b></span>`; };
     const pick = seg === "all" || !segs.length ? F.cos : F.cos.filter(c => segs.find(s => s.key === seg)?.members.includes(c.id));
     const cos = pick.filter(c => c.annual?.revenue?.length).sort((a, b) => (b.annual.currency === "KRW") - (a.annual.currency === "KRW") || b.annual.revenue.at(-1) - a.annual.revenue.at(-1));
-    const segBtn = segs.length ? `<span class="seg">${[...segs.map(s => [s.key, s.title]), ["all", "전체"]].map(([k, l]) => `<button data-ui="seg=${k}" aria-pressed="${k === seg}">${esc(l)}</button>`).join("")}</span>` : "";
-    const perBtn = hasQ ? `<span class="seg">${[["a", "연간"], ["q", "분기"]].map(([k, l]) => `<button data-ui="per=${k}" aria-pressed="${k === per}">${l}</button>`).join("")}</span>` : "";
+    const segBtn = segs.length ? `<select class="pick" data-uisel="seg" aria-label="경쟁사 묶음">${[...segs.map(s => [s.key, s.title]), ["all", "전체"]].map(([k, l]) => `<option value="${k}"${k === seg ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>` : "";
+    const perBtn = hasQ ? `<select class="pick" data-uisel="per" aria-label="기간"><option value="a"${per === "a" ? " selected" : ""}>연간</option><option value="q"${per === "q" ? " selected" : ""}>분기</option></select>` : "";
     const metBtn = `<span class="seg">${Object.entries(METB).map(([k, l]) => `<button data-ui="met=${k}" aria-pressed="${k === met}">${l}</button>`).join("")}</span>`;
     // 비교 평균: 화면에 표시된 회사의 이익률 단순평균(매출 미미 제외, 연간 2개사·분기 3개사 이상일 때만)
     const avgOf = vs => { const v = vs.map(capFn).filter(x => x != null); return v.length ? v.reduce((t, x) => t + x, 0) / v.length : null; };
@@ -577,7 +577,7 @@ const SUM = {
     const yr = cos[0]?.annual?.years?.at(-1) || "";
     const lastQ = per === "q" ? cos.flatMap(c => c.quarterly?.periods || []).sort().at(-1) : null;
     const when = per === "q" ? `최근 5개 분기${lastQ ? ` (~${lastQ.slice(2, 4)}.${lastQ.slice(5)}Q)` : ""}` : `${yr} 사업연도`;
-    return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()} 기준 · OpenDART</span><span class="r">${ofsBtn()}${perBtn}${metBtn}${segBtn}</span></div>
+    return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()}${infoI(`OpenDART ${basisLbl()} 재무제표 · 비교 평균 = 표시된 회사 이익률 단순평균(매출 미미 제외)`)}</span><span class="r">${metBtn}${segBtn}${perBtn}${ofsBtn()}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
       ${F.id === "microbiome" ? rndCard(cos) : F.id === "hff" ? adCard(cos, ui) : ""}
       ${sgaCard(cos)}`;

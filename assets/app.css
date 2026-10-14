@@ -448,3 +448,20 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .fsb .fx{white-space:pre}
 @media (max-width:760px){ .fsb .fx{display:none} .h2o .fsb{font-size:13px} }
 .ph .r .fsb{margin-right:6px;align-self:center}
+/* ---------- 머리·화면 머리 정리 (2026.10.15) ---------- */
+.hlp{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;background:none;border:1px solid rgba(255,255,255,.18);color:var(--navy-ink);font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer}
+.hlp:hover{background:var(--navy-2);color:#fff}
+/* 화면 머리: 제목·기준 한 덩어리, 조작은 오른쪽 한 줄 */
+.ph{align-items:center;gap:8px 14px;min-height:40px}
+.ph h1{font-size:24px}
+.ph .m{display:inline-flex;align-items:center;gap:2px}
+.ph .r{align-items:center;gap:10px}
+.pick{font:inherit;font-size:14px;font-weight:600;color:var(--ink);height:34px;padding:0 30px 0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236B7A90' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 11px center;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ph .seg{height:34px;align-items:center}
+@media (max-width:760px){
+  .hlp{padding:7px 9px}.hlp .hl{display:none}
+  .ph h1{font-size:21px}
+  .ph .r{width:100%;gap:8px}
+  .ph .r .seg{flex:1 1 100%}.ph .r .seg button{flex:1;padding:6px 6px;font-size:13.5px}
+  .ph .r .pick{flex:1 1 0;min-width:0}
+}

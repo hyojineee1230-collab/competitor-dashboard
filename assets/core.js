@@ -125,7 +125,7 @@ const catName = k => D.newsfx?.cats?.[k] || (k === "etc" ? "기타" : k);
 /* ---------- 갱신 현황 ---------- */
 // 머리 아래 한 줄: 이용 안내 (기준 시각은 각 제목 옆에 표시)
 function freshness(F){
-  return `<div class="fresh"><span class="fr"><button type="button" class="ib" data-intro>이용 안내</button></span></div>`;
+  return "";
 }
 // 별도 재무제표 스위치: 재무 숫자를 쓰는 구역(홈 실적·재무·기업가치·약식 손익계산서)에만. 한 곳에서 바꾸면 모든 구역에 적용
 const ofsBtn = () => `<button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결 · 모든 화면에 적용)"><span>별도<span class="fx"> 재무제표</span></span><i aria-hidden="true"></i></button>`;
@@ -317,7 +317,7 @@ function header(){
   // 오른쪽: 경쟁사 실적 리포트(기존 보고서 화면, 분야에 맞는 탭)
   const rep = `<a class="rep" href="${SITE}report/" title="월간 경쟁사 리포트"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/></svg><span class="rl">경쟁사 실적 리포트</span><span class="rs">리포트</span></a>`;
   return `<div class="hd"><a class="brand" href="#insight/${S.field}">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
-    <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r">${rep}</div></div>`;
+    <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r"><button type="button" class="hlp" data-intro title="이용 안내" aria-label="이용 안내"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17.2h.01"/></svg><span class="hl">이용 안내</span></button>${rep}</div></div>`;
 }
 let PAGES = {};
 async function render(){
