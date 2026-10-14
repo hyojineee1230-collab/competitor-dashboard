@@ -187,20 +187,23 @@ function lineChart(series, { W = 1200, H = 360, fmt = fmtPctTick, zero = true, l
   }
   return `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
-// 가로 막대: items [{label,color,v,tip?}], 값은 오른쪽 고정 열, 음수가 있으면 0을 축으로
-function barChart(items, { W = 580, row = 36, lab = 140, valW = 84, fmt = v => nf(v), colorFn = null } = {}){
-  W = fitW(W); if (PHONE()){ lab = Math.min(lab, 104); valW = Math.min(valW, 66); row = Math.min(row, 32); }
+// 가로 막대(HTML): items [{label,color,v,tip?}] — 회사명 · 막대 · 값(막대 끝에 붙임)
+// 화면이 넓어도 막대가 늘어나지 않게 최대 폭(.hb max-width)을 둠. 음수가 있으면 0을 축으로
+// dot: 막대 대신 점(같은 축 위 위치 비교), ref: {v, label} 기준선(예: 중앙값)
+function barChart(items, { lab = 140, fmt = v => nf(v), colorFn = null, dot = false, ref = null } = {}){
   if (!items.length) return '<p class="empty">데이터 없음</p>';
-  const vs = items.map(x => x.v), lo = Math.min(0, ...vs), hi = Math.max(0, ...vs), span = (hi - lo) || 1, A = W - lab - valW - 10;
-  const x0 = lab + (0 - lo) / span * A;
-  let g = `<line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="2" y2="${row * items.length - 2}" stroke="#B4BFCF"/>`;
-  items.forEach((it, i) => {
-    const y = i * row, x1 = lab + (Math.min(it.v, 0) - lo) / span * A, w = Math.abs(it.v) / span * A, c = colorFn ? colorFn(it.v) : it.color;
-    const lb = PHONE() && it.label.length > 7 ? it.label.slice(0, 6) + "…" : it.label;
-    g += T(0, y + row / 2 + 5, esc(lb), PHONE() ? 13.5 : 15, INK) + `<rect x="${x1.toFixed(1)}" y="${y + 8}" width="${Math.max(w, 2).toFixed(1)}" height="${row - 16}" rx="3" fill="${c}"/>` + T(W - 2, y + row / 2 + 5, fmt(it.v), 15, colorFn ? c : INK, "end", 700);
-    g += hit(0, y, W, row, it.tip || [it.label, `값\t${fmt(it.v)}`]);
-  });
-  return `<svg width="100%" viewBox="0 0 ${W} ${row * items.length}" role="img">${g}</svg>`;
+  const vs = items.map(x => x.v).concat(ref ? [ref.v] : []), mn = Math.min(...vs), mx = Math.max(...vs), pd = (mx - mn) * .08 || Math.abs(mx) * .1 || 1;
+  // 점 그래프는 0에서 시작하지 않고 값 범위만(위치 비교가 목적)
+  const lo = dot ? mn - pd : Math.min(0, mn), hi = dot ? mx + pd : Math.max(0, mx), span = (hi - lo) || 1;
+  const P = v => (v - lo) / span * 100, z = P(0), neg = lo < 0;
+  const rows = items.map(it => {
+    const c = colorFn ? colorFn(it.v) : it.color, a = P(Math.min(it.v, 0)), b = P(Math.max(it.v, 0)), e = P(it.v);
+    const mark = dot ? `<i class="hb-d" style="left:${e.toFixed(2)}%;background:${c}"></i>` : `<i class="hb-b" style="left:${a.toFixed(2)}%;width:${Math.max(b - a, .6).toFixed(2)}%;background:${c}"></i>`;
+    const vpos = it.v < 0 && !dot ? `right:calc(${(100 - a).toFixed(2)}% + 7px)` : `left:calc(${(dot ? e : b).toFixed(2)}% + ${dot ? 11 : 7}px)`;
+    return `<div class="hb-r"${tipA(it.tip || [it.label, `값\t${fmt(it.v)}`])}><span class="hb-l">${esc(it.label)}</span><span class="hb-t">${mark}<b class="hb-v" style="${vpos};color:${colorFn ? c : "var(--ink)"}">${fmt(it.v)}</b></span></div>`;
+  }).join("");
+  const refL = ref ? `<span class="hb-ref" style="left:${P(ref.v).toFixed(2)}%"><em>${esc(ref.label)}</em></span>` : "";
+  return `<div class="hb${neg ? " neg" : ""}${dot ? " hbdot" : ""}" style="--lab:${lab}px;--z:${z.toFixed(2)}%;--refh:${items.length * 34 + 4}px">${rows}${refL ? `<div class="hb-rr"><span></span><span class="hb-t">${refL}</span></div>` : ""}</div>`;
 }
 // 세로 막대: vals, labels, 마지막 막대 강조. tips: 막대별 확인 내용(없으면 값·직전 대비)
 function colChart(vals, labels, { W = 580, H = 220, colors = null, fmt = v => nf(v), subs = null, hi = null, tips = null, unit = "" } = {}){
