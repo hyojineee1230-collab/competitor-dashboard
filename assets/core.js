@@ -204,12 +204,14 @@ function colChart(vals, labels, { W = 580, H = 220, colors = null, fmt = v => nf
   const full = labels.slice();
   if (PHONE() && vals.length > 8) labels = labels.map((l, i) => i % 2 === (vals.length - 1) % 2 ? l : "");
   const n = vals.length; if (!n) return '<p class="empty">데이터 없음</p>';
-  const top = Math.max(...vals.map(v => Math.abs(v || 0))) || 1, bw = W / n * .6, base = H - (subs ? 46 : 28);
-  let g = "";
+  // 음수가 있으면 0 기준선을 올리고 음수 막대는 아래로(값은 막대 아래)
+  const bw = W / n * .6, base = H - (subs ? 46 : 28), pos = Math.max(0, ...vals.map(v => v || 0)), neg = Math.max(0, ...vals.map(v => -(v || 0)));
+  const yTop = 28, yBot = neg ? base - 22 : base, span = (pos + neg) || 1, z = yTop + (yBot - yTop) * pos / span, k = (yBot - yTop) / span;
+  let g = neg ? `<line x1="0" x2="${W}" y1="${z.toFixed(1)}" y2="${z.toFixed(1)}" stroke="#C3CEDF" stroke-width="1"/>` : "";
   vals.forEach((v, i) => {
-    const cx = W / n * (i + .5), h = Math.abs(v || 0) / top * (base - 28), c = colors ? colors[i] : (i === n - 1 ? "#2B5CA8" : "#C3CEDF");
-    g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${(base - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${c}"/>`;
-    g += T(cx, base - h - 7, fmt(v), 14, INK, "middle", i === (hi ?? n - 1) ? 700 : 400) + T(cx, base + 18, esc(labels[i]), 13, MU, "middle");
+    const cx = W / n * (i + .5), h = Math.abs(v || 0) * k, c = colors ? colors[i] : (i === n - 1 ? "#2B5CA8" : "#C3CEDF"), dn = (v || 0) < 0;
+    g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${(dn ? z : z - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, v ? 1 : 0).toFixed(1)}" rx="4" fill="${c}"/>`;
+    g += T(cx, dn ? z + h + 16 : z - h - 7, fmt(v), 14, INK, "middle", i === (hi ?? n - 1) ? 700 : 400) + T(cx, base + 18, esc(labels[i]), 13, MU, "middle");
     if (subs) g += T(cx, base + 38, subs[i] ?? "", 13.5, subs[i]?.startsWith?.("+") ? UP : subs[i]?.startsWith?.("−") ? DN : MU, "middle", 600);
     const pv = i ? vals[i - 1] : null;
     g += hit(W / n * i, 0, W / n, H, tips?.[i] || [full[i], `값\t${fmt(v)}${unit}`, pv != null && v != null ? `직전 ${full[i - 1]}\t${fmt(pv)}${unit} → ${sgn(growth(v, pv))}` : null]);
