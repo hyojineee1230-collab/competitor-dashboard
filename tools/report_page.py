@@ -30,10 +30,11 @@ rep('<p class="sub">핵심 경쟁사 요약과 산업별 시장·경쟁사 비�
 rep('<button class="info-btn" id="setBtn" aria-haspopup="dialog" title="자사·섹션 이름 설정 (이 브라우저에만 저장)">⚙ 설정</button>',
     '<button class="info-btn" id="setBtn" hidden>⚙</button>')
 rep('<span class="info-btn" title="2026.10 Beta 전환 전 화면 보관본" style="cursor:default">v1 보관본</span><a class="info-btn" id="sumLink" href="../" title="현재 메인 화면">메인으로</a>',
-    '<a class="info-btn" href="./" title="다른 호 보기">호 목록</a><a class="info-btn" href="../" title="대시보드">← 대시보드</a><button class="info-btn" type="button" id="printBtn" onclick="print()">인쇄·PDF</button>')
+    '<a class="info-btn" href="./" title="다른 호 보기">호 목록</a><a class="info-btn" href="../" title="대시보드">← 대시보드</a><span class="pm"><button class="info-btn" type="button" id="printBtn" aria-haspopup="menu" aria-expanded="false">인쇄·PDF</button><span class="pm-m" id="printMenu" role="menu" hidden><button type="button" role="menuitem" data-p="all">전체 3개 분야</button><button type="button" role="menuitem" data-p="cur">현재 분야만</button></span></span>')
 rep("function maybeIntro(){", "function maybeIntro(){ return; ")
 # 호 머리 자리
 rep('  <div id="content">', '  <div id="content">\n    <section class="panel is-panel" id="secIssue"></section>')
+rep('<div class="gbar"><p class="gdesc" id="gdesc"></p></div>', '<div class="gbar"><p class="gdesc" id="gdesc"></p></div>\n  <div id="printRoot" aria-hidden="true"></div>')
 rep('''function renderAll(){
   if (grp().mode === "full") renderMkt();
   renderCompanies();
@@ -76,17 +77,101 @@ CSS = """
 .upd.new{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
 .upd.same{background:var(--tag);color:var(--muted)}
 @media (max-width:760px){ .is-grid{grid-template-columns:1fr} .is-hd h2{font-size:19px} .hdr-r .info-btn{white-space:nowrap;padding:5px 8px;font-size:12.5px} #updated{white-space:nowrap} }
+/* 인쇄 메뉴 */
+.pm{position:relative;display:inline-block}
+.pm-m{position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;min-width:150px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:4px}
+.pm-m[hidden]{display:none}
+.pm-m button{all:unset;cursor:pointer;padding:9px 12px;border-radius:7px;font-size:14px;color:var(--ink);white-space:nowrap}
+.pm-m button:hover,.pm-m button:focus-visible{background:var(--tag)}
+#printRoot{display:none}
+/* ---------- 인쇄: A4 보고서 서식 ----------
+   화면에서 그린 그래프는 그림으로 바꿔 담고(잘림 방지), 넓은 화면 배치를 0.8배로 줄여 담음 */
 @media print{
-  @page{size:A4;margin:12mm}
-  body{background:#fff}
-  .hdr-r .meta > *:not(#updated), #themeBtn, #fsBtn, #printBtn, .seg, select{display:none !important}
-  .panel{break-inside:avoid;box-shadow:none}
-  #secIssue{break-after:page}
-  .tabs .tab:not([aria-selected="true"]){display:none}
+  @page{size:A4;margin:12mm 11mm 14mm;
+    @bottom-left{content:"경쟁사 리포트";font-size:8pt;color:#8A94A6}
+    @bottom-right{content:counter(page) " / " counter(pages);font-size:8pt;color:#8A94A6}}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff !important}
+  .wrap{max-width:none !important;padding:0 !important;margin:0 !important}
+  body.printing .wrap > *:not(header):not(#printRoot){display:none !important}
+  body.printing #printRoot{display:block;zoom:.8}
+  header{border-radius:0 !important;margin:0 0 10px !important;break-after:avoid}
+  .hdr-r .meta > *:not(#updated), #themeBtn, #fsBtn, .pm, #introBtn, #setBtn{display:none !important}
+  .pgrp + .pgrp{break-before:page}
+  .pgrp-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--brand);padding:2px 2px 6px;margin:0 0 12px;break-after:avoid}
+  .pgrp-h b{font-size:20px}
+  .pgrp-h span{font-size:13px;color:var(--muted)}
+  #printRoot .seg, #printRoot select, #printRoot .btn, #printRoot .go, #printRoot .sel-btn,
+  #printRoot .more, #printRoot .mk-strip, #printRoot [hidden]{display:none !important}
+  #printRoot .core-grid{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) !important;grid-auto-flow:row !important;grid-auto-columns:auto !important;overflow:visible !important;padding-bottom:0 !important}
+  #printRoot .tw, #printRoot .tbl-wrap, #printRoot .table-wrap{overflow:visible !important}
+  #printRoot table{width:100% !important}
+  #printRoot .chart-box{height:auto !important}
+  #printRoot img.pimg{display:block;width:100%;height:auto;max-height:430px;object-fit:contain;object-position:left top}
+  #printRoot .panel{break-inside:auto;box-shadow:none !important;margin-bottom:12px !important}
+  #printRoot .panel:has(img.pimg){break-inside:avoid}   /* 그래프가 있는 구역은 제목·그래프를 한 쪽에 */
+  #printRoot .panel h2, #printRoot .panel h3, #printRoot .upd, #printRoot .hint{break-after:avoid}
+  #printRoot .chart-box, #printRoot img.pimg, #printRoot .core-card, #printRoot tr, #printRoot li, #printRoot .is-box, #printRoot .card{break-inside:avoid}
+  #printRoot .is-grid{grid-template-columns:1fr 1.4fr 1fr !important}
 }
 """
 rep("</style>\n</head>", CSS + "</style>\n</head>")
 
+PRINT_JS = r"""/* ---------- 인쇄: 분야별로 그려 그래프는 그림으로 담음 ---------- */
+const PTABS = () => [...document.querySelectorAll("#tabs .tab")].map(b => [b.dataset.id, (b.childNodes[0]?.textContent || b.textContent).trim()]);
+const pWait = ms => new Promise(r => setTimeout(r, ms)), pFrames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+let PRINT_RESTORE = null;
+function snapGroup(name){
+  const src = $("content"), cl = src.cloneNode(true);
+  // 화면에서 안 보이는 구역(#content 규칙으로 숨긴 것 포함)은 사본에서도 숨김
+  const sa = src.querySelectorAll("*"), ca = cl.querySelectorAll("*");
+  sa.forEach((el, i) => { if (ca[i] && getComputedStyle(el).display === "none") ca[i].setAttribute("hidden", ""); });
+  const a = src.querySelectorAll("canvas"), b = cl.querySelectorAll("canvas");
+  a.forEach((c, i) => { const d = b[i]; if (!d || !c.width) return;
+    try { const img = new Image(); img.src = c.toDataURL("image/png"); img.className = "pimg"; img.alt = c.getAttribute("aria-label") || ""; d.replaceWith(img); } catch (e) {} });
+  cl.querySelectorAll(".hint, small").forEach(e => { e.innerHTML = e.innerHTML.replace(/\s*·\s*[^·<]*누르면[^·<]*/g, ""); });
+  cl.querySelectorAll("[id]").forEach(e => e.removeAttribute("id")); cl.removeAttribute("id");
+  const sec = document.createElement("section"); sec.className = "pgrp";
+  sec.innerHTML = `<div class="pgrp-h"><b>${esc(name)}</b><span>${esc($("issueBadge").textContent)} · ${esc($("updated").textContent)}</span></div>`;
+  sec.append(cl); return sec;
+}
+async function buildPrint(all){
+  const cur = location.hash.slice(1) || PTABS()[0][0];
+  PRINT_RESTORE = { cur, theme: document.documentElement.dataset.theme };
+  document.documentElement.dataset.theme = "light";   // 그래프를 밝은 서식으로 다시 그림
+  const root = $("printRoot"); root.innerHTML = "";
+  for (const [id, name] of (all ? PTABS() : PTABS().filter(t => t[0] === cur))){
+    await selectGroup(id); await pWait(900); await pFrames();
+    root.append(snapGroup(name));
+  }
+  document.body.classList.add("printing");
+}
+function endPrint(){
+  const r = PRINT_RESTORE; PRINT_RESTORE = null;
+  document.body.classList.remove("printing"); $("printRoot").innerHTML = "";
+  if (!r) return;
+  if (r.theme) document.documentElement.dataset.theme = r.theme; else delete document.documentElement.dataset.theme;
+  if (r.rerender) selectGroup(r.cur);
+}
+// Ctrl+P로 바로 인쇄: 지금 화면(현재 분야)을 같은 서식으로
+addEventListener("beforeprint", () => {
+  if (document.body.classList.contains("printing")) { if (PRINT_RESTORE) PRINT_RESTORE.rerender = true; return; }
+  const cur = location.hash.slice(1) || PTABS()[0][0], t = PTABS().find(x => x[0] === cur);
+  PRINT_RESTORE = { cur, theme: document.documentElement.dataset.theme, rerender: true };
+  document.documentElement.dataset.theme = "light";   // 종이는 밝은 서식(그래프는 다음 화면에서 다시 그림)
+  $("printRoot").innerHTML = ""; $("printRoot").append(snapGroup(t ? t[1] : ""));
+  document.body.classList.add("printing");
+});
+addEventListener("afterprint", endPrint);
+document.addEventListener("click", async e => {
+  const m = $("printMenu"), b = e.target.closest("#printBtn"), it = e.target.closest("#printMenu [data-p]");
+  if (b){ m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); return; }
+  if (it){ m.hidden = true; const pb = $("printBtn"); pb.setAttribute("aria-expanded", "false"); pb.textContent = "준비 중…";
+    try { await buildPrint(it.dataset.p === "all"); } finally { pb.textContent = "인쇄·PDF"; }
+    print(); return; }
+  if (m && !m.hidden && !e.target.closest(".pm")) m.hidden = true;
+});
+"""
 JS = r"""
 /* ---------- 월간 호: 머리(인사이트·이번 달 공시·보도·1개월 주가), 섹션 갱신 표시 ---------- */
 let REPORT = null;
@@ -126,8 +211,11 @@ function applyUpd(){
   });
 }
 """
+JS += PRINT_JS
 rep("/* ---------- 안내 팝업 ---------- */", JS + "\n/* ---------- 안내 팝업 ---------- */")
 
+import re
+s = re.sub(r"@media \((max|min)-width:", r"@media screen and (\1-width:", s)
 os.makedirs(os.path.join(ROOT, "report"), exist_ok=True)
 open(os.path.join(ROOT, "report", "issue.html"), "w", encoding="utf-8").write(s)
 print("report/issue.html", len(s))
