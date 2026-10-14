@@ -426,3 +426,25 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .dn-r span,.dn-r b{color:var(--ink)}
 .dn-card{align-self:stretch;display:flex;flex-direction:column}
 .dn-card .dn{flex:1;align-content:center}
+/* 이례적 주가 변동: 회사마다 두 줄(등락 · 같은 시기 공시·보도 제목 전체) */
+.sg-l{display:grid;margin-top:4px}
+.sg-r{padding:10px 0;border-top:1px solid var(--grid)}
+.sg-r:first-child{border-top:0;padding-top:4px}
+.sg-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:15px}
+.sg-h b{font-size:16px;font-variant-numeric:tabular-nums}
+.sg-h .mu{font-size:14px}
+.sg-m{margin-left:auto;font-size:13.5px;color:var(--muted);white-space:nowrap}
+.sg-w{display:flex;gap:8px;align-items:baseline;margin-top:5px;font-size:14px;line-height:1.5}
+.sg-w .tag{flex:none;white-space:nowrap}
+.sg-w a.more{color:var(--ink);font-weight:500}
+.sg-w a.more:hover{text-decoration:underline}
+.sg-c{margin:12px 0 2px;font-size:13px;color:var(--muted)}
+@media (max-width:760px){ .sg-m{margin-left:0;flex-basis:100%} }
+/* 구역 안 별도 재무제표 스위치: 제목 줄 오른쪽 */
+.h2o,.h3o{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.h2o .fsb,.h3o .fsb{margin-left:auto;font-size:13.5px;font-weight:500;align-self:center}
+.ic .meta .mr{display:inline-flex;align-items:center;gap:14px;flex:none}
+.ic .meta .fsb{font-size:13.5px}
+.fsb .fx{white-space:pre}
+@media (max-width:760px){ .fsb .fx{display:none} .h2o .fsb{font-size:13px} }
+.ph .r .fsb{margin-right:6px;align-self:center}

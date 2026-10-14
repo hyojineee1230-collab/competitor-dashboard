@@ -3,8 +3,8 @@
 "use strict";
 const card = (inner, cls = "", attr = "") => `<div class="card ${cls}"${attr}>${inner}</div>`;
 // 인사이트 카드: 머리줄(오른쪽 '자세히'), 큰 숫자, 그래프, 펼치는 표
-const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link = "", more = "" } = {}) =>
-  card(`<div class="meta"><span>${meta}${isNew ? '<span class="new" aria-label="새 소식"></span>' : ""}</span>${link ? `<a class="more" href="${link}">자세히 ›</a>` : ""}</div>
+const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link = "", more = "", tool = "" } = {}) =>
+  card(`<div class="meta"><span>${meta}${isNew ? '<span class="new" aria-label="새 소식"></span>' : ""}</span>${tool || link ? `<span class="mr">${tool}${link ? `<a class="more" href="${link}">자세히 ›</a>` : ""}</span>` : ""}</div>
   <div class="big"><b style="color:${numCol}">${num}</b><span>${head}</span></div>${sub ? `<div class="sub">${sub}</div>` : ""}${chart}${more}`, "ic");
 const moreLink = (menu, label) => `<div class="right"><a class="more" href="${href(menu, S.field, "detail")}">${label} ›</a></div>`;
 const won = (v, cur = "KRW") => v == null ? "–" : cur === "KRW" ? `${nf(v)}원` : `${{ USD: "$", EUR: "€" }[cur] || ""}${nf(v, 2)}`;
@@ -141,13 +141,13 @@ function coPL(c, F){
     <div class="cp-kpis">${kpis}</div>${sgm}
     ${c.note ? `<p class="note" style="margin:-8px 0 16px">${esc(c.note)}</p>` : ""}
     ${struct ? `<div class="cp-sec"><h3>비용 구조 <small>매출액 대비 비중(%) · 판관비 계정은 사업보고서 주석 기준</small></h3>${struct}</div>` : ""}
-    <div class="cp-sec"><h3>약식 손익계산서 <small>(%) = 매출 대비 · OpenDART ${(S.ofs && c.alt?.annual) || a.basis === "OFS" || c.fs === "OFS" ? "별도" : "연결"}</small></h3><div class="cp-tw">${pl}</div></div>
+    <div class="cp-sec"><h3 class="h3o">약식 손익계산서 <small>(%) = 매출 대비 · OpenDART ${(S.ofs && c.alt?.annual) || a.basis === "OFS" || c.fs === "OFS" ? "별도" : "연결"}</small>${ofsBtn()}</h3><div class="cp-tw">${pl}</div></div>
     ${news.length ? `<div class="cp-sec"><h3>최근 보도 <small>최근 2주</small></h3>${news.map(e => `<a class="cp-n" href="${esc(e.url)}" target="_blank" rel="noopener"><span class="mu">${md(e.d)}</span><span class="tag">${esc(catName(e.cat))}</span><span>${esc(e.title)}</span></a>`).join("")}</div>` : ""}`;
 }
 function openCo(id){
   const F = fieldCtx(S.field), c = F.cos.find(x => x.id === id); if (!c) return;
   hideTip();
-  const dlg = $("coPop"); $("coPopBody").innerHTML = coPL(c, F);
+  const dlg = $("coPop"); dlg.dataset.co = id; $("coPopBody").innerHTML = coPL(c, F);
   if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
 }
 document.addEventListener("keydown", e => { const b = e.target.closest?.(".fcard[data-co]"); if (b && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openCo(b.dataset.co); } });
@@ -203,7 +203,7 @@ function valCard(F){
   });
   const t = tbl(["회사", "시가총액", "매출<small>최근 연간</small>", "PSR", "PER", "PBR", "1년 주가"], body,
     "PSR = 시가총액 ÷ 최근 연간 매출(OpenDART) · PER·PBR = 시가총액 ÷ 최근 연간 순이익·자본총계 · 비상장 = 같은 묶음 상장사 PSR 범위 × 매출");
-  return card(`<h2>기업가치<small>PSR = 시가총액 ÷ 매출액</small></h2>
+  return card(`<h2 class="h2o">기업가치<small>PSR = 시가총액 ÷ 매출액</small>${ofsBtn()}</h2>
     ${split(`${med != null ? `<div class="big1"><b>${xv(med)}</b><span>상장 ${lst.length}개사 PSR 중앙값</span></div>` : ""}${lst.length ? chart : '<p class="empty">상장사 없음</p>'}`, `<div class="val-t">${t}</div>`, "wide")}`);
 }
 
@@ -438,20 +438,27 @@ const SUM = {
     const { kept } = signalsOf(F);
     let c2;
     if (kept.length){
-      const s = kept[0], c = F.cos.find(x => x.id === s.c), P = c.price || {}, cl = (P.close || []).slice(-40), ds = (P.dates || []).slice(-40), b = cl[0];
       // 판정: 시장·업종 영향을 뺀 회사 고유 등락이 최근 60거래일 하루 변동폭(표준편차)의 2배 이상이거나, 거래량이 평소의 3배 이상
-      const whyTxt = k => !k.why ? "확인된 공시·보도 없음" : k.why.type === "filing" ? "직전 공시" : `직전 ${catName(k.why.cat)} 보도`;
-      const whyLink = k => !k.why ? `<span class="dim">${whyTxt(k)}</span>` : `<a class="more" href="${esc(k.why.url || "#")}" target="_blank" rel="noopener">${whyTxt(k)} · ${esc(k.why.title.length > 30 ? k.why.title.slice(0, 29) + "…" : k.why.title)}</a>`;
-      const cur = c.quote?.currency || "KRW";
+      // 회사마다 두 줄: ① 회사 · 등락 · 날짜 · 변동 배수 ② 같은 날 전후 공시·보도 제목 전체(없으면 없음)
+      const gap = k => { if (!k.why?.d) return ""; const n = Math.round((new Date(k.d) - new Date(k.why.d)) / 864e5); return n <= 0 ? "같은 날" : `${n}일 전`; };
+      const whyTag = k => !k.why ? "" : k.why.type === "filing" ? "공시" : `${catName(k.why.cat)} 보도`;
+      const whyLink = k => !k.why ? `<span class="dim">확인된 공시·보도 없음</span>` : `<a class="more" href="${esc(k.why.url || "#")}" target="_blank" rel="noopener">${esc(k.why.title)}</a>`;
+      const rowsH = kept.slice(0, 4).map(k => { const x = F.cos.find(y => y.id === k.c);
+        return `<div class="sg-r"><div class="sg-h"><button type="button" class="co cob" data-co="${esc(x.id)}"><i class="dot" style="background:${x.color}"></i>${esc(x.name)}</button>
+            <b style="color:${colOf(k.idio)}">${arrow(k.idio)}</b><span class="mu">${md(k.d)}</span>
+            <span class="sg-m"${tipA([`${x.name} · ${md(k.d)}`, `고유 등락률\t${sgn(k.idio)}`, `실제 등락률\t${sgn(k.ar)}`, `평소 하루 변동폭\t±${k.sd.toFixed(1)}%`, `변동 배수\t${k.z.toFixed(1)}배`, k.vr ? `거래량\t평소의 ${k.vr.toFixed(1)}배` : null])}>평소의 ${k.z.toFixed(1)}배${k.vr ? ` · 거래량 ${k.vr.toFixed(1)}배` : ""}</span></div>
+          <div class="sg-w">${k.why ? `<span class="tag">${esc(gap(k))} ${esc(whyTag(k))}</span>` : ""}${whyLink(k)}</div></div>`; }).join("");
+      // 아래 그래프: 해당 회사들의 최근 40거래일 주가(시작일 = 0%), 열 끝 맞춤에 쓰는 늘림 그래프
+      const sers = kept.slice(0, 4).map(k => { const x = F.cos.find(y => y.id === k.c), P = x.price || {}, cl = (P.close || []).slice(-40), b0 = cl.find(v => v);
+        return { name: x.name, color: x.color, raw: cl, ds: (P.dates || []).slice(-40), vals: cl.map(v => v && b0 ? (v / b0 - 1) * 100 : null), cur: x.quote?.currency || "KRW" }; }).filter(x => x.raw.length > 5);
+      const sigChart = sers.length ? (GROW.sig = H => lineChart(sers, { W: 560, H, labels: sers.length > 1, xs: sers[0].ds,
+        tipFmt: (sr, i) => `${sr.name}\t${won(sr.raw[i], sr.cur)}  ${sgn(sr.vals[i])}` }), `<p class="sg-c">최근 40거래일 주가 · 시작일 = 0%</p><div data-grow="sig" data-h0="130">${GROW.sig(130)}</div>`) : "";
       const sigTbl = tbl(["일자", "회사", "고유 등락률", "변동 배수", "관련 공시·보도"],
         kept.map(k => { const x = F.cos.find(y => y.id === k.c);
-          return [md(k.d), coCell(x), pct(k.idio, 1, 0), `${k.z.toFixed(1)}배<small>±${k.sd.toFixed(1)}%</small>`, whyLink(k)]; }),
-        "고유 등락률 = 시장·업종 영향을 제외한 등락률 · 변동 배수 = 고유 등락률 ÷ 최근 60거래일 하루 변동폭(표준편차)");
-      c2 = icard(`이례적 주가 변동 · 최근 2주${kept.length > 1 ? ` · 외 ${kept.length - 1}개사` : ""}`, arrow(s.idio), colOf(s.idio), esc(c.name),
-        (GROW.sig = H => lineChart([{ name: c.name, color: c.color, raw: cl, vals: cl.map(x => x && b ? (x / b - 1) * 100 : null) }],
-          { W: 560, H, labels: false, xs: ds, tipFmt: (sr, i) => `${sr.name}\t${won(sr.raw[i], cur)}  ${sgn(sr.vals[i])}` }), `<div data-grow="sig" data-h0="150">${GROW.sig(150)}</div>`),
-        { sub: `${md(s.d)} 시장·업종 영향을 제외한 등락률 ${sgn(s.idio)} — 평소 하루 변동폭(±${s.sd.toFixed(1)}%)의 ${s.z.toFixed(1)}배${s.vr ? ` · 거래량 평소의 ${s.vr.toFixed(1)}배` : ""}<br>${whyLink(s)}`,
-          link: href("quotes", S.field), more: fold("in-sig", `상세 · ${kept.length}개사`, `<div class="wrapcells sig-t">${sigTbl}</div>`) });
+          return [md(k.d), coCell(x), pct(k.idio, 1, 0), `${k.z.toFixed(1)}배<small>±${k.sd.toFixed(1)}%</small>`, whyLink(k)]; }));
+      c2 = icard(`이례적 주가 변동 · 최근 2주${infoI("고유 등락률 = 시장·업종 영향을 제외한 등락률 · 평소의 n배 = 고유 등락률 ÷ 최근 60거래일 하루 변동폭(표준편차) · 판정 = 2배 이상 또는 거래량 평소의 3배 이상 · 공시·보도 = 직전 거래일 ~ 등락일(당일 장 마감 뒤 보도 제외), 공시 우선")}`,
+        `${kept.length}개사`, INK, "평소 변동폭을 벗어난 등락", `<div class="sg-l">${rowsH}</div>${sigChart}`,
+        { link: href("quotes", S.field), more: kept.length > 4 ? fold("in-sig", `전체 · ${kept.length}개사`, `<div class="wrapcells sig-t">${sigTbl}</div>`) : "" });
     } else c2 = icard("이례적 주가 변동 · 최근 2주", "없음", INK, "평소 변동폭 범위 내 등락", "", { link: href("quotes", S.field) });
     const { wk, pw } = voiceOf(F), byC = {}, byP = {};
     wk.forEach(e => byC[e.c] = (byC[e.c] || 0) + 1); pw.forEach(e => byP[e.c] = (byP[e.c] || 0) + 1);
@@ -465,7 +472,7 @@ const SUM = {
     const c4 = fin.length ? icard(`실적 · ${fin[0].y} 매출(억원)`, `${eok(fin[0].v)}억`, INK, `1위 ${esc(fin[0].c.name)}`,
       barChart(fin.slice(0, 8).map(x => ({ label: x.c.name, color: x.c.color, v: x.v / 1e8,
         tip: [`${x.c.name} · ${x.y}`, `매출\t${big(x.v)}`, x.p.g != null ? `매출 성장률\t${sgn(x.p.g)}` : null, `영업이익\t${big(x.p.op)}${x.p.opm != null ? ` (${x.p.opm.toFixed(1)}%)` : ""}`] })), { W: 560, row: 30, lab: 120, valW: 70 }),
-      { link: href("finance", S.field), more: fold("in-fin", "숫자 보기", tbl(["회사", `${fin[0].y} 매출`, "성장률", "영업이익", "영업이익률"],
+      { tool: ofsBtn(), link: href("finance", S.field), more: fold("in-fin", "숫자 보기", tbl(["회사", `${fin[0].y} 매출`, "성장률", "영업이익", "영업이익률"],
         fin.map(x => [coCell(x.c), big(x.v), pct(x.p.g, 1, 0), big(x.p.op), x.p.opm == null ? '<span class="dim">–</span>' : `${x.p.opm.toFixed(1)}%`]), `OpenDART 사업보고서 · ${basisLbl()} 기준`)) }) : "";
     const m = F.mk.kr, ser = m?.size?.series?.[0]?.points;
     let c5 = "";
@@ -570,7 +577,7 @@ const SUM = {
     const yr = cos[0]?.annual?.years?.at(-1) || "";
     const lastQ = per === "q" ? cos.flatMap(c => c.quarterly?.periods || []).sort().at(-1) : null;
     const when = per === "q" ? `최근 5개 분기${lastQ ? ` (~${lastQ.slice(2, 4)}.${lastQ.slice(5)}Q)` : ""}` : `${yr} 사업연도`;
-    return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()} 기준 · OpenDART</span><span class="r">${perBtn}${metBtn}${segBtn}</span></div>
+    return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()} 기준 · OpenDART</span><span class="r">${ofsBtn()}${perBtn}${metBtn}${segBtn}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
       ${F.id === "microbiome" ? rndCard(cos) : F.id === "hff" ? adCard(cos, ui) : ""}
       ${sgaCard(cos)}`;

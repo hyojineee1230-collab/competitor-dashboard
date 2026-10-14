@@ -123,10 +123,12 @@ function voiceOf(F){
 const catName = k => D.newsfx?.cats?.[k] || (k === "etc" ? "기타" : k);
 
 /* ---------- 갱신 현황 ---------- */
-// 머리 아래 한 줄: 이용 안내 · 별도 재무제표 (기준 시각은 각 제목 옆에 표시)
+// 머리 아래 한 줄: 이용 안내 (기준 시각은 각 제목 옆에 표시)
 function freshness(F){
-  return `<div class="fresh"><span class="fr"><button type="button" class="ib" data-intro>이용 안내</button><button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결)">별도 재무제표<i aria-hidden="true"></i></button></span></div>`;
+  return `<div class="fresh"><span class="fr"><button type="button" class="ib" data-intro>이용 안내</button></span></div>`;
 }
+// 별도 재무제표 스위치: 재무 숫자를 쓰는 구역(홈 실적·재무·기업가치·약식 손익계산서)에만. 한 곳에서 바꾸면 모든 구역에 적용
+const ofsBtn = () => `<button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결 · 모든 화면에 적용)"><span>별도<span class="fx"> 재무제표</span></span><i aria-hidden="true"></i></button>`;
 
 /* ---------- 그래프 (SVG 문자열) ---------- */
 // 휴대폰에서는 좌표 폭을 화면 폭에 맞춰 글자가 줄어들지 않게
@@ -384,8 +386,10 @@ document.addEventListener("click", e => {
 document.addEventListener("click", e => {
   if (!e.target.closest("[data-ofs]")) return;
   S.ofs = !S.ofs; lsSet(LS.ofs, S.ofs ? "1" : "0");
-  const d = $("coPop"); if (d?.open) d.close();
+  const d = $("coPop"), co = d?.open ? d.dataset.co : null;   // 약식 손익계산서에서 바꾸면 같은 회사로 다시 엶
+  if (d?.open) d.close();
   render();
+  if (co && typeof openCo === "function") openCo(co);
 });
 // 화면 안 선택 상자: <select data-uisel="key"> — 회사·유형 등을 바꾸면 '더 보기'는 처음으로
 document.addEventListener("change", e => {
