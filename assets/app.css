@@ -392,21 +392,21 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .hmt .tw:not(.keep) tbody td::before{font-size:12.5px;letter-spacing:-.02em}
   .hmt td small{display:inline;margin-left:6px}
 }
-/* 광고비 효율 표: 칸 안 막대 */
-.adt small.in{display:inline;margin-left:4px}
-.ib2{display:flex;align-items:center;gap:8px;min-width:170px}
-.ib2 .trk{display:block;width:100px;flex:0 0 auto}
-.ib2 i{display:block;height:12px;border-radius:3px}
-.ib2 b{white-space:nowrap}
-@media (max-width:760px){ .ib2{min-width:0} .ib2 .trk{width:80px} .adt .tw:not(.keep) tbody td:nth-child(5){grid-column:1/-1} }
 /* 히트맵·광고비 효율 표: 회사 열 고정, 나머지 열 같은 너비 */
 @media (min-width:761px){
   .hmt table{table-layout:fixed;width:100%}
   .hmt th:first-child,.hmt td:first-child{width:170px}
   .hmt th{white-space:nowrap;letter-spacing:-.03em;font-size:13.5px}
-  .adt .ib2{min-width:0}
-  .adt .ib2 .trk{width:auto;flex:1 1 auto;max-width:90px}
 }
 /* 연구개발 투자 회수 표: 회수율 칸 막대 · 모바일에서 회수율 한 줄 */
 .rdt td a{white-space:nowrap}
 @media (max-width:760px){ .rdt .tw:not(.keep) tbody td:nth-child(6){grid-column:1/-1} }
+/* 칸 안 막대(광고비 효율·연구개발 회수): 값은 막대 끝에 바로 붙임, 막대 길이 = --f × 최대 길이 */
+.adt small.in{display:inline;margin-left:4px}
+.ib2{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.ib2 i{display:block;height:12px;border-radius:3px;flex:0 0 auto;width:calc(var(--f,0) * 150px);min-width:2px}
+@media (min-width:761px){
+  .adt:not(.rdt) th:nth-child(5),.adt:not(.rdt) td:nth-child(5),.rdt th:nth-child(6),.rdt td:nth-child(6){text-align:left!important;padding-left:16px}
+  .adt:not(.rdt) th:nth-child(5),.rdt th:nth-child(6){width:24%}
+}
+@media (max-width:760px){ .ib2 i{width:calc(var(--f,0) * 110px)} .adt:not(.rdt) .tw:not(.keep) tbody td:nth-child(5){grid-column:1/-1} }
