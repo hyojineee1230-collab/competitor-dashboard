@@ -9,6 +9,8 @@ const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link =
 const moreLink = (menu, label) => `<div class="right"><a class="more" href="${href(menu, S.field, "detail")}">${label} ›</a></div>`;
 const won = (v, cur = "KRW") => v == null ? "–" : cur === "KRW" ? `${nf(v)}원` : `${{ USD: "$", EUR: "€" }[cur] || ""}${nf(v, 2)}`;
 const coCell = c => `<button type="button" class="co cob" data-co="${esc(c.id)}"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</button>`;
+// 제목 옆 ⓘ: 표 아래 주석 대신 기준 설명을 마우스오버(모바일은 탭)로
+const infoI = text => `<button type="button" class="ii" aria-label="기준 설명"${tipA(["기준", ...text.split(" · ")])}>i</button>`;
 const capFn = v => v == null ? null : Math.abs(v) > MCAP ? null : v;
 
 function todayRows(F){
@@ -233,9 +235,9 @@ function rndCard(cos){
     rndC(r), pctC(r.ratio), big(r.cr), signedB(r.cg), recC(r), payTxt(r), signedB(r.L.op)]);
   if (srt.length >= 2){ const av = k => mean(srt.map(r => r[k]).filter(v => v != null)), ar = av("rec"), ap = mean(srt.map(r => r.pay).filter(v => v != null));
     const row = [`<b>비교 평균</b><small>${srt.length}개사</small>`, "", "", "", "", `<b>${ar == null ? "–" : `${ar.toFixed(0)}%`}</b>`, `<b>${ap == null ? "–" : `${ap < 10 ? ap.toFixed(1) : nf(ap)}년`}</b>`, ""]; row.cls = "avg"; body.push(row); }
-  const t = tbl(["회사", "연구개발비", "매출 대비", "누적 연구개발비", "누적 매출총이익", "회수율", "회수기간", "영업이익"], body,
-    `OpenDART ${basisLbl()} · 누적 = 최근 3개 사업연도 · 회수율 = 누적 매출총이익 ÷ 누적 연구개발비 · 회수기간 = 누적 연구개발비 ÷ 최근 연간 매출총이익 · 연구개발비는 사업보고서 연구개발비용 표(원가 처리분 포함), 없으면 판관비 주석 · 회사 단위 지표`);
-  return card(`<h2>연구개발 투자 회수<small>${yr} 사업연도 기준</small></h2><div class="hmt adt rdt">${t}</div>`);
+  const foot = `OpenDART ${basisLbl()} · 누적 = 최근 3개 사업연도 · 회수율 = 누적 매출총이익 ÷ 누적 연구개발비 · 회수기간 = 누적 연구개발비 ÷ 최근 연간 매출총이익 · 연구개발비는 사업보고서 연구개발비용 표(원가 처리분 포함), 없으면 판관비 주석 · 회사 단위 지표`;
+  const t = tbl(["회사", "연구개발비", "매출 대비", "누적 연구개발비", "누적 매출총이익", "회수율", "회수기간", "영업이익"], body);
+  return card(`<h2>연구개발 투자 회수<small>${yr} 사업연도 기준</small>${infoI(foot)}</h2><div class="hmt adt rdt">${t}</div>`);
 }
 
 /* ---------- 판관비: 계정 × 회사 히트맵 ----------
@@ -290,9 +292,9 @@ function sgaCard(cos){
   const body = srt.map(x => [coCell(x.c) + (x.y !== main ? `<small>${x.y}년</small>` : ""), ...cols.map(([k]) => cellOf(x, k))]);
   if (srt.length >= 2){ const r = [`<b>비교 평균</b><small>${srt.length}개사</small>`, ...cols.map(([k]) => avg[k] == null ? "–" : `<b>${avg[k].toFixed(1)}%</b>`)]; r.cls = "avg"; body.push(r); }
   const part = rows.filter(x => x.partial).map(x => x.c.name);
-  const t = tbl(["회사", ...cols.map(([, l]) => l)], body,
-    `${main}년 사업보고서 판관비 주석 · OpenDART ${basisLbl()} · 셀 = 매출액 대비 비중, 색은 계정마다 가장 낮은 회사(연함) ~ 가장 높은 회사(진함) · 셀을 누르면 구성 계정·3개년 추이${part.length ? ` · ${part.join("·")}: 계정 목록 미공시로 일부 묶음만` : ""}`);
-  return card(`<h2>판매비와관리비<small>${main} 사업연도 · 계정별 매출액 대비 비중</small></h2><div class="hmt">${t}</div>`);
+  const foot = `${main}년 사업보고서 판관비 주석 · OpenDART ${basisLbl()} · 셀 = 매출액 대비 비중, 색은 계정마다 가장 낮은 회사(연함) ~ 가장 높은 회사(진함)${part.length ? ` · ${part.join("·")}: 계정 목록 미공시로 일부 묶음만` : ""}`;
+  const t = tbl(["회사", ...cols.map(([, l]) => l)], body);
+  return card(`<h2>판매비와관리비<small>${main} 사업연도 · 계정별 매출액 대비 비중</small>${infoI(foot)}</h2><div class="hmt">${t}</div>`);
 }
 // 셀 상세 팝업: 구성 계정 · 3개년 · 같은 계정 회사 비교
 function openSga(id, key){
@@ -337,9 +339,9 @@ function adCard(cos, ui){
   const x1 = v => v == null ? "–" : `${v.toFixed(1)}배`, gmx = Math.max(...R.map(x => x.gpx));
   const body = R.map(x => [coCell(x.c) + (x.y !== main ? `<small>${x.y}년</small>` : ""), big(x.rev), `${big(x.sp)} <small class="in">${x.spr.toFixed(1)}%</small>`, x1(x.rvx), `<span class="ib2"${tipA([`${x.c.name} · ${x.y}`, `매출총이익\t${big(x.gp)}`, `${SP}\t${big(x.sp)}`, `평균\t${x1(ag)}`])}><i style="--f:${(Math.max(0, x.gpx) / gmx).toFixed(3)};background:${x.c.color}"></i><b>${x1(x.gpx)}</b></span>`, upPct(x.g), x.opm == null ? "–" : `<span class="${x.opm < 0 ? "dn" : ""}">${x.opm.toFixed(1)}%</span>`]);
   const ar = [`<b>비교 평균</b><small>${R.length}개사</small>`, "", `<b>${av("spr").toFixed(1)}%</b>`, `<b>${x1(av("rvx"))}</b>`, `<b>${x1(ag)}</b>`, `<b>${upPct(av("g"))}</b>`, `<b>${av("opm")?.toFixed(1) ?? "–"}%</b>`]; ar.cls = "avg"; body.push(ar);
-  const t = tbl(["회사", "매출", `${fee ? "마케팅비" : "광고·판촉비"}<small>매출 대비</small>`, `매출 ÷ ${fee ? "마케팅비" : "광고비"}`, `매출총이익 ÷ ${fee ? "마케팅비" : "광고비"}`, "매출 성장률", "영업이익률"], body,
-    `OpenDART ${basisLbl()} · 판관비 주석 · 광고선전·판촉비 = 광고선전비·판매촉진비·견본비 등${fee ? " · 마케팅비 = 광고선전·판촉비 + 판매수수료·지급수수료" : ""} · 회사 전체 연간 값(캠페인·채널 단위 아님)${out.length ? ` · 제외: 광고선전·판촉비 매출 1% 미만 ${out.map(x => x.c.name).join("·")}` : ""}`);
-  return card(`<h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">광고비 효율<small>${main} 사업연도 · 배 = 매출총이익 또는 매출 ÷ ${SP}</small><span style="margin-left:auto">${btn}</span></h2>
+  const foot = `OpenDART ${basisLbl()} · 판관비 주석 · 광고선전·판촉비 = 광고선전비·판매촉진비·견본비 등${fee ? " · 마케팅비 = 광고선전·판촉비 + 판매수수료·지급수수료" : ""} · 회사 전체 연간 값(캠페인·채널 단위 아님)${out.length ? ` · 제외: 광고선전·판촉비 매출 1% 미만 ${out.map(x => x.c.name).join("·")}` : ""}`;
+  const t = tbl(["회사", "매출", `${fee ? "마케팅비" : "광고·판촉비"}<small>매출 대비</small>`, `매출 ÷ ${fee ? "마케팅비" : "광고비"}`, `매출총이익 ÷ ${fee ? "마케팅비" : "광고비"}`, "매출 성장률", "영업이익률"], body);
+  return card(`<h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">광고비 효율<small>${main} 사업연도 · 배 = 매출총이익 또는 매출 ÷ ${SP}</small>${infoI(foot)}<span style="margin-left:auto">${btn}</span></h2>
     <div class="hmt adt">${t}</div>`);
 }
 

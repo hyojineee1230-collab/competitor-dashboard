@@ -410,3 +410,6 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .adt:not(.rdt) th:nth-child(5),.rdt th:nth-child(6){width:24%}
 }
 @media (max-width:760px){ .ib2 i{width:calc(var(--f,0) * 110px)} .adt:not(.rdt) .tw:not(.keep) tbody td:nth-child(5){grid-column:1/-1} }
+/* 제목 옆 기준 설명(ⓘ) */
+.ii{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:8px;border:1.5px solid var(--muted);border-radius:50%;background:none;color:var(--muted);font:700 11.5px/1 Georgia,serif;font-style:italic;cursor:help;vertical-align:2px;padding:0;flex:none}
+.ii:hover,.ii.on,.ii:focus-visible{border-color:var(--ink);color:var(--ink)}

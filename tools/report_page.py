@@ -47,17 +47,21 @@ rep('''function renderAll(){
 CSS = """
 /* ---------- 월간 호 ---------- */
 #content > #secIssue{order:-100}
+#content[data-mode="business"] > #secHead{order:-101}
 .is-badge{font-size:14px;font-weight:600;color:var(--brand);background:var(--brand-soft);border-radius:999px;padding:3px 12px;vertical-align:4px;margin-left:6px}
 .is-panel{border-top:4px solid var(--brand)}
 .is-hd{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .is-hd h2{margin:2px 0 0;font-size:22px}
 .is-k{font-size:13px;font-weight:700;color:var(--brand);letter-spacing:.02em}
-.is-ins{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px}
-.is-ins li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.is-ins li > i{font-style:normal;font-weight:700;color:var(--brand);font-size:18px}
-.is-ins b{display:block;font-size:16px;margin-bottom:3px}
-.is-ins p{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.6}
-.is-ins .act-src{margin-top:6px}
+.is-ins{list-style:none;margin:0 0 18px;padding:0}
+.is-ins > li{padding:12px 2px;border-top:1px solid var(--line)}
+.is-ins > li:first-child{border-top:0;padding-top:4px}
+.is-ins > li > b{display:flex;gap:8px;align-items:baseline;font-size:16px;margin-bottom:4px}
+.is-ins > li > b::before{content:"";flex:none;width:8px;height:8px;border-radius:2px;background:var(--brand);transform:translateY(-2px)}
+.is-ins ul{margin:0;padding:0 0 0 34px;color:var(--ink-2);font-size:14.5px;line-height:1.6}
+.is-ins ul li{margin:2px 0}
+.is-ins ul li::marker{color:var(--muted)}
+.is-ins .act-src{margin:6px 0 0 16px}
 .is-none{color:var(--muted);margin:0 0 18px}
 .is-grid{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:14px}
 .is-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
@@ -101,7 +105,7 @@ CSS = """
   .pgrp-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--brand);padding:2px 2px 6px;margin:0 0 12px;break-after:avoid}
   .pgrp-h b{font-size:20px}
   .pgrp-h span{font-size:13px;color:var(--muted)}
-  #printRoot .seg, #printRoot select, #printRoot .btn, #printRoot .go, #printRoot .sel-btn,
+  #printRoot .seg, #printRoot select, #printRoot .fs-btn, #printRoot .btn, #printRoot .go, #printRoot .sel-btn,
   #printRoot .more, #printRoot .mk-strip, #printRoot [hidden]{display:none !important}
   #printRoot .core-grid{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) !important;grid-auto-flow:row !important;grid-auto-columns:auto !important;overflow:visible !important;padding-bottom:0 !important}
   #printRoot .tw, #printRoot .tbl-wrap, #printRoot .table-wrap{overflow:visible !important}
@@ -191,12 +195,15 @@ async function renderIssue(){
   const news = nw.slice(0, 8).map(([id, n]) => `<div class="is-bar"><span>${esc(nm(id))}</span><span><i style="width:${(n / mx * 100).toFixed(0)}%;background:${col(id)}"></i></span><b>${n}</b></div>`).join("");
   $("secIssue").innerHTML = `<div class="is-hd"><div><span class="is-k">${esc(R.title || "")}${R.pilot ? " · 시범호" : ""}</span><h2>${FIELD_NAME[F] || ""} · 이번 달 인사이트</h2>
       <p class="hint">기준일 ${d2(R.asOf)} · 주가 ${d2(R.close)} 종가 · 기간 ${d2(R.window?.[0])} ~ ${d2(R.window?.[1])} · 재무는 OpenDART, 주가는 KRX·Yahoo</p></div></div>
-    ${ins?.items?.length ? `<ol class="is-ins">${ins.items.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.h)}</b><p>${esc(x.d)}</p>${srcLinks(x.s)}</div></li>`).join("")}</ol>` : `<p class="is-none">이번 호 인사이트를 작성 중입니다.</p>`}
+    ${ins?.items?.length ? `<ul class="is-ins">${ins.items.map(x => `<li><b>${esc(x.h)}</b><ul>${String(x.d || "").split(/(?<=\.)\s+(?=\S)/).filter(Boolean).map(z => `<li>${esc(z)}</li>`).join("")}</ul>${srcLinks(x.s)}</li>`).join("")}</ul>` : `<p class="is-none">이번 호 인사이트를 작성 중입니다.</p>`}
     <div class="is-grid">
       <div class="is-box"><h3>1개월 주가 <span>상장사</span></h3>${moves || '<p class="hint">상장사 없음</p>'}</div>
       <div class="is-box"><h3>기간 중 공시 <b>${(dg.disc || []).length}건</b></h3>${disc || '<p class="hint">기간 중 공시 없음</p>'}</div>
       <div class="is-box"><h3>기간 중 보도 <b>${nt}건</b></h3>${news || '<p class="hint">기간 중 보도 없음</p>'}<p class="hint" style="margin:6px 0 0">시세 기사 제외 · 같은 날 비슷한 제목은 1건</p></div>
     </div>`;
+  // 별도 재무제표 스위치는 숫자가 바뀌는 실적 비교 구역에 둠
+  const fb = $("fsBtn"), ctl = document.querySelector("#secAnnual .controls");
+  if (fb && ctl && fb.parentElement !== ctl) ctl.prepend(fb);
   setTimeout(applyUpd, 400);
 }
 function applyUpd(){
