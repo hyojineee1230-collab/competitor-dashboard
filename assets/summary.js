@@ -419,30 +419,35 @@ const SUM = {
     // 경쟁사 묶음: 설정(segments)이 없고 국내·해외가 섞인 분야는 국내/해외로 나눔
     const domestic = c => (c.country || (isKR(c) ? "KR" : "")) === "KR", kr = F.cos.filter(domestic), ov = F.cos.filter(c => !domestic(c));
     const segs = F.g.segments?.length ? F.g.segments : kr.length && ov.length ? [{ key: "kr", title: "국내", members: kr.map(c => c.id) }, { key: "global", title: "해외", members: ov.map(c => c.id) }] : [];
-    const seg = ui.seg || segs[0]?.key || "all", met = ui.met || "rv";
+    const seg = ui.seg || segs[0]?.key || "all", met = ["rv", "gp", "op"].includes(ui.met) ? ui.met : "rv";
     const hasQ = F.cos.some(c => c.quarterly?.periods?.length), per = hasQ && ui.per === "q" ? "q" : "a";
-    const MET = { rv: "매출", op: "영업이익", ni: "순이익" };
+    const MET = { rv: "매출", gp: "매출총이익", op: "영업이익" }, METB = { rv: "매출", gp: "매출총이익(%)", op: "영업이익(%)" };
+    // 매출총이익·영업이익 모드: 금액 옆에 매출액 대비 이익률, 아래 줄은 같은 이익률의 연도별 추이
+    const RATE = { rv: "영업이익률", gp: "매출총이익률", op: "영업이익률" }[met];
+    const rateTxt = v => `<b style="color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b>`;
+    const rateCell = (num, rv) => { const v = margin(num, rv); return v == null ? "–" : capFn(v) == null ? "매출 미미" : rateTxt(v); };
+    const rateNum = (num, rv) => { const v = capFn(margin(num, rv)); return v == null ? "" : `<span style="font-size:15px;color:${MU};white-space:nowrap">이익률 <b style="font-size:17px;color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b></span>`; };
     const pick = seg === "all" || !segs.length ? F.cos : F.cos.filter(c => segs.find(s => s.key === seg)?.members.includes(c.id));
     const cos = pick.filter(c => c.annual?.revenue?.length).sort((a, b) => (b.annual.currency === "KRW") - (a.annual.currency === "KRW") || b.annual.revenue.at(-1) - a.annual.revenue.at(-1));
     const segBtn = segs.length ? `<span class="seg">${[...segs.map(s => [s.key, s.title]), ["all", "전체"]].map(([k, l]) => `<button data-ui="seg=${k}" aria-pressed="${k === seg}">${esc(l)}</button>`).join("")}</span>` : "";
     const perBtn = hasQ ? `<span class="seg">${[["a", "연간"], ["q", "분기"]].map(([k, l]) => `<button data-ui="per=${k}" aria-pressed="${k === per}">${l}</button>`).join("")}</span>` : "";
-    const metBtn = `<span class="seg">${Object.entries(MET).map(([k, l]) => `<button data-ui="met=${k}" aria-pressed="${k === met}">${l}</button>`).join("")}</span>`;
+    const metBtn = `<span class="seg">${Object.entries(METB).map(([k, l]) => `<button data-ui="met=${k}" aria-pressed="${k === met}">${l}</button>`).join("")}</span>`;
     // 분기: 연간 카드와 같은 회사·같은 순서. 분기 자료가 없는 회사는 카드 자리만 두고 비움
     const qCard = c => {
       const q = c.quarterly, head = `<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</div>`;
       if (!q?.periods?.length) return card(`${head}<div class="qempty">${c.listed ? "분기 미수집" : "분기 미공시 · 연간만"}</div>`, "fcard", ` data-co="${esc(c.id)}" role="button" tabindex="0"`);
-      const cur = q.currency || "KRW", K = { rv: "revenue", op: "operatingIncome", ni: "netIncome" }[met], n = q.periods.length, ks = [...Array(Math.min(5, n)).keys()].map(j => n - Math.min(5, n) + j);
+      const cur = q.currency || "KRW", n = q.periods.length, val = k => met === "rv" ? q.revenue?.[k] : met === "op" ? q.operatingIncome?.[k] : q.revenue?.[k] != null && q.costOfSales?.[k] != null ? q.revenue[k] - q.costOfSales[k] : null, ks = [...Array(Math.min(5, n)).keys()].map(j => n - Math.min(5, n) + j);
       const ql = p => `${p.slice(2, 4)}.${p.slice(5)}Q`, yoyI = k => q.periods.indexOf(`${+q.periods[k].slice(0, 4) - 1}${q.periods[k].slice(4)}`);
-      const raw = ks.map(k => q[K]?.[k] ?? null), vals = raw.map(v => v == null ? null : cur === "KRW" ? Math.round(v / 1e8) : +(v / 1e6).toFixed(1));
-      const opm = k => capFn(margin(q.operatingIncome?.[k], q.revenue?.[k])), last = ks.at(-1), yj = yoyI(last);
+      const raw = ks.map(k => val(k) ?? null), vals = raw.map(v => v == null ? null : cur === "KRW" ? Math.round(v / 1e8) : +(v / 1e6).toFixed(1));
+      const rnum = k => met === "gp" ? val(k) : q.operatingIncome?.[k], opm = k => capFn(margin(rnum(k), q.revenue?.[k])), last = ks.at(-1), yj = yoyI(last);
       const yoy = yj < 0 ? null : met === "rv" ? growth(q.revenue[last], q.revenue[yj]) : null;
-      const tips = ks.map(k => { const j = yoyI(k); return [`${c.name} · ${ql(q.periods[k])}`, `${MET[met]}\t${big(q[K]?.[k], cur)}`,
-        j >= 0 && q[K]?.[j] != null ? `전년 같은 분기\t${big(q[K][j], cur)}${met === "rv" ? ` → ${sgn(growth(q.revenue[k], q.revenue[j]))}` : ""}` : null,
-        met !== "rv" ? `매출\t${big(q.revenue?.[k], cur)}` : null, opm(k) != null ? `영업이익률\t${opm(k).toFixed(1)}%` : null]; });
+      const tips = ks.map(k => { const j = yoyI(k); return [`${c.name} · ${ql(q.periods[k])}`, `${MET[met]}\t${big(val(k), cur)}`,
+        j >= 0 && val(j) != null ? `전년 같은 분기\t${big(val(j), cur)}${met === "rv" ? ` → ${sgn(growth(q.revenue[k], q.revenue[j]))}` : ""}` : null,
+        met !== "rv" ? `매출\t${big(q.revenue?.[k], cur)}` : null, opm(k) != null ? `${RATE}\t${opm(k).toFixed(1)}%` : null]; });
       return card(`${head}
-        <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(q[K]?.[last], cur)}</span><span style="font-size:15px;color:${MU}">${ql(q.periods[last])} ${MET[met]}</span>${yoy != null ? `<span style="font-size:17px;font-weight:700">${pct(yoy, 1, 0)}</span>` : ""}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(val(last), cur)}</span><span style="font-size:15px;color:${MU};white-space:nowrap">${ql(q.periods[last])} ${MET[met]}</span>${met === "rv" ? (yoy != null ? `<span style="font-size:17px;font-weight:700">${pct(yoy, 1, 0)}</span>` : "") : rateNum(rnum(last), q.revenue?.[last])}</div>
         ${colChart(vals, ks.map(k => ql(q.periods[k])), { W: 360, H: 130, colors: vals.map((v, i) => v < 0 ? "#9DB5DD" : i === vals.length - 1 ? c.color : "#D5DCE7"), fmt: v => v == null ? "–" : cur === "KRW" ? nf(v) : v.toFixed(1), tips })}
-        <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>영업이익률</span><span>${ks.slice(-3).map(k => { const v = opm(k); return v == null ? "–" : `<b style="color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b>`; }).join(" → ")}</span></div>`,
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>${RATE}</span><span>${ks.slice(-3).map(k => rateCell(rnum(k), q.revenue?.[k])).join(" → ")}</span></div>`,
         "fcard", ` data-co="${esc(c.id)}" role="button" tabindex="0" title="누르면 약식 손익계산서"`);
     };
     const cards = per === "q" ? cos.map(qCard).join("") : cos.map(c => {
@@ -451,12 +456,12 @@ const SUM = {
       const raw = P.map(p => p[met]), vals = raw.map(v => v == null ? null : cur === "KRW" ? Math.round(v / 1e8) : +(v / 1e6).toFixed(1));
       const unit = cur === "KRW" ? "억" : "M";
       const tips = ks.map((k, j) => { const p = P[j], pv = j ? P[j - 1][met] : k > 0 ? plAt(a, k - 1)[met] : null;
-        return [`${c.name} · ${ys[j]}`, `${MET[met]}\t${big(p[met], cur)}`, pv != null && p[met] != null ? `${met === "rv" ? "매출 성장률" : "전년 대비"}\t${pv > 0 ? sgn(growth(p[met], pv)) : "전년 적자"}` : null,
-          met !== "rv" ? `매출\t${big(p.rv, cur)}` : null, p.opm != null ? `영업이익률\t${p.opm.toFixed(1)}%` : null]; });
+        return [`${c.name} · ${ys[j]}`, `${MET[met]}\t${big(p[met], cur)}`, p.gpm != null && met === "gp" ? `매출총이익률\t${p.gpm.toFixed(1)}%` : null, pv != null && p[met] != null ? `${met === "rv" ? "매출 성장률" : "전년 대비"}\t${pv > 0 ? sgn(growth(p[met], pv)) : "전년 적자"}` : null,
+          met !== "rv" ? `매출\t${big(p.rv, cur)}` : null, p.opm != null && met !== "gp" ? `영업이익률\t${p.opm.toFixed(1)}%` : null]; });
       return card(`<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</div>
-        <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(last[met], cur)}</span><span style="font-size:15px;color:${MU}">${ys.at(-1)} ${MET[met]}</span>${met === "rv" ? `<span style="font-size:17px;font-weight:700">${pct(last.g, 1, 0)}</span>` : ""}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(last[met], cur)}</span><span style="font-size:15px;color:${MU};white-space:nowrap">${ys.at(-1)} ${MET[met]}</span>${met === "rv" ? `<span style="font-size:17px;font-weight:700">${pct(last.g, 1, 0)}</span>` : rateNum(last[met === "gp" ? "gp" : "op"], last.rv)}</div>
         ${colChart(vals, ys, { W: 360, H: 130, colors: vals.map((v, i) => v < 0 ? "#9DB5DD" : i === vals.length - 1 ? c.color : "#D5DCE7"), fmt: v => v == null ? "–" : cur === "KRW" ? nf(v) : (Math.abs(v) < 10 ? v.toFixed(1) : nf(v)) + "M", tips })}
-        <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>영업이익률</span><span>${P.map(p => { const v = margin(p.op, p.rv); return capFn(v) == null ? (v == null ? "–" : "매출 미미") : `<b style="color:${v < 0 ? DN : INK}">${v.toFixed(1)}%</b>`; }).join(" → ")}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>${RATE}</span><span>${P.map(p => rateCell(met === "gp" ? p.gp : p.op, p.rv)).join(" → ")}</span></div>
 `, "fcard", ` data-co="${esc(c.id)}" role="button" tabindex="0" title="누르면 약식 손익계산서"`);
     }).join("");
     const pts = cos.map(c => { const s = sgaOf(c), a = c.annual, n = a.revenue.length; if (!s?.mk || a.currency !== "KRW") return null;
