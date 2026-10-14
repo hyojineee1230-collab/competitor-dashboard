@@ -338,24 +338,25 @@ const INTRO_KEY = "cm2-intro-v1";
 function openIntro(){
   let d = $("intro");
   if (!d){ d = document.createElement("dialog"); d.id = "intro"; d.setAttribute("aria-labelledby", "introTitle"); document.body.appendChild(d); }
-  const M = [["홈", "오늘의 요약", "주가·실적·시장·보도"], ["시세", "주가 흐름", "당일 시세·기업가치"], ["재무", "실적·판관비·연구개발", "카드 선택 시 약식 손익"],
-             ["시장", "시장 규모", "채널·품목 비중"], ["공시·기사", "보도 추이", "공시·기사 목록"]];
-  d.innerHTML = `<div class="in-in"><div class="adm-hd"><h2 id="introTitle">이용 안내</h2><button class="cp-x" type="button" data-intro-x aria-label="닫기">✕</button></div>
-    <p class="in-lead">건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도를 공개 자료로 자동 수집해 비교합니다.</p>
-    <div class="in-grid">${M.map(([t, a1, a2]) => `<div class="in-m"><b>${t}</b><span>${a1}</span><span>${a2}</span></div>`).join("")}</div>
-    <div class="in-row"><span><b>분야</b> 오른쪽 위에서 전환</span><span><b>별도 재무제표</b> 기본은 연결</span><span><b>리포트</b> 월간 경쟁사 실적</span><span><b>숫자 확인</b> 그래프에 마우스 올리기·선택</span></div>
-    <details class="fold"><summary>용어·계산 기준</summary><div class="fold-b"><dl class="in-dl">
-      <dt>코스닥 대비</dt><dd>등락률 − 코스닥 등락률(%p). 코스피 상장사는 제외</dd>
-      <dt>이례적 주가 변동</dt><dd>시장·업종 영향을 뺀 등락률이 최근 60거래일 하루 변동폭의 2배 이상, 또는 거래량이 평소의 3배 이상</dd>
-      <dt>추정</dt><dd>비상장사 기업가치 = 같은 묶음 상장사 PSR 범위 × 매출(참고값)</dd>
-      <dt>매출 미미</dt><dd>매출이 매우 작아 이익률이 ±1,000%를 넘는 경우, 평균에서 제외</dd>
-      <dt>회수율·회수기간</dt><dd>누적 매출총이익 ÷ 누적 연구개발비 · 누적 연구개발비 ÷ 연간 매출총이익</dd></dl></div></details>
-    <details class="fold"><summary>데이터 출처·갱신</summary><div class="fold-b"><dl class="in-dl">
-      <dt>주가·시가총액</dt><dd>KRX(종가, 다음 영업일 08:30) · Yahoo Finance(장중 15~20분 지연, 평일 08~20시 매시)</dd>
-      <dt>재무·공시</dt><dd>OpenDART · 평일 08:30·16:40, 화~토 06:40</dd>
-      <dt>보도</dt><dd>Google 뉴스 기사 목록 · 평일 08~20시 매시</dd>
-      <dt>시장 규모</dt><dd>협회·기관 조사 자료(화면에 출처 표기) · 새 자료 발표 시</dd></dl></div></details>
-    <p class="in-foot">공시·거래소 공개 자료 기반 · 투자 판단의 근거로 사용하지 마십시오</p></div>`;
+  const upd = D.meta?.updatedAt ? (() => { const k = KST(D.meta.updatedAt).toISOString(); return `${k.slice(0, 10).replace(/-/g, ". ")} ${k.slice(11, 16)}`; })() : "–";
+  const C = [["홈", "당일 주가(코스닥 대비) → 이례적 주가 변동과 관련 보도 → 최근 실적 → 시장 규모 → 최근 7일 보도"],
+             ["시세 · 재무", "주가 흐름·당일 시세·기업가치(PSR·PER·PBR) → 연간·분기 실적, 판매비와관리비, 연구개발 투자 회수 · 회사 카드를 누르면 약식 손익계산서"],
+             ["시장 · 공시·기사", "시장 규모·판매 채널·품목 비중(국내·해외) → 주별 보도 추이, 정기보고서·IR·기사 목록"],
+             ["경쟁사 실적 리포트", "매월 기준일 숫자를 고정해 이번 달 인사이트·공시·보도·주가를 한 호로 발행"]];
+  d.innerHTML = `<div class="in-in"><h2 id="introTitle">경쟁사 모니터, 이런 대시보드입니다</h2>
+    <p class="in-lead">건강기능식품·마이크로바이옴 경쟁사의 주가·재무·시장·보도를 공개 자료로 모아 비교합니다. 자료는 자동으로 받아 그대로 보여 주는 영역과, 수집 자료를 바탕으로 정리하는 영역으로 나뉩니다.</p>
+    <div class="in-src">
+      <div class="in-s a"><p class="h"><span>①</span>자동 수집<em>평일 매시 · 하루 3회</em></p>
+        <dl><dt>출처</dt><dd>KRX·OpenDART·해외 시세 오픈 API, 뉴스 기사 목록</dd>
+        <dt>화면</dt><dd>주가·시총, 실적·판관비·연구개발비, 기업가치, 공시·기사</dd>
+        <dt>성격</dt><dd>원자료 그대로, 비율 계산(PSR·이익률 등)만 코드가 수행</dd></dl></div>
+      <div class="in-s b"><p class="h"><span>②</span>정리·분석<em>월 1회 · 자료 발표 시</em></p>
+        <dl><dt>재료</dt><dd>수집된 공시·보도, 협회 조사·시장 리포트</dd>
+        <dt>화면</dt><dd>월간 리포트 인사이트, 시장 개요</dd>
+        <dt>성격</dt><dd>정해진 작성 규칙으로 갱신, 재무 숫자는 DART 값만 사용, 출처·기준일 표기</dd></dl></div>
+    </div>
+    <div class="in-cards">${C.map(([t, x]) => `<div class="in-c"><b>${t}</b><p>${x}</p></div>`).join("")}</div>
+    <div class="in-foot"><small>데이터 업데이트 ${upd} · 투자 판단의 근거로 사용하지 마십시오</small><button type="button" class="in-go" data-intro-x>시작하기</button></div></div>`;
   d.showModal();
   lsSet(INTRO_KEY, "1");
 }
