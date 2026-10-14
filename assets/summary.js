@@ -108,7 +108,7 @@ function coPL(c, F){
     ${row("연구개발비", col => col.sg?.rnd || null, "sub")}
     ${row("영업이익", col => col.op, "key")}${pctRow(col => col.op)}
   </tbody></table>`;
-  // 비용 구조: 매출 100원 중 원가·판관비 계정·영업이익 (연도별 한 줄). 영업손실이면 비용이 100을 넘음
+  // 비용 구조: 매출액 대비 원가·판관비 계정·영업이익 비중 (연도별 한 줄). 영업손실이면 비용이 100%를 넘음
   const CS = [["cogs", "매출원가", "#9AA8BD"], ["labor", "인건비", "#5B7DB1"], ["adpromo", "광고/판촉", "#D08A3C"], ["commission", "판매수수료", "#C46A6A"], ["rnd", "연구개발", "#7A5AD0"], ["etc", "기타 판관비", "#C9D2DE"], ["op", "영업이익", "#1F8A78"]];
   const costCols = annualCols.filter(col => col.rev > 0 && col.cogs != null && col.op != null).slice(-3);
   const struct = (() => { if (!costCols.length) return "";
@@ -120,9 +120,9 @@ function coPL(c, F){
     const rows = costCols.map((col, j) => { const p = P[j], tot = cost(p), loss = col.op < 0, D = Math.max(scale, tot, 100);
       const seg = CS.filter(([k]) => p[k] > 0.05).map(([k, l, clr]) => { const w = p[k] / D * 100;
         return `<i style="width:${w.toFixed(2)}%;background:${clr}"${tipA([`${c.name} · ${col.y}`, `${l}\t${big(k === "op" ? col.op : p[k] * col.rev / 100, cur)}`, `매출 대비\t${p[k].toFixed(1)}%`])}>${w >= 9 ? `${p[k].toFixed(0)}` : ""}</i>`; }).join("");
-      return `<div class="cs-row"><span class="cs-y">${col.y}</span><span class="cs-bar${D > 100.5 ? " over" : ""}" style="--h:${(100 / D * 100).toFixed(2)}%">${seg}</span><b class="${loss ? "dn" : ""}">${loss ? `손실 ${(-col.op / col.rev * 100).toFixed(0)}%` : `이익 ${(col.op / col.rev * 100).toFixed(0)}%`}</b></div>`; }).join("");
+      return `<div class="cs-row"><span class="cs-y">${col.y}</span><span class="cs-bar${D > 100.5 ? " over" : ""}" style="--h:${(100 / D * 100).toFixed(2)}%">${seg}</span><b class="${loss ? "dn" : ""}">${(col.op / col.rev * 100).toFixed(1)}%</b></div>`; }).join("");
     const used = CS.filter(([k]) => P.some(p => p[k] > 0.05));
-    return `<div class="cs">${rows}<div class="cs-lg">${used.map(([, l, clr]) => `<span><i style="background:${clr}"></i>${l}</span>`).join("")}${scale > 100 ? '<span class="mu">┆ = 매출 100</span>' : ""}</div></div>`; })();
+    return `<div class="cs"><div class="cs-row cs-h"><span></span><span></span><b>영업이익률</b></div>${rows}<div class="cs-lg">${used.map(([, l, clr]) => `<span><i style="background:${clr}"></i>${l}</span>`).join("")}${scale > 100 ? '<span class="mu">점선 = 매출액(100%)</span>' : ""}</div></div>`; })();
   // 부문(사업보고서 부문 정보가 있을 때)
   const sgm = (() => { const s2 = c.segment; if (!s2?.years) return ""; const k = s2.years.length - 1; if (s2.revenue[k] == null) return "";
     const ai = ys.indexOf(s2.years[k]), tot = ai >= 0 ? a.revenue?.[ai] : null, share = tot ? s2.revenue[k] / tot * 100 : null;
@@ -137,7 +137,7 @@ function coPL(c, F){
     </div><button class="cp-x" type="button" data-close aria-label="닫기">✕</button></div>
     <div class="cp-kpis">${kpis}</div>${sgm}
     ${c.note ? `<p class="note" style="margin:-8px 0 16px">${esc(c.note)}</p>` : ""}
-    ${struct ? `<div class="cp-sec"><h3>매출 100원의 쓰임 <small>매출 대비 % · 판관비 계정은 사업보고서 주석</small></h3>${struct}</div>` : ""}
+    ${struct ? `<div class="cp-sec"><h3>비용 구조 <small>매출액 대비 비중(%) · 판관비 계정은 사업보고서 주석 기준</small></h3>${struct}</div>` : ""}
     <div class="cp-sec"><h3>약식 손익계산서 <small>(%) = 매출 대비 · OpenDART ${(S.ofs && c.alt?.annual) || a.basis === "OFS" || c.fs === "OFS" ? "별도" : "연결"}</small></h3><div class="cp-tw">${pl}</div></div>
     ${news.length ? `<div class="cp-sec"><h3>최근 보도 <small>최근 2주</small></h3>${news.map(e => `<a class="cp-n" href="${esc(e.url)}" target="_blank" rel="noopener"><span class="mu">${md(e.d)}</span><span class="tag">${esc(catName(e.cat))}</span><span>${esc(e.title)}</span></a>`).join("")}</div>` : ""}`;
 }
@@ -207,8 +207,8 @@ function rndCard(cos){
     r.link ? `<a class="more" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.src)} ↗</a>` : esc(r.src)]);
   const t = tbl(["회사", `연구개발비<small>최근 연간</small>`, "매출 대비", "누적 연구개발비", "누적 매출총이익", "회수율<small>누적 GP ÷ 누적 R&D</small>", "회수기간<small>누적 R&D ÷ 연간 GP</small>", "영업이익", "출처"], body,
     `OpenDART ${basisLbl()} · 누적 = 최근 3개 사업연도(자료가 있는 해만) · 연구개발비는 사업보고서 연구개발비용 표(원가 처리분 포함), 없으면 판관비 주석 연구개발비 · 회사 단위 지표이며 파이프라인별 투입·회수는 공시되지 않음`);
-  return card(`<h2>연구개발 회수<small>${yr} 기준 · 막대 = 누적 연구개발비 · 누르면 연도별</small></h2>
-    ${best ? `<div class="big1"><b>${best.rec.toFixed(0)}%</b><span>회수율 1위 ${esc(best.c.name)} · ${R.length}곳 비교</span></div>` : ""}${chart}<div class="sga-t">${t}</div>`);
+  return card(`<h2>연구개발 투자 회수<small>${yr} 사업연도 기준 · 막대 = 누적 연구개발비</small></h2>
+    ${best ? `<div class="big1"><b>${best.rec.toFixed(0)}%</b><span>회수율 최고 ${esc(best.c.name)} · 비교 대상 ${R.length}개사</span></div>` : ""}${chart}<div class="sga-t">${t}</div>`);
 }
 
 /* ---------- 판관비 (v1 판관비 표와 같은 계정 묶음) ----------
@@ -231,8 +231,8 @@ function sgaCard(cos){
     s.link ? `<a class="more" href="${esc(s.link)}" target="_blank" rel="noopener">원문 ↗</a>` : "–"]);
   const t = tbl(["회사", "매출", "판관비<small>매출 대비</small>", "인건비<small>판관비 대비</small>", "광고/판촉<small>매출 대비</small>", "판매수수료<small>매출 대비</small>", "연구개발비<small>판관비 대비</small>", "출처"], body,
     `${main}년 사업보고서 판관비 주석 · OpenDART ${basisLbl()} · 인건비 = 급여·상여·퇴직급여·복리후생비 · 광고/판촉 = 광고선전비·판매촉진비·견본비 · 판매수수료 = 유통·방송 판매수수료(지급수수료 제외) · – = 해당 계정 없음`);
-  return card(`<h2>판관비<small>${main} · 판관비 ÷ 매출 · 막대를 누르면 계정별</small></h2>
-    <div class="big1"><b>${r1(top.sr)}</b><span>판관비율 1위 ${esc(top.c.name)} · ${rows.length}곳 비교</span></div>${chart}<div class="sga-t">${t}</div>`);
+  return card(`<h2>판매비와관리비<small>${main} 사업연도 · 매출액 대비 비중</small></h2>
+    <div class="big1"><b>${r1(top.sr)}</b><span>판관비율 최고 ${esc(top.c.name)} · 비교 대상 ${rows.length}개사</span></div>${chart}<div class="sga-t">${t}</div>`);
 }
 
 /* ---------- 최근 공시/기사 (기존 화면 '최근 공시/기사'와 같은 구성: 정기보고서 표 · IR · 기사 목록) ---------- */
@@ -387,7 +387,10 @@ const SUM = {
 
   /* ---------- 재무 ---------- */
   async finance(F, ui){
-    const segs = F.g.segments || [], seg = ui.seg || segs[0]?.key || "all", met = ui.met || "rv";
+    // 경쟁사 묶음: 설정(segments)이 없고 국내·해외가 섞인 분야는 국내/해외로 나눔
+    const domestic = c => (c.country || (isKR(c) ? "KR" : "")) === "KR", kr = F.cos.filter(domestic), ov = F.cos.filter(c => !domestic(c));
+    const segs = F.g.segments?.length ? F.g.segments : kr.length && ov.length ? [{ key: "kr", title: "국내", members: kr.map(c => c.id) }, { key: "global", title: "해외", members: ov.map(c => c.id) }] : [];
+    const seg = ui.seg || segs[0]?.key || "all", met = ui.met || "rv";
     const hasQ = F.cos.some(c => c.quarterly?.periods?.length), per = hasQ && ui.per === "q" ? "q" : "a";
     const MET = { rv: "매출", op: "영업이익", ni: "순이익" };
     const pick = seg === "all" || !segs.length ? F.cos : F.cos.filter(c => segs.find(s => s.key === seg)?.members.includes(c.id));
