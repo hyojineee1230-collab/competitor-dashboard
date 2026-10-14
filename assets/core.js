@@ -123,16 +123,9 @@ function voiceOf(F){
 const catName = k => D.newsfx?.cats?.[k] || (k === "etc" ? "기타" : k);
 
 /* ---------- 갱신 현황 ---------- */
+// 머리 아래 한 줄: 이용 안내 · 별도 재무제표 (기준 시각은 각 제목 옆에 표시)
 function freshness(F){
-  const items = [];
-  if (D.live?.updatedAt) items.push(["#2B6FD6", `시세 ${mdh(D.live.updatedAt)}`]);
-  if (D.newsfx?.updatedAt) items.push(["#2B6FD6", `기사 ${mdh(D.newsfx.updatedAt)}`]);
-  if (D.meta?.updatedAt) items.push(["#6B7A90", `공시·종가 ${mdh(D.meta.updatedAt)}`]);
-  const qs = F.cos.flatMap(c => c.quarterly?.periods || []).sort().at(-1), ys = F.cos.map(c => c.annual?.years?.at(-1)).filter(Boolean).sort().at(-1);
-  items.push(["#1F8A78", `재무 ${qs ? qs.slice(2, 4) + "년 " + qs.slice(5) + "Q" : ys ? ys + "년" : "–"}`]);
-  const ser = F.mk.kr?.size?.series?.[0]?.points; items.push(["#C98A1B", `시장 ${ser?.length ? ser.at(-1)[0] + "년" : D.market?.updatedAt ? md(D.market.updatedAt) : "–"}`]);
-  if (VIEW === "detail" && D.summaries?.updatedAt) items.push(["#7A5AD0", `AI 정리 ${md(D.summaries.updatedAt)}`]);
-  return `<div class="fresh">${items.map(([c, s]) => `<span><i style="background:${c}"></i>${esc(s)}</span>`).join("")}<span class="fr">다음 갱신 시세·기사 ${nextHourly()}<button type="button" class="ib" data-intro>이용 안내</button><button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결)">별도 재무제표<i aria-hidden="true"></i></button></span></div>`;
+  return `<div class="fresh"><span class="fr"><button type="button" class="ib" data-intro>이용 안내</button><button type="button" class="fsb" data-ofs aria-pressed="${S.ofs}" title="재무 숫자를 별도 재무제표로 (기본 연결)">별도 재무제표<i aria-hidden="true"></i></button></span></div>`;
 }
 
 /* ---------- 그래프 (SVG 문자열) ---------- */
