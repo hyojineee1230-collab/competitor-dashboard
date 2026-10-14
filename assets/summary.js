@@ -302,16 +302,18 @@ async function discPanel(F, ui){
 const SUM = {
   /* ---------- 인사이트 ---------- */
   async insight(F){
-    const { rows, mk } = todayRows(F), avg = mean(rows.map(r => r.chg));
+    const { rows, mk } = todayRows(F);
     const tsLive = rows.find(r => r.ts)?.ts;
     let c1 = "";
     if (rows.length){
-      const d = avg != null && mk.chg != null ? avg - mk.chg : null;
-      const verdict = d == null ? "" : d >= 1 ? "시장보다 강함" : d <= -1 ? "시장보다 약함" : "코스닥과 비슷";
+      // 큰 숫자 = 코스닥 상장사 평균 등락 − 코스닥 등락(%p). 막대와 같은 기준(코스피 상장사 제외)
       const rel = rows.filter(r => r.rel != null).sort((a, b) => b.rel - a.rel);
-      c1 = icard(`오늘 주가 · 시장 대비(%p) · ${tsLive ? tsLive.slice(11, 16) : "종가 " + md(rows[0].c.quote?.asOf)}`, arrow(avg), colOf(avg), verdict,
+      const avgQ = mean(rel.map(r => r.chg)), d = avgQ != null && mk.chg != null ? avgQ - mk.chg : null, avgAll = mean(rows.map(r => r.chg));
+      const verdict = d == null ? "코스닥 지수 미수집" : d >= 1 ? "코스닥 대비 강세" : d <= -1 ? "코스닥 대비 약세" : "코스닥과 유사";
+      const sub = d == null ? `평균 등락 ${sgn(avgAll)}` : `코스닥 상장 ${rel.length}개사 평균 등락 ${sgn(avgQ)} · 코스닥 ${sgn(mk.chg)}`;
+      c1 = icard(`당일 주가 · 코스닥 대비(%p) · ${tsLive ? tsLive.slice(11, 16) : "종가 " + md(rows[0].c.quote?.asOf)}`, d == null ? arrow(avgAll) : sgn(d, 1, "%p"), colOf(d ?? avgAll), verdict,
         barChart(rel.map(r => ({ label: r.c.name, color: r.c.color, v: r.rel, tip: todayTip(r, mk) })), { W: 560, row: 30, lab: 130, valW: 56, fmt: v => `${v > 0 ? "+" : ""}${v.toFixed(1)}`, colorFn: v => v >= 1.5 ? UP : v <= -1.5 ? DN : "#A9B4C4" }),
-        { isNew: !!tsLive, link: href("quotes", S.field), more: fold("in-today", "숫자 보기", todayTable(rows.slice().sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99)), mk)) });
+        { isNew: !!tsLive, sub, link: href("quotes", S.field), more: fold("in-today", "숫자 보기", todayTable(rows.slice().sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99)), mk)) });
     }
     const { kept } = signalsOf(F);
     let c2;
@@ -376,7 +378,7 @@ const SUM = {
       ser.filter(s => s.all.length).sort((a, b) => (b.vals.at(-1) ?? -1e9) - (a.vals.at(-1) ?? -1e9)).map(s => { const cur = s.c.quote?.currency || "KRW", q = s.c.quote || {};
         return [coCell(s.c), won(s.b, cur), won(s.all.at(-1), cur), pct(s.b ? (s.all.at(-1) / s.b - 1) * 100 : null, 1, 0), won(Math.max(...s.all), cur), won(Math.min(...s.all), cur),
           q.low52w != null ? `${won(q.low52w, cur)} ~ ${won(q.high52w, cur)}` : "–"]; }), "종가 기준 · 해외 상장사는 현지 통화");
-    return `<div class="ph"><h1>시세</h1><span class="m">${tsLive ? `장중 ${tsLive.slice(11, 16)}(15~20분 지연)` : `종가 ${md(rows[0]?.c.quote?.asOf)}`} · 종가 확정 16:40 · KRX, Yahoo</span><span class="r"><span class="seg">${seg}</span></span></div>
+    return `<div class="ph"><h1>시세</h1><span class="m">${tsLive ? `장중 ${tsLive.slice(11, 16)}(15~20분 지연)` : `종가 ${md(rows[0]?.c.quote?.asOf)}`} · KRX 종가는 다음 영업일 08:30 반영 · KRX, Yahoo</span><span class="r"><span class="seg">${seg}</span></span></div>
       ${card(`<h2>${perL} 주가 흐름<small>시작일 = 0% · 그래프를 누르면 그날 종가</small></h2>${lineChart(ser, { W: 1200, H: 400, xs, tipFmt: (s, i) => `${s.name}\t${won(s.raw[i], s.c.quote?.currency || "KRW")}  ${sgn(s.vals[i])}` })}${fold("q-per", "숫자 보기 · 시작 → 현재 종가", perTbl)}`)}
       <div class="g2">${card(`<h2>오늘 등락<small>코스닥 ${pct(mk.chg, 2, null)}</small></h2>${barChart(rows.slice().sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99)).map(r => ({ label: r.c.name, v: r.chg ?? 0, tip: todayTip(r, mk) })), { fmt: v => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`, colorFn: v => v > 0 ? UP : v < 0 ? DN : "#A9B4C4" })}
         ${fold("q-today", "숫자 보기 · 현재가·전일 종가", todayTable(rows.slice().sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99)), mk))}`)}

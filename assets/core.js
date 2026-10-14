@@ -37,7 +37,7 @@ const todayKST = () => KST(Date.now()).toISOString().slice(0, 10);
 const hm = d => KST(d).toISOString().slice(11, 16);
 const mdh = d => { const s = KST(d).toISOString(); return (s.slice(0, 10) === todayKST() ? "" : `${s.slice(5, 7)}.${s.slice(8, 10)} `) + s.slice(11, 16); };
 const md = s => s ? s.slice(5, 10).replace("-", ".") : "";
-// 다음 갱신: 매시(평일 08:07~20:07) · 전체 수집(평일 16:40, 화~토 06:40)
+// 다음 갱신: 매시(평일 08:07~20:07) · 전체 수집(평일 08:30·16:40, 화~토 06:40)
 function nextHourly(){
   const k = KST(Date.now()); let h = k.getUTCHours(), m = k.getUTCMinutes(), wd = k.getUTCDay();
   if (wd >= 1 && wd <= 5 && h < 20 + (m < 7 ? 1 : 0) && h >= 7) { const nh = m < 7 ? h : h + 1; if (nh >= 8 && nh <= 20) return `${String(nh).padStart(2, "0")}:07`; }

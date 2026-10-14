@@ -39,7 +39,7 @@ GitHub Pages로 호스팅하고, GitHub Actions가 하루 2회 전체 수집 + �
 ## 갱신 주기
 | 워크플로 | 시각(KST) | 하는 일 | 결과 |
 |---|---|---|---|
-| `update-data.yml` Update market data | 평일 16:40, 화~토 06:40, `config/**`·`scripts/**` push 시 | KRX 종가·시총·거래량·지수, DART 재무·공시, 해외 시세, 뉴스 아카이브, 보도 반응 분석 | `data/<그룹>.json`, `data/index.json`, `data/newsfx.json` 등 |
+| `update-data.yml` Update market data | 평일 08:30(전 영업일 KRX 종가)·16:40, 화~토 06:40, `config/**`·`scripts/**` push 시 | KRX 종가·시총·거래량·지수, DART 재무·공시, 해외 시세, 뉴스 아카이브, 보도 반응 분석 | `data/<그룹>.json`, `data/index.json`, `data/newsfx.json` 등 |
 | `news-hourly.yml` Hourly news and quotes | 평일 08:07~20:07 매시 | 뉴스 아카이브, 보도 반응 재계산, 장중 지연 시세·지수(Yahoo) | `data/live.json`, `data/newsfx.json` |
 
 같은 워크플로는 동시에 하나만 돕니다. 연달아 push하면 대기 중 실행이 교체됩니다.
