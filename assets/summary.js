@@ -76,10 +76,7 @@ function coPL(c, F){
   ].join("");
   // 머리줄
   const Q = c.quote || {};
-  // 비상장: 기업가치 카드와 같은 계산(같은 묶음 상장사 PSR 범위 × 최근 연간 매출)
-  const est = c.listed ? null : valRows(F).find(r => r.c.id === c.id);
-  const estTxt = !est || est.lo == null || !est.L.rev ? "" : `<span>추정 가치 <b>${est.lo === est.hi ? `약 ${big(est.L.rev * est.lo)}` : `${big(est.L.rev * est.lo)} ~ ${big(est.L.rev * est.hi)}`}</b> <small>(상장 ${est.n}곳 PSR ${est.lo === est.hi ? est.lo.toFixed(2) : `${est.lo.toFixed(2)}~${est.hi.toFixed(2)}`}배 × ${est.L.y} 매출)</small></span>`;
-  const capTxt = c.listed && Q.marketCap ? `<span>시가총액 <b>${big(Q.marketCap, Q.currency || "KRW")}</b> <small>(${md(Q.asOf)})</small></span><span>1년 주가 ${upPct(Q.change1y)}</span>${Q.per ? `<span>PER ${Q.per.toFixed(1)}배</span>` : ""}` : estTxt || "<span>비상장</span>";
+  const capTxt = c.listed && Q.marketCap ? `<span>시가총액 <b>${big(Q.marketCap, Q.currency || "KRW")}</b> <small>(${md(Q.asOf)})</small></span><span>1년 주가 ${upPct(Q.change1y)}</span>${Q.per ? `<span>PER ${Q.per.toFixed(1)}배</span>` : ""}` : "<span>비상장</span>";
   const lastDisc = (c.disclosures || [])[0];
   // 약식 손익
   const sgaAt = y => { const d = c.sga; if (!d?.years) return null; const k = d.years.indexOf(String(y)); if (k < 0) return null;
@@ -192,20 +189,14 @@ function valCard(F){
     tip: [r.c.name, `PSR\t${xv(r.psr)}`, `시가총액\t${big(r.q.marketCap, r.q.currency || "KRW")}`, `매출 ${r.L.y}\t${big(r.L.rev, r.L.cur || "KRW")}`,
       r.q.per ? `PER\t${r.q.per.toFixed(1)}배` : null, r.q.pbr ? `PBR\t${r.q.pbr.toFixed(1)}배` : null, `1개월 주가\t${sgn(r.q.change1m)}`, `3개월 주가\t${sgn(r.q.change3m)}`, `1년 주가\t${sgn(r.q.change1y)}`] })),
     { lab: 130, fmt: v => `${v.toFixed(2)}배`, dot: true, ref: med != null ? { v: med, label: `중앙값 ${xv(med)}` } : null });
-  const body = rows.slice().sort((a, b) => (b.q?.marketCap ?? -1) - (a.q?.marketCap ?? -1)).map(r => {
-    if (r.est){
-      const same = r.lo != null && r.lo.toFixed(2) === r.hi.toFixed(2);   // 피어 PSR 범위가 반올림해 같으면 한 값으로
-      const v = r.lo == null || !r.L.rev ? "–" : same ? `약 ${big(r.L.rev * r.lo)}` : `${big(r.L.rev * r.lo)}~<wbr>${big(r.L.rev * r.hi)}`;
-      const note = F.g.valuationNotes?.[r.c.id], rc = note && ref(note.ref);
-      return [coCell(r.c), `<span class="est">추정</span>${v}`, big(r.L.rev, r.L.cur || "KRW"), r.lo == null ? "–" : same ? `<span class="sv">${xv(r.lo)}<small>피어</small></span>` : `<span class="sv">${r.lo.toFixed(2)}~<wbr>${xv(r.hi)}<small>피어</small></span>`, "–", "–", "–"].map((x, i) => i === 0 && rc?.quote?.marketCap ? `${x}<small>참고: ${esc(note.text)} ${big(rc.quote.marketCap)}</small>` : x);
-    }
-    return [coCell(r.c), big(r.q.marketCap, r.q.currency || "KRW"), big(r.L.rev, r.L.cur || "KRW"), xv(r.psr), r.q.per == null ? "–" : r.q.per.toFixed(1) + "배", r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배",
-      pct(r.q.change1y, 1, 0)];
-  });
+  // 상장사만(그래프와 같은 회사). 비상장 추정 가치는 비교 상장사가 적으면 범위가 지나치게 넓어 표시하지 않음
+  const body = lst.slice().sort((a, b) => (b.q?.marketCap ?? -1) - (a.q?.marketCap ?? -1)).map(r =>
+    [coCell(r.c), big(r.q.marketCap, r.q.currency || "KRW"), big(r.L.rev, r.L.cur || "KRW"), xv(r.psr), r.q.per == null ? "–" : r.q.per.toFixed(1) + "배", r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배",
+      pct(r.q.change1y, 1, 0)]);
   const t = tbl(["회사", "시가총액", "매출<small>최근 연간</small>", "PSR", "PER", "PBR", "1년 주가"], body,
-    "PSR = 시가총액 ÷ 최근 연간 매출(OpenDART) · PER·PBR = 시가총액 ÷ 최근 연간 순이익·자본총계 · 비상장 = 같은 묶음 상장사 PSR 범위 × 매출");
-  return card(`<h2 class="h2o">기업가치<small>PSR = 시가총액 ÷ 매출액</small>${ofsBtn()}</h2>
-    ${split(`${med != null ? `<div class="big1"><b>${xv(med)}</b><span>상장 ${lst.length}개사 PSR 중앙값</span></div>` : ""}${lst.length ? chart : '<p class="empty">상장사 없음</p>'}`, `<div class="val-t">${t}</div>`, "wide")}`);
+    "");
+  return card(`<h2 class="h2o">기업가치<small>상장 ${lst.length}개사</small>${infoI("PSR = 시가총액 ÷ 최근 연간 매출(OpenDART) · PER·PBR = 시가총액 ÷ 최근 연간 순이익·자본총계 · 비상장사는 시가총액이 없어 제외")}${ofsBtn()}</h2>
+    ${split(`${med != null ? `<div class="big1"><b>${xv(med)}</b><span>PSR 중앙값</span></div>` : ""}${lst.length ? chart : '<p class="empty">상장사 없음</p>'}`, `<div class="val-t">${t}</div>`, "wide")}`, "valc");
 }
 
 /* ---------- 비중 도넛: items [{label, v(%), color, tip}] — 조각과 범례(이름·%) ---------- */

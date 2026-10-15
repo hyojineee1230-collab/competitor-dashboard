@@ -502,3 +502,9 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .val-t th:first-child,.val-t td:first-child{width:150px}
   .val-t td:nth-child(2),.val-t td:nth-child(4){min-width:0}
 }
+/* 기업가치: 왼쪽 점 그래프 높이를 오른쪽 표에 맞춤(행 간격을 늘려 아래 빈칸 없앰) */
+@media (min-width:1181px){
+  .valc .split{align-items:stretch}
+  .valc .sp-l{display:flex;flex-direction:column}
+  .valc .sp-l .hb{flex:1;align-content:space-around;padding-top:34px}
+}
