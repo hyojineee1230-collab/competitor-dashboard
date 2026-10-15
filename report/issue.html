@@ -266,8 +266,7 @@ tbody tr.sel, tbody tr.sel td:first-child{background:var(--brand-soft)}
 #sgaTable tr.avg .pv{font-weight:600}
 .stk{display:flex;height:12px;min-width:140px;margin:5px 5px 0 0}
 .stk i{position:relative;display:block;height:100%}
-.stk i::before{content:"";position:absolute;left:0;right:0;top:-5px;height:5px;background:inherit;filter:brightness(1.25);transform:skewX(-45deg);transform-origin:bottom left}
-.stk i:last-child::after{content:"";position:absolute;left:100%;top:0;width:5px;height:100%;background:inherit;filter:brightness(.72);transform:skewY(-45deg);transform-origin:top left}
+.stk{border-radius:3px;overflow:hidden;box-shadow:0 1px 3px rgba(11,26,51,.22)}
 .lg{display:inline-flex;align-items:center;gap:4px;margin-right:10px}.lg i{width:9px;height:9px;border-radius:2px;display:inline-block}
 details.note summary{cursor:pointer}
 #sgaTable .sub2{display:block;font-size:12px;color:var(--muted);font-weight:400}
@@ -310,13 +309,13 @@ tr.sec td:first-child{background:var(--page)}
 .mk-bar .n small{display:block;color:var(--muted);font-size:11px}
 .mk-bar .t{display:flex;align-items:center;gap:8px;min-width:0}
 .mk-bar .t i{position:relative;display:block;height:9px;margin-top:4px;background:var(--brand);opacity:.6;flex:none}
-.mk-bar .t i::before{content:"";position:absolute;left:0;right:0;top:-4px;height:4px;background:var(--brand);filter:brightness(1.4);transform:skewX(-45deg);transform-origin:bottom left}
-.mk-bar .t i::after{content:"";position:absolute;left:100%;top:0;width:4px;height:100%;background:var(--brand);filter:brightness(.68);transform:skewY(-45deg);transform-origin:top left}
+.mk-bar .t i{height:10px;margin-top:0;border-radius:3px}
 .mk-bar .t .x{margin-left:4px}
 .mk-bar:first-child .t i{opacity:1}
 .mk-bar .x{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;font-size:12.5px}
-.mk-pie{display:grid;grid-template-columns:210px minmax(0,320px);justify-content:center;gap:18px;align-items:center}
+.mk-pie{display:grid;grid-template-columns:auto minmax(0,320px);justify-content:center;gap:18px;align-items:center}
 @media screen and (max-width:600px){.mk-pie{grid-template-columns:minmax(0,1fr);gap:12px}.mk-pie .c{width:min(230px,100%);justify-self:center}}
+@media screen and (min-width:601px){.mk-pie .c{width:210px}}
 .mk-pie .c svg{display:block;width:100%;height:auto;overflow:visible}
 .mk-pie [data-i]{transition:opacity .15s}
 .mk-pie.hl .c [data-i]:not(.on){opacity:.25}
@@ -857,7 +856,7 @@ td span.err{font-size:13.5px}
 .is-d:first-of-type{border-top:0}
 .is-d small{color:var(--muted);margin-right:6px}
 .is-d a{color:var(--ink)}
-/* 기간 중 보도: 3D 원형 + 범례 */
+/* 기간 중 보도: 원형 + 범례 */
 .is-pie{display:grid;gap:10px}
 .is-pie .c{width:min(190px,80%);justify-self:center}
 .is-pie .c svg{display:block;width:100%;height:auto;overflow:visible}
@@ -874,7 +873,11 @@ td span.err{font-size:13.5px}
 .is-leg span:first-of-type{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .is-leg span:nth-of-type(2){font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 .is-leg span:nth-of-type(3){color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
-/* 연간 실적 비교 막대: 평면 막대(올해) + 바로 아래 얇은 막대(전년) */
+/* 리포트 입체 양식(막대 공통): 얕은 그림자 + 위쪽 밝고 아래쪽 어두운 명암 */
+.stk i,.mk-bar .t i,.fr-row .tr i:not(.pv),.vo-row .tr i{box-shadow:0 1px 3px rgba(11,26,51,.22)}
+.stk i,.mk-bar .t i,.fr-row .tr i:not(.pv),.vo-row .tr i{background-image:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 55%,rgba(0,0,0,.10)) !important}
+.stk i{box-shadow:none}
+/* 연간 실적 비교 막대: 막대(올해) + 바로 아래 얇은 막대(전년) */
 .fr-row{padding:6px 0}
 .fr-row .tr{height:25px;background:none}
 .fr-row .tr i{top:0;bottom:auto;height:16px;border-radius:3px}
@@ -885,6 +888,7 @@ td span.err{font-size:13.5px}
 .upd{font-size:13px;font-weight:600;display:inline-block;border-radius:999px;padding:2px 10px}
 .upd.new{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
 .upd.same{background:var(--tag);color:var(--muted)}
+@media screen and (max-width:430px){ #updated{display:none} }
 @media screen and (max-width:760px){ .is-grid,.is-grid.n2{grid-template-columns:1fr} .is-grid.n2 .is-pie{grid-template-columns:1fr} .is-grid.n2 .is-pie .c{width:min(190px,80%) !important} .is-hd h2{font-size:19px} .hdr-r .info-btn{white-space:nowrap;padding:5px 8px;font-size:12.5px} #updated{white-space:nowrap} }
 /* 인쇄 메뉴 */
 .pm{position:relative;display:inline-block}
@@ -1611,31 +1615,25 @@ function chartBase(){
     borderColor: css("--axis"), borderWidth: 1, padding: 10, boxPadding: 4,
   };
 }
-// 세로 막대 3D: 막대 오른쪽 옆면(어둡게)과 윗면(밝게)을 덧그림. 투명(전망치)은 테두리만
-const BAR3D = { id: "bar3d", afterDatasetsDraw(c){
-  if (c.config.type !== "bar") return;
-  const g = c.ctx, d = 6;
-  const shade = (col, f) => { const m = /^#?([0-9a-f]{6})/i.exec(col || ""); if (!m) return col; const n = parseInt(m[1], 16);
-    const ch = k => Math.max(0, Math.min(255, Math.round(((n >> k) & 255) * f))); return `rgb(${ch(16)},${ch(8)},${ch(0)})`; };
-  g.save();
-  c.data.datasets.forEach((ds, di) => { const meta = c.getDatasetMeta(di); if (meta.hidden) return;
-    meta.data.forEach((el, k) => { if (ds.data[k] == null) return;
-      const { x, y, base, width } = el.getProps(["x", "y", "base", "width"], true);
-      const L = x - width / 2, R = x + width / 2, top = Math.min(y, base), bot = Math.max(y, base);
-      const col = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[k] : ds.backgroundColor;
-      const line = Array.isArray(ds.borderColor) ? ds.borderColor[k] : ds.borderColor;
-      const hollow = !col || col === "transparent";
-      g.beginPath(); g.moveTo(R, top); g.lineTo(R + d, top - d); g.lineTo(R + d, bot - d); g.lineTo(R, bot); g.closePath();
-      if (hollow){ g.strokeStyle = line; g.lineWidth = 1; g.stroke(); } else { g.fillStyle = shade(col, .72); g.fill(); }
-      g.beginPath(); g.moveTo(L, top); g.lineTo(L + d, top - d); g.lineTo(R + d, top - d); g.lineTo(R, top); g.closePath();
-      if (hollow){ g.strokeStyle = line; g.stroke(); } else { g.fillStyle = shade(col, 1.18); g.fill(); }
-    });
-  });
-  g.restore();
-} };
+// 세로 막대(리포트 입체 양식): 얕은 그림자 + 위쪽 밝고 아래쪽 어두운 명암. 투명(전망치)은 테두리만
+const BAR3D = { id: "bar3d",
+  beforeDatasetsDraw(c){ if (c.config.type !== "bar") return; const g = c.ctx; g.save(); g.shadowColor = "rgba(11,26,51,.22)"; g.shadowBlur = 5; g.shadowOffsetY = 2; },
+  afterDatasetsDraw(c){
+    if (c.config.type !== "bar") return;
+    const g = c.ctx; g.restore(); g.save();
+    c.data.datasets.forEach((ds, di) => { const meta = c.getDatasetMeta(di); if (meta.hidden) return;
+      meta.data.forEach((el, k) => { if (ds.data[k] == null) return;
+        const col = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[k] : ds.backgroundColor;
+        if (!col || col === "transparent") return;
+        const { x, y, base, width } = el.getProps(["x", "y", "base", "width"], true);
+        const L = x - width / 2, top = Math.min(y, base), h = Math.abs(base - y); if (h < 1) return;
+        const gr = g.createLinearGradient(0, top, 0, top + h);
+        gr.addColorStop(0, "rgba(255,255,255,.26)"); gr.addColorStop(.5, "rgba(255,255,255,0)"); gr.addColorStop(1, "rgba(0,0,0,.10)");
+        g.fillStyle = gr; g.beginPath(); g.roundRect ? g.roundRect(L, top, width, h, [3, 3, 0, 0]) : g.rect(L, top, width, h); g.fill(); }); });
+    g.restore(); } };
 function draw(key, canvasId, cfg){
   if (cfg.type === "bar"){ cfg.plugins = [...(cfg.plugins || []), BAR3D];
-    cfg.data.datasets.forEach(ds => { ds.borderRadius = 0; });
+    cfg.data.datasets.forEach(ds => { ds.borderRadius = { topLeft: 3, topRight: 3 }; ds.borderSkipped = "start"; });
     cfg.options = cfg.options || {}; cfg.options.layout = { ...(cfg.options.layout || {}), padding: { ...((cfg.options.layout || {}).padding || {}), top: Math.max(10, ((cfg.options.layout || {}).padding || {}).top || 0), right: 8 } }; }
   if (charts[key]) charts[key].destroy();
   charts[key] = new Chart($(canvasId), cfg);
@@ -2813,40 +2811,44 @@ function renderSga(){
 
 /* ---------- 시장 개요 (data/market.json, 직접 작성) ---------- */
 let market = null;
-// 3D 원형 차트(SVG): 윗면 타원 + 앞쪽 옆면. items = [[이름, 값, 색]]
+// 원형 차트(SVG, 리포트 입체 양식): 평면 도넛 + 얕은 그림자 + 위쪽 밝은 명암. items = [[이름, 값, 색, 글자색]]
+// (기울인 3D는 앞쪽 조각이 커 보여 비중이 틀어지므로 쓰지 않음)
+let PIE_N = 0;
 function pie3d(items){
-  const W = 230, rx = 100, ry = 58, dep = 20, gap = 0, cx = W / 2, cy = ry + gap + 4, H = cy + ry + dep + gap + 6;
-  const tot = items.reduce((t, x) => t + x[1], 0) || 1;
-  const pt = (ox, oy, a, r = 1, dy = 0) => `${(ox + rx * r * Math.cos(a)).toFixed(2)},${(oy + dy + ry * r * Math.sin(a)).toFixed(2)}`;
-  const line = css("--surface");
-  let a = -Math.PI / 2; const faces = []; let tops = "";
-  let labels = "";
+  const W = 200, cx = 100, cy = 98, R = 90, r0 = 50, H = 204, id = "pz" + (++PIE_N);
+  const tot = items.reduce((t, x) => t + x[1], 0) || 1, line = css("--surface");
+  const pt = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)},${(cy + rad * Math.sin(a)).toFixed(2)}`;
+  let a = -Math.PI / 2, segs = "", labels = "";
   items.forEach(([n, v, col, lab], k) => {
     const a0 = a, a1 = a + v / tot * 2 * Math.PI, mid = (a0 + a1) / 2; a = a1;
-    // 조각을 가운데 각도 방향으로 살짝 밀어 간격을 만듦
-    const g1 = gap > 0 && items.length > 1 ? gap : 0, ox = cx + g1 * Math.cos(mid), oy = cy + g1 * Math.sin(mid) * ry / rx;
-    const tip = `<title>${esc(n)} ${v.toFixed(1)}%</title>`;
-    const face = (d, f, key) => faces.push([key, `<g data-i="${k}"><path d="${d}" fill="${col}"/><path d="${d}" fill="#000" opacity="${f}">${tip}</path></g>`]);
-    for (const [s0, e0] of [[0, Math.PI], [2 * Math.PI, 3 * Math.PI]]){       // 바깥 옆면(앞쪽만)
-      const s = Math.max(a0, s0), e = Math.min(a1, e0);
-      if (e > s) face(`M${pt(ox, oy, s)} A${rx},${ry} 0 0 1 ${pt(ox, oy, e)} L${pt(ox, oy, e, 1, dep)} A${rx},${ry} 0 0 0 ${pt(ox, oy, s, 1, dep)} Z`, .28, oy + ry * Math.sin((s + e) / 2));
-    }
-    if (gap > 0 && items.length > 1) [[a0, Math.cos(a0) < 0], [a1, Math.cos(a1) > 0]].forEach(([e, vis]) => {   // 잘린 단면(보이는 쪽만)
-      if (vis) face(`M${ox},${oy} L${pt(ox, oy, e)} L${pt(ox, oy, e, 1, dep)} L${ox},${oy + dep} Z`, .4, oy + ry * Math.sin(e) / 2);
-    });
-    const large = a1 - a0 > Math.PI ? 1 : 0;
-    const d = items.length === 1 ? `M${cx - rx},${cy} A${rx},${ry} 0 1 1 ${cx + rx},${cy} A${rx},${ry} 0 1 1 ${cx - rx},${cy} Z`
-      : `M${ox},${oy} L${pt(ox, oy, a0)} A${rx},${ry} 0 ${large} 1 ${pt(ox, oy, a1)} Z`;
-    tops += `<path class="top" data-i="${k}" d="${d}" fill="${col}" stroke="${line}" stroke-width=".8" stroke-linejoin="round">${tip}</path>`;
-    // 8% 이상 조각은 윗면 안쪽에 비율 표시
+    const tip = `<title>${esc(n)} ${v.toFixed(1)}%</title>`, large = a1 - a0 > Math.PI ? 1 : 0;
+    const d = items.length === 1 ? `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 M${cx - r0},${cy} a${r0},${r0} 0 1 0 ${2 * r0},0 a${r0},${r0} 0 1 0 ${-2 * r0},0 Z`
+      : `M${pt(R, a0)} A${R},${R} 0 ${large} 1 ${pt(R, a1)} L${pt(r0, a1)} A${r0},${r0} 0 ${large} 0 ${pt(r0, a0)} Z`;
+    segs += `<path class="top" data-i="${k}" d="${d}" fill="${col}" fill-rule="evenodd" stroke="${line}" stroke-width="1.2" stroke-linejoin="round">${tip}</path>`;
     if (items.length > 1 && v / tot >= .08){
-      const [lx, ly] = pt(ox, oy, mid, .62).split(",");
-      labels += `<text data-i="${k}" x="${lx}" y="${ly}" dy=".35em" text-anchor="middle" fill="${lab || "#fff"}"${lab ? "" : ` stroke="rgba(0,0,0,.28)" stroke-width="2" paint-order="stroke"`}>${v.toFixed(1)}%</text>`;
+      const [lx, ly] = pt((R + r0) / 2, mid).split(",");
+      labels += `<text data-i="${k}" x="${lx}" y="${ly}" dy=".35em" text-anchor="middle" fill="${lab || "#fff"}"${lab ? "" : ` stroke="rgba(0,0,0,.25)" stroke-width="2" paint-order="stroke"`}>${v.toFixed(0)}%</text>`;
     }
   });
-  faces.sort((p, q) => p[0] - q[0]);
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="비중 원형 차트">${faces.map(f => f[1]).join("")}${tops}${labels}</svg>`;
+  const ring = `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 M${cx - r0},${cy} a${r0},${r0} 0 1 0 ${2 * r0},0 a${r0},${r0} 0 1 0 ${-2 * r0},0 Z`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="비중 원형 차트"><defs>
+      <filter id="${id}s" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0b1a33" flood-opacity=".22"/></filter>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
+    <g filter="url(#${id}s)">${segs}</g><path d="${ring}" fill="url(#${id}g)" fill-rule="evenodd" pointer-events="none"/>${labels}</svg>`;
 }
+// 나란한 시장 카드 높이가 다르면 원형을 키워 빈 여백을 줄임(최대 300px)
+function fitMkPies(){
+  document.querySelectorAll("#mktBody .mk-card > .mk-pie .c").forEach(c => {
+    const card = c.closest(".mk-card"), row = card.parentElement; c.style.width = "";
+    if (getComputedStyle(row).display !== "grid" || getComputedStyle(row).gridTemplateColumns.split(" ").length < 2) return;
+    const sibs = [...row.children].filter(x => x !== card && Math.abs(x.offsetTop - card.offsetTop) < 4); if (!sibs.length) return;
+    row.style.alignItems = "start";
+    const target = Math.max(...sibs.map(x => x.offsetHeight)), w0 = c.offsetWidth;
+    for (let w = w0; w <= 300; w += 10){ c.style.width = w + "px"; if (card.offsetHeight > target){ c.style.width = (w - 10) + "px"; break; } }
+    row.style.alignItems = "";
+  });
+}
+addEventListener("resize", () => requestAnimationFrame(fitMkPies));
 async function renderMkt(){
   const gid = state.group;
   if (!market){ try { market = await loadJSON("data/market.json"); } catch(e){ market = {groups:{}}; } }
@@ -2925,6 +2927,7 @@ async function renderMkt(){
   h += `<details class="note mk-src"><summary>출처 ${src.length}건</summary><ol>${src.map(x =>
     `<li>${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)}</li>`).join("")}</ol></details>`;
   $("mktBody").innerHTML = h;
+  requestAnimationFrame(fitMkPies);
   if (!$("mktBody").dataset.pieHl){   // 범례 줄 ↔ 원형 조각 강조 연동(한 번만 연결)
     $("mktBody").dataset.pieHl = "1";
     $("mktBody").addEventListener("mouseover", e => {
