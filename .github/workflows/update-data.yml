@@ -23,6 +23,8 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-24.04
+    env:
+      HAS_R2: ${{ secrets.R2_ACCESS_KEY_ID != '' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
@@ -56,3 +58,18 @@ jobs:
             done
             exit 1
           fi
+
+      # Cloudflare R2에 데이터 올리기(설정 전에는 건너뜀). 사이트는 /data/*를 R2에서 읽으므로 다시 배포하지 않아도 바로 반영
+      - name: Upload data to R2
+        if: env.HAS_R2 == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: |
+          aws s3 sync data/ "s3://${{ secrets.R2_BUCKET }}/data/" \
+            --endpoint-url "https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+            --exclude "*" --include "*.json" --exclude "reports/*" --only-show-errors
+          echo "R2 업로드 완료"
