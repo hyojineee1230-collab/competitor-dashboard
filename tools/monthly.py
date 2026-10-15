@@ -4,6 +4,8 @@
 - 같은 호를 다시 만들면 데이터·집계는 새로 쓰고, 직접 작성한 insights 는 그대로 둔다.
 - 기간(window) = 직전 호 기준일 다음 날 ~ 이번 기준일. 직전 호가 없으면 기준일 한 달 전부터.
 - 숫자는 수집 데이터(DART·KRX·해외 시세) 그대로 — 여기서 새 재무 숫자를 만들지 않는다.
+- 호는 기준일에 고정: 복사본에서 기준일 뒤의 주가·지수·공시·활동·보도는 잘라 낸다. 기사 유형·매체 설정도 호 폴더에 복사.
+  기준일 당일(또는 다음 날)에 돌린다 — 늦게 돌리면 재무·시세 요약(quote)은 실행 시점 값이 들어가므로 경고한다.
 """
 import argparse, datetime as dt, json, os, shutil
 
@@ -35,6 +37,27 @@ def md(d):
     return d[5:10].replace("-", ".") if d else ""
 
 
+def trim(obj, as_of):
+    """기준일(as_of, YYYY-MM-DD) 뒤의 시계열·목록을 잘라 낸다(제자리 수정)."""
+    if isinstance(obj, dict):
+        ds = obj.get("dates")
+        if isinstance(ds, list) and ds and isinstance(ds[0], str):
+            k = sum(1 for d in ds if d[:10] <= as_of)
+            if k < len(ds):
+                for key, v in obj.items():
+                    if isinstance(v, list) and len(v) == len(ds) and not (v and isinstance(v[0], dict)):
+                        obj[key] = v[:k]
+        for key, v in list(obj.items()):
+            if isinstance(v, list) and v and isinstance(v[0], dict) and ("date" in v[0] or "d" in v[0]):
+                obj[key] = [x for x in v if (x.get("date") or x.get("d") or "")[:10] <= as_of]
+            if isinstance(v, (dict, list)):
+                trim(obj[key], as_of)
+    elif isinstance(obj, list):
+        for x in obj:
+            trim(x, as_of)
+    return obj
+
+
 def is_report(t):
     return any(k in t for k in ("사업보고서", "반기보고서", "분기보고서", "감사보고서"))
 
@@ -58,8 +81,15 @@ def main():
 
     out = os.path.join(REP, a.issue)
     os.makedirs(out, exist_ok=True)
+    late = (dt.datetime.utcnow() + dt.timedelta(hours=9)).date() - as_of
+    if late.days > 1:
+        print(f"경고: 기준일보다 {late.days}일 늦게 실행 — 주가·공시·보도는 기준일까지 잘라 내지만 재무·시세 요약은 지금 값입니다")
     for f in COPY:
-        shutil.copy(os.path.join(DATA, f), os.path.join(out, f))
+        obj = load(os.path.join(DATA, f))
+        dump(os.path.join(out, f), obj if f in ("market.json", "summaries.json", "meta.json") else trim(obj, w1))
+    for f in ("news_cats.json", "media.json"):
+        os.makedirs(os.path.join(out, "config"), exist_ok=True)
+        shutil.copy(os.path.join(ROOT, "config", f), os.path.join(out, "config", f))
     dump(os.path.join(out, "live.json"), {"quotes": {}, "index": {}})   # 호는 장중 시세 없이 종가 기준
 
     market = load(os.path.join(DATA, "market.json"), {})

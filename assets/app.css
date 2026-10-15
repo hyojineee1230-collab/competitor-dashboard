@@ -193,9 +193,6 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .adm-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .adm-hd h2{margin:0;font-size:21px}
 #adm h3{font-size:16px;margin:18px 0 8px}#adm h3 small{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
-.adm-go{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-weight:700;color:var(--accent)}
-.adm-go small{font-weight:400;color:var(--muted);font-size:13px}
-.adm-go:hover{border-color:var(--accent)}
 .adm-tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
 .adm-tool input{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px}
 .cap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}

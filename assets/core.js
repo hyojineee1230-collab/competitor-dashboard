@@ -1,5 +1,5 @@
 /* 경쟁사 모니터(메인): 데이터 읽기, 경로·메뉴·분야 라우팅, 헤더, 갱신 현황, 숫자·그래프 도우미
-   경로: /#<메뉴>/<분야>   보관본 /v1/   월간 리포트 /report/
+   경로: /#<메뉴>/<분야>   월간 리포트 /report/
    메뉴: insight · quotes · finance · market · news   분야: core(핵심 경쟁사, biz) · hff · microbiome */
 "use strict";
 const VIEW = "summary";
@@ -28,7 +28,6 @@ async function getJSON(name, path = DATA){
 }
 async function loadBase(){
   await Promise.all(["meta", "biz", "hff", "microbiome", "live", "index", "newsfx", "market"].map(n => getJSON(n)));
-  if (VIEW === "detail") await getJSON("summaries");
 }
 
 /* ---------- 날짜 (한국 시간) ---------- */
@@ -306,10 +305,7 @@ function parseHash(){
   if (MENUS.some(x => x[0] === m)) S.menu = m;
   if (FIELDS.some(x => x[0] === f)) S.field = f;
 }
-// 상세 = v1 보관본의 맞는 탭 (아직 Beta에 없는 표: 판관비, 시장 세부)
-const FIELD_TAB = { core: "biz", hff: "hff", microbiome: "microbiome" };
-const LEGACY = (menu, field) => field === "core" ? (menu === "quotes" || menu === "news" ? "biz" : "biz-x") : field;
-const href = (menu, field, view = VIEW) => view === "detail" ? `${SITE}v1/#${LEGACY(menu, field)}` : `#${menu}/${field}`;
+const href = (menu, field) => `#${menu}/${field}`;
 function header(){
   const ICON = { insight: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>', quotes: '<path d="M4 19V5M4 19h16M7 15l4-4 3 3 5-6"/>',
     finance: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/>', market: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/>',
@@ -418,7 +414,7 @@ async function start(pages){
 }
 
 /* ---------- 관리자 모드: 브랜드명을 길게 누르면 ----------
-   일자별 시가총액(이 브라우저에 저장한 '시총 복사 목록' 기준, v1과 같은 계산) · v1 보관본 이동
+   일자별 시가총액(이 브라우저에 저장한 '시총 복사 목록' 기준)
    회사 목록은 localStorage(cm-labels-v2.cap)에만 — 저장소·사이트에는 올리지 않음 */
 const SITE_ROOT = SITE;
 const LABELS_KEY = "cm-labels-v2";
@@ -464,7 +460,6 @@ function openAdmin(){
   let d = $("adm");
   if (!d){ d = document.createElement("dialog"); d.id = "adm"; d.setAttribute("aria-labelledby", "admTitle"); document.body.appendChild(d); }
   d.innerHTML = `<div class="adm-in"><div class="adm-hd"><h2 id="admTitle">관리자</h2><button class="cp-x" type="button" data-adm-x aria-label="닫기">✕</button></div>
-    <div class="adm-links"><a class="adm-go" href="${SITE_ROOT}v1/">v1 보관본 열기<small>Beta 전환 전 화면 그대로</small></a></div>
     <h3>일자별 시가총액 <small id="admHint"></small></h3>
     <div class="adm-tool"><input type="date" id="admDate" aria-label="기준일"><button type="button" class="morebtn" id="admCopy" title="종목(코드)과 시가총액(억원, 원 단위까지)을 엑셀에 붙여넣을 수 있게 복사">시총 복사</button><span class="mu" id="admToast" role="status"></span></div>
     <div class="cap-grid" id="admCap"></div>

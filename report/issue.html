@@ -864,13 +864,12 @@ td span.err{font-size:13.5px}
 .is-leg span:first-of-type{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .is-leg span:nth-of-type(2){font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 .is-leg span:nth-of-type(3){color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
-/* 연간 실적 비교 막대: 윗면·옆면을 덧대 입체로 (리포트 양식) */
-.fr-row .tr{overflow:visible}
-.fr-row .tr i{border-radius:0}
-.fr-row .tr i::before{content:"";position:absolute;left:0;right:0;top:-5px;height:5px;background:inherit;filter:brightness(1.35);transform:skewX(-45deg);transform-origin:bottom left}
-.fr-row .tr i::after{content:"";position:absolute;left:100%;top:0;width:5px;height:100%;background:inherit;filter:brightness(.7);transform:skewY(-45deg);transform-origin:top left}
-.fr-row .tr i.cut::before,.fr-row .tr i.cut::after{display:none}
-.fr-row{padding:7px 0}
+/* 연간 실적 비교 막대: 평면 막대(올해) + 바로 아래 얇은 막대(전년) */
+.fr-row{padding:6px 0}
+.fr-row .tr{height:25px;background:none}
+.fr-row .tr i{top:0;bottom:auto;height:16px;border-radius:3px}
+.fr-row .tr i.pv{top:20px;height:5px;border-radius:2px;opacity:.35}
+.fr-row .tr em{top:-3px;bottom:-3px}
 .upd{margin:0 0 10px;font-size:13px;font-weight:600;display:inline-block;border-radius:999px;padding:2px 10px}
 .upd.new{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
 .upd.same{background:var(--tag);color:var(--muted)}
@@ -1075,7 +1074,7 @@ td span.err{font-size:13.5px}
   </div>
 
   <footer>
-    데이터: Yahoo Finance, OpenDART(정기보고서·감사보고서) · GitHub Actions로 평일 자동 갱신 · 투자 판단의 근거로 사용하지 마십시오.
+    데이터: KRX·Yahoo Finance(시세), OpenDART(정기보고서·감사보고서) · 각 호의 숫자는 기준일에 고정 · 투자 판단의 근거로 사용하지 마십시오.
   </footer>
 </div>
 
@@ -1281,13 +1280,15 @@ new MutationObserver(ms => { const seen = new Set();
 // v1 보관본: 데이터·설정은 상위 폴더(메인과 같은 파일)
 const ISSUE = new URLSearchParams(location.search).get("m");
 if (!/^\d{4}-\d{2}$/.test(ISSUE || "")) location.replace("./");
-const P = p => p.startsWith("data/") ? `../data/reports/${ISSUE}/` + p.slice(5) : p.startsWith("config/") ? "../config/" + p.slice(7) : p;
+const P = p => p.startsWith("data/") ? `../data/reports/${ISSUE}/` + p.slice(5) : p.startsWith("config/") ? `../data/reports/${ISSUE}/config/` + p.slice(7) : p;
 async function loadJSON(path){
   const r = await fetch(P(path), {cache:"no-cache"});
   if (!r.ok) throw new Error(path + " " + r.status);
   return r.json();
 }
+let ISSUE_ASOF = null;
 async function init(){
+  try { REPORT = await loadJSON("data/report.json"); ISSUE_ASOF = REPORT.asOf || null; } catch(e){ REPORT = {}; }
   try { state.meta = await loadJSON("data/meta.json"); }
   catch(e){
     $("content").innerHTML = `<div class="panel empty">데이터를 불러오지 못했습니다. GitHub Pages 또는 로컬 웹서버(python -m http.server)로 열어주세요.</div>`;
@@ -1478,7 +1479,8 @@ const sgn = (v, d = 1) => v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(d)
 const upDown = v => v > 0 ? "up" : v < 0 ? "down" : "";
 const arrow = v => v == null ? "–" : `${v > 0 ? "▲" : v < 0 ? "▼" : ""}${Math.abs(v).toFixed(1)}%`;
 const md = d => d ? d.slice(5).replace("-", ".") : "";
-const todayKST = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+// 호는 기준일(report.json asOf)에 고정: "오늘"·최근 n일 계산은 모두 기준일 기준
+const todayKST = () => ISSUE_ASOF || new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 async function briefData(){
   if (!liveQ){ try { liveQ = await loadJSON("data/live.json"); } catch(e){ liveQ = {}; } }
   if (!idxD){ try { idxD = await loadJSON("data/index.json"); } catch(e){ idxD = {}; } }
@@ -1987,7 +1989,7 @@ async function renderVal(){
                  : `<span class="lg"><i style="background:${color(x.c)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
   }
   const hasEst = rows.some(r => r.est);
-  $("valHint").textContent = `최근 거래일 기준`;
+  $("valHint").textContent = `${md(REPORT?.close || "")} 종가 기준`;
   $("valNotes").innerHTML = "";
 }
 
@@ -2353,7 +2355,7 @@ function discPool(){
 }
 function newsOf(c){
   if (!isTodayTab() || !newsRaw) return (c.activity || []).filter(x => x.src === "뉴스");
-  const from = new Date(Date.now() - 270 * 864e5).toISOString().slice(0, 10);
+  const from = new Date(Date.parse(todayKST()) - 270 * 864e5).toISOString().slice(0, 10);
   return newsRaw.filter(x => x.c === c.id && x.d >= from).map(x => ({ date: x.d, title: x.title, url: x.url, by: x.by }));
 }
 function renderDisc(reset){
@@ -2385,7 +2387,7 @@ function renderDisc(reset){
     sel.innerHTML = `<option value="">전체 회사</option>` + list.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
   }
   const pick = sel.value;
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = new Date(todayKST() + "T00:00:00");
   const isGrid = discCat === "report";
   $("discGridWrap").hidden = $("discYearWrap").hidden = !isGrid;
   $("discListWrap").hidden = isGrid;
@@ -2598,7 +2600,7 @@ const RATIO_CAP = 200;   // 매출이 작은 신약사의 수천 % 비율이 차
 // 국내 기업인데 값이 없으면: DART 장애 중이면 '수집 대기', 아니면 '공시 없음'
 const waitMsg = (c, none) => (c.country === "KR" && (state.meta?.dartStale || []).length)
   ? "DART 점검 중 · 점검 종료 후 자동 수집" : none;
-// 손익 지표 비교: 회사별 가로 막대(최근 연도) + 세로선(전년), 값과 전년 대비 변화. 큰 순서
+// 손익 지표 비교: 회사별 가로 막대(최근 연도) + 아래 얇은 막대(전년), 값과 전년 대비 변화. 큰 순서
 function renderFinBars(list, m, years, isPct, unit, scale){
   const box = $("finBars"), full = grp().mode === "full";
   document.querySelector("#secAnnual .chart-box").hidden = true;
@@ -2622,11 +2624,11 @@ function renderFinBars(list, m, years, isPct, unit, scale){
   box.innerHTML = `<p class="fin-ans">${esc(lab)} ${up[0]} 곳 <b>${esc(top.c.name)}</b> ${fv(top.cur)}`
     + (mv.length ? ` · 전년보다 ${mv[0].chg >= 0 ? up[1] : up[2]} 곳 <b>${esc(mv[0].c.name)}</b> ${fc(mv[0].chg)}` : "")
     + (avg != null && rows.length > 2 && !isPct ? ` <small>· 경쟁사 평균 ${fv(avg)}</small>` : "") + `</p>
-    <p class="fr-key">막대 = ${esc(last)}년${prev ? ` · 세로선 = ${esc(prev)}년` : ""}${clipped ? ` · ${FLOOR}% 아래는 잘라서 표시` : ""}</p>
+    <p class="fr-key">막대 = ${esc(last)}년${prev ? ` · 얇은 막대 = ${esc(prev)}년` : ""}${clipped ? ` · ${FLOOR}% 아래는 잘라서 표시` : ""}</p>
     <div class="fr-row head"><span></span><span></span><span class="v">${esc(last)}년</span><span class="g">전년 대비</span></div>`
     + rows.map(r => { const a = Math.min(pos(r.cur), z), w = Math.abs(pos(r.cur) - z);
       return `<div class="fr-row"><span class="nm" title="${esc(r.c.name)}"><i style="background:${color(r.c)}"></i>${esc(r.c.name)}</span>
-        <span class="tr">${lo < 0 ? `<em style="left:${z}%"></em>` : ""}<i class="${r.cur < lo ? "cut" : ""}" style="left:${a}%;width:${Math.max(w, .6)}%;background:${color(r.c)}${r.cur < 0 ? ";opacity:.55" : ""}"></i>${r.pv != null ? `<b style="left:calc(${pos(r.pv)}% - 1px)" title="${esc(prev)}년 ${esc(fv(r.pv))}"></b>` : ""}</span>
+        <span class="tr">${lo < 0 ? `<em style="left:${z}%"></em>` : ""}<i class="${r.cur < lo ? "cut" : ""}" style="left:${a}%;width:${Math.max(w, .6)}%;background:${color(r.c)}${r.cur < 0 ? ";opacity:.55" : ""}"></i>${r.pv != null ? `<i class="pv" style="left:${Math.min(pos(r.pv), z)}%;width:${Math.max(Math.abs(pos(r.pv) - z), .6)}%;background:${color(r.c)}" title="${esc(prev)}년 ${esc(fv(r.pv))}"></i>` : ""}</span>
         <span class="v ${r.cur < 0 ? "down" : ""}">${fv(r.cur)}</span><span class="g">${r.chg == null && r.diff != null ? `<span class="${upDown(r.diff)}" title="전년 대비 금액 차이">${r.diff > 0 ? "+" : ""}${fmtBig(r.diff, state.currency)}</span>` : fc(r.chg)}</span></div>`; }).join("");
 }
 function renderExtra(m){

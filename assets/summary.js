@@ -6,7 +6,6 @@ const card = (inner, cls = "", attr = "") => `<div class="card ${cls}"${attr}>${
 const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link = "", more = "", tool = "" } = {}) =>
   card(`<div class="meta"><span>${meta}${isNew ? '<span class="new" aria-label="새 소식"></span>' : ""}</span>${tool || link ? `<span class="mr">${tool}${link ? `<a class="more" href="${link}">자세히 ›</a>` : ""}</span>` : ""}</div>
   <div class="big"><b style="color:${numCol}">${num}</b><span>${head}</span></div>${sub ? `<div class="sub">${sub}</div>` : ""}${chart}${more}`, "ic");
-const moreLink = (menu, label) => `<div class="right"><a class="more" href="${href(menu, S.field, "detail")}">${label} ›</a></div>`;
 const won = (v, cur = "KRW") => v == null ? "–" : cur === "KRW" ? `${nf(v)}원` : `${{ USD: "$", EUR: "€" }[cur] || ""}${nf(v, 2)}`;
 const xaTag = c => c.noAvg ? `<span class="xa" title="평균·중앙값 계산에서 제외">평균 제외</span>` : "";
 const coCell = c => `<button type="button" class="co cob" data-co="${esc(c.id)}"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</button>${xaTag(c)}`;
@@ -604,8 +603,7 @@ const SUM = {
     const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;
     return `<div class="ph"><h1>시장</h1><span class="m">${esc(m.label || F.name)} · ${upd}</span><span class="r">${regBtn}</span></div>
-      ${kp ? `<div class="g3">${kp}</div>` : ""}${trend || chs ? `<div class="g2">${trend}${chs}</div>` : ""}${sh}${pipe}
-      ${moreLink("market", "대표 브랜드 · 동향 · 출처는 v1에서 보기")}`;
+      ${kp ? `<div class="g3">${kp}</div>` : ""}${trend || chs ? `<div class="g2">${trend}${chs}</div>` : ""}${sh}${pipe}`;
   },
 
   /* ---------- 공시·기사 ---------- */
