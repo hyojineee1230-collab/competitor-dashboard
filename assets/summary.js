@@ -139,18 +139,21 @@ function coPL(c, F){
     <div class="cp-kpis">${kpis}</div>${sgm}
     ${c.note ? `<p class="note" style="margin:-8px 0 16px">${esc(c.note)}</p>` : ""}
     ${struct ? `<div class="cp-sec"><h3>비용 구조 <small>매출액 대비 비중(%) · 판관비 계정은 사업보고서 주석 기준</small></h3>${struct}</div>` : ""}
-    <div class="cp-sec"><h3 class="h3o">약식 손익계산서 <small>(%) = 매출 대비 · OpenDART ${(S.ofs && c.alt?.annual) || a.basis === "OFS" || c.fs === "OFS" ? "별도" : "연결"}</small>${ofsBtn()}</h3><div class="cp-tw">${pl}</div></div>
+    <div class="cp-sec"><h3 class="h3o">약식 손익계산서 <small>(%) = 매출 대비 · OpenDART${c.alt?.annual ? "" : a.basis === "OFS" || c.fs === "OFS" ? " 별도" : " 연결"}</small>${c.alt?.annual ? `<span class="seg cp-fs">${[[0, "연결"], [1, "별도"]].map(([k, l]) => `<button type="button" data-pofs="${k}" aria-pressed="${!!k === !!F.ofs}">${l}</button>`).join("")}</span>` : ""}</h3><div class="cp-tw">${pl}</div></div>
     ${news.length ? `<div class="cp-sec"><h3>최근 보도 <small>최근 2주</small></h3>${news.map(e => `<a class="cp-n" href="${esc(e.url)}" target="_blank" rel="noopener"><span class="mu">${md(e.d)}</span><span class="tag">${esc(catName(e.cat))}</span><span>${esc(e.title)}</span></a>`).join("")}</div>` : ""}`;
 }
-function openCo(id){
-  const F = fieldCtx(S.field), c = F.cos.find(x => x.id === id); if (!c) return;
+// ofs: 이 팝업에서만 쓰는 연결/별도(처음엔 화면 스위치를 따름). 회사·비교 평균 모두 같은 기준으로 다시 계산
+function openCo(id, ofs = S.ofs){
+  const F = { ...fieldCtx(S.field, ofs), ofs }, c = F.cos.find(x => x.id === id); if (!c) return;
   hideTip();
-  const dlg = $("coPop"); dlg.dataset.co = id; $("coPopBody").innerHTML = coPL(c, F);
-  if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
+  const dlg = $("coPop"), keep = dlg.open && dlg.dataset.co === id ? dlg.scrollTop : 0;
+  dlg.dataset.co = id; $("coPopBody").innerHTML = coPL(c, F);
+  if (!dlg.open) dlg.showModal(); dlg.scrollTop = keep;
 }
 document.addEventListener("keydown", e => { const b = e.target.closest?.(".fcard[data-co]"); if (b && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openCo(b.dataset.co); } });
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-co]"); if (b && !e.target.closest("[data-tip]")){ e.preventDefault(); openCo(b.dataset.co); return; }
+  const t = e.target.closest("[data-pofs]"); if (t){ const d = $("coPop"); if (d?.dataset.co) openCo(d.dataset.co, t.dataset.pofs === "1"); return; }
+  const b = e.target.closest("[data-co]:not(dialog)"); if (b && !e.target.closest("[data-tip]")){ e.preventDefault(); openCo(b.dataset.co); return; }
   const d = $("coPop"); if (d?.open && (e.target === d || e.target.closest("[data-close]"))) d.close();
 });
 

@@ -68,12 +68,12 @@ const margin = (x, r) => r && x != null ? x / r * 100 : null;
 const MCAP = 1000;   // ±1,000% 넘는 이익률은 '매출 미미'
 
 /* ---------- 분야 · 회사 ---------- */
-function fieldCtx(fid){
+function fieldCtx(fid, ofs = S.ofs){
   const f = FIELDS.find(x => x[0] === fid) || FIELDS[1];
   const g = D[f[2]] || { companies: [] };
   // 별도 재무제표(S.ofs): 별도 값(c.alt)이 있는 회사만 바꿈. 연결이 없는 회사는 본래 별도 그대로. 부문 주석은 연결 기준이라 뺌
   // noAvg: 평균·중앙값·비교 범위 계산에서 뺄 회사(설정 avgExclude, 예: 핵심 경쟁사의 신약 회사). 화면에는 그대로 표시
-  const cos = g.companies.map((c, i) => { const x = { ...c, listed: c.listed ?? !!c.ticker, color: coColor(c.id, i), noAvg: (g.avgExclude || []).includes(c.id) }, A = S.ofs && c.alt?.annual ? c.alt : null;
+  const cos = g.companies.map((c, i) => { const x = { ...c, listed: c.listed ?? !!c.ticker, color: coColor(c.id, i), noAvg: (g.avgExclude || []).includes(c.id) }, A = ofs && c.alt?.annual ? c.alt : null;
     if (A){ x.annual = A.annual; if (A.quarterly !== undefined) x.quarterly = A.quarterly; x.sga = A.sga || null; x.segment = null; }
     return x; });
   return { id: f[0], name: f[1], gid: f[2], g, cos, mk: (D.market?.groups || {})[MARKET_OF[f[0]]] || {} };
@@ -400,10 +400,7 @@ document.addEventListener("click", e => {
 document.addEventListener("click", e => {
   if (!e.target.closest("[data-ofs]")) return;
   S.ofs = !S.ofs; lsSet(LS.ofs, S.ofs ? "1" : "0");
-  const d = $("coPop"), co = d?.open ? d.dataset.co : null;   // 약식 손익계산서에서 바꾸면 같은 회사로 다시 엶
-  if (d?.open) d.close();
   render();
-  if (co && typeof openCo === "function") openCo(co);
 });
 // 화면 안 선택 상자: <select data-uisel="key"> — 회사·유형 등을 바꾸면 '더 보기'는 처음으로
 document.addEventListener("change", e => {

@@ -442,6 +442,7 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 @media (max-width:760px){ .sg-m{margin-left:0;flex-basis:100%} }
 /* 구역 안 별도 재무제표 스위치: 제목 줄 오른쪽 */
 .h2o,.h3o{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.h3o .cp-fs{margin-left:auto;align-self:center;font-size:13.5px;font-weight:500}
 .h2o .fsb,.h3o .fsb{margin-left:auto;font-size:13.5px;font-weight:500;align-self:center}
 .ic .meta .mr{display:inline-flex;align-items:center;gap:14px;flex:none}
 .ic .meta .fsb{font-size:13.5px}
