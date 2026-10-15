@@ -841,6 +841,8 @@ td span.err{font-size:13.5px}
 .is-grid.n2 .is-pie{grid-template-columns:auto minmax(0,300px);justify-content:center;align-items:center;gap:28px}
 .is-grid.n2 .is-pie .c{width:150px}
 .is-foot{margin:8px 0 0}
+.cp-plh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cp-plh .cp-fs{margin-left:auto;align-self:center;font-size:13.5px;font-weight:500}
 /* 칸 높이가 다르면 줄 간격을 고르게 늘려 아래 빈칸을 없앰 */
 .is-box{display:flex;flex-direction:column}
 .is-box > .is-row,.is-box > .is-d{flex:1 1 auto;align-content:center}
@@ -2088,10 +2090,15 @@ async function peerEstimate(c){
     return { lo: rev * Math.min(...ps), hi: rev * Math.max(...ps), seg: seg.title, n: ps.length };
   } catch(e){ return null; }
 }
-async function openCo(id){
+// 팝업 안에서만 쓰는 연결/별도 보기: 회사 자료를 그 기준으로 바꾼 사본(원본·화면 스위치는 그대로)
+const basisView = (x, ofs) => { const m = x._main || { annual: x.annual, quarterly: x.quarterly, sga: x.sga, segment: x.segment }, alt = ofs && x.alt?.annual ? x.alt : null;
+  return { ...x, annual: alt ? alt.annual : m.annual, quarterly: alt && alt.quarterly !== undefined ? alt.quarterly : m.quarterly, sga: alt ? (alt.sga || null) : m.sga, segment: alt ? null : m.segment }; };
+async function openCo(id, ofs = state.ofs){
   // 요약 탭 회사가 아니면(오늘 시장 카드 등) 다른 탭 데이터에서 찾음 — AI 정리·강조처럼 없는 부분은 빼고 표시
-  const list = comps(), core = list.some(x => x.id === id);
-  const c = core ? list.find(x => x.id === id) : (await allCompanies()).get(id); if (!c) return;
+  const list0 = comps(), core = list0.some(x => x.id === id);
+  const c0 = core ? list0.find(x => x.id === id) : (await allCompanies()).get(id); if (!c0) return;
+  const list = list0.map(x => basisView(x, ofs)), c = basisView(c0, ofs), hasAlt = !!c0.alt?.annual;
+  const basisTxt = hasAlt ? "" : ` · ${c.fs === "OFS" || c.annual?.basis === "OFS" ? "별도" : "연결"}`;
   const S = await loadSummaries();
   // 비교 대상 = 건강기능식품 탭 '브랜드사' 묶음에 속한 요약 탭 회사(건기식 4사) 단순 평균
   if (!state.data.hff){ try { state.data.hff = await loadJSON("data/hff.json"); } catch(e){} }
@@ -2122,7 +2129,7 @@ async function openCo(id){
   // 머리줄: 시가총액(비상장은 추정)
   let cap = "";
   if (c.listed && c.quote?.marketCap) cap = `<span>시가총액 <b>${fmtBig(c.quote.marketCap, c.quote.currency)}</b> <small>(${c.quote.asOf?.slice(5).replace("-", ".")})</small></span><span>1년 주가 ${fmtPct(c.quote.change1y)}</span>${c.quote.per ? `<span${abbrTitle("PER")}>PER ${c.quote.per.toFixed(1)}배</span>` : ""}`;
-  else { const e = await peerEstimate(c); cap = e ? `<span>추정 가치 <b>${fmtBig(e.lo, "KRW")} ~ ${fmtBig(e.hi, "KRW")}</b> <small${abbrTitle("PSR")}>(동종사 PSR 적용)</small></span>` : `<span>비상장</span>`; }
+  else cap = "";   // 비상장: 제목 옆 '비상장' 표시로 충분(추정 가치는 비교 상장사가 적어 쓰지 않음)
   const lastDisc = (c.disclosures || [])[0];
   // 약식 손익: 연간 3개년 + 최근 누적(상장사)
   const sgaAt = y => { const d = c.sga; if (!d?.years) return null; const k = d.years.indexOf(String(y)); if (k < 0) return null;
@@ -2182,7 +2189,7 @@ async function openCo(id){
             etc = g.others.filter(([, v]) => v / tot < .02).reduce((t, [, v]) => t + (v || 0), 0);
       return `<div class="cp-seg"><span class="main">${esc(g.name.replace("건강기능식품", "건기식"))} 부문 <b>${fmtBig(g.rev, "KRW")}</b>${g.share == null ? "" : ` (${g.share.toFixed(0)}%)`} · 영업이익 ${signed(g.op, "KRW")}</span>${big.map(([n, v]) => `<span>${esc(n)} ${fmtBig(v, "KRW")}</span>`).join("")}${etc ? `<span>기타 ${fmtBig(etc, "KRW")}</span>` : ""}</div>`; })(bizSeg(c))}
     ${c.note ? `<p class="note" style="margin:-8px 0 18px">${esc(c.note)}</p>` : ""}
-    <div class="cp-sec"><h3>약식 손익계산서 <small>(%) = 매출 대비</small></h3><div class="tbl-wrap">${pl}</div></div>
+    <div class="cp-sec"><h3 class="cp-plh">약식 손익계산서 <small>(%) = 매출 대비${basisTxt}</small>${hasAlt ? `<span class="seg cp-fs">${[[0, "연결"], [1, "별도"]].map(([k, l]) => `<button type="button" data-pofs="${k}" aria-pressed="${!!k === !!ofs}">${l}</button>`).join("")}</span>` : ""}</h3><div class="tbl-wrap">${pl}</div></div>
     ${core ? `<div class="cp-two">
       <div class="cp-sec"><h3>최근 동향 <small>AI 정리 · ${esc(S.updatedAt || "")}</small></h3>
         ${pts.length ? `<ul class="cp-trend">${pts.map(p => `<li><b>${esc(p.h)}</b><p>${esc(p.d)}</p></li>`).join("")}</ul>` : `<p class="note">정리된 동향이 없습니다.</p>`}</div>
@@ -2206,9 +2213,11 @@ async function openCo(id){
     b.setAttribute("aria-pressed", "true");
     const idxs = top.find(([w]) => w === b.dataset.w)[1];
     $("cpNews").innerHTML = idxs.slice(0, 6).map(k => `<li><a href="${esc(news[k].url)}" target="_blank" rel="noopener">${esc(news[k].title)}</a> <small class="flat">${esc(news[k].by || "")} ${news[k].date.slice(5).replace("-", ".")}</small></li>`).join(""); };
-  const dlg = $("coPop");
+  const dlg = $("coPop"), keep = dlg.open && dlg.dataset.co === id ? dlg.scrollTop : 0;
+  dlg.dataset.co = id;
+  $("coPopBody").querySelectorAll("[data-pofs]").forEach(b => b.onclick = () => openCo(id, b.dataset.pofs === "1"));
   if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
-  dlg.scrollTop = 0;
+  dlg.scrollTop = keep;
 }
 function closeCo(){ const d = $("coPop"); if (typeof d.close === "function") d.close(); else d.removeAttribute("open"); }
 $("coPop").addEventListener("click", e => { if (e.target === $("coPop")) closeCo(); });
@@ -2811,29 +2820,30 @@ function renderSga(){
 
 /* ---------- 시장 개요 (data/market.json, 직접 작성) ---------- */
 let market = null;
-// 원형 차트(SVG, 리포트 입체 양식): 꽉 찬 평면 원형 + 얕은 그림자 + 위쪽 밝은 명암. items = [[이름, 값, 색, 글자색]]
+// 원형 차트(SVG, 리포트 입체 양식): 평면 도넛 + 얕은 그림자 + 위쪽 밝은 명암. items = [[이름, 값, 색, 글자색]]
 // (기울인 3D는 앞쪽 조각이 커 보여 비중이 틀어지므로 쓰지 않음)
 let PIE_N = 0;
 function pie3d(items){
-  const W = 200, cx = 100, cy = 98, R = 92, H = 204, id = "pz" + (++PIE_N);
+  const W = 200, cx = 100, cy = 98, R = 90, r0 = 50, H = 204, id = "pz" + (++PIE_N);
   const tot = items.reduce((t, x) => t + x[1], 0) || 1, line = css("--surface");
   const pt = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)},${(cy + rad * Math.sin(a)).toFixed(2)}`;
   let a = -Math.PI / 2, segs = "", labels = "";
   items.forEach(([n, v, col, lab], k) => {
     const a0 = a, a1 = a + v / tot * 2 * Math.PI, mid = (a0 + a1) / 2; a = a1;
     const tip = `<title>${esc(n)} ${v.toFixed(1)}%</title>`, large = a1 - a0 > Math.PI ? 1 : 0;
-    const d = items.length === 1 ? `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 Z`
-      : `M${cx},${cy} L${pt(R, a0)} A${R},${R} 0 ${large} 1 ${pt(R, a1)} Z`;
-    segs += `<path class="top" data-i="${k}" d="${d}" fill="${col}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round">${tip}</path>`;
-    if (items.length > 1 && v / tot >= .07){
-      const [lx, ly] = pt(R * (v / tot > .4 ? .5 : .64), mid).split(",");
-      labels += `<text data-i="${k}" x="${lx}" y="${ly}" dy=".35em" text-anchor="middle" fill="${lab || "#fff"}"${lab ? "" : ` stroke="rgba(0,0,0,.25)" stroke-width="2" paint-order="stroke"`}>${v.toFixed(1)}%</text>`;
+    const d = items.length === 1 ? `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 M${cx - r0},${cy} a${r0},${r0} 0 1 0 ${2 * r0},0 a${r0},${r0} 0 1 0 ${-2 * r0},0 Z`
+      : `M${pt(R, a0)} A${R},${R} 0 ${large} 1 ${pt(R, a1)} L${pt(r0, a1)} A${r0},${r0} 0 ${large} 0 ${pt(r0, a0)} Z`;
+    segs += `<path class="top" data-i="${k}" d="${d}" fill="${col}" fill-rule="evenodd" stroke="${line}" stroke-width="1.2" stroke-linejoin="round">${tip}</path>`;
+    if (items.length > 1 && v / tot >= .08){
+      const [lx, ly] = pt((R + r0) / 2, mid).split(",");
+      labels += `<text data-i="${k}" x="${lx}" y="${ly}" dy=".35em" text-anchor="middle" fill="${lab || "#fff"}"${lab ? "" : ` stroke="rgba(0,0,0,.25)" stroke-width="2" paint-order="stroke"`}>${v.toFixed(0)}%</text>`;
     }
   });
+  const ring = `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 M${cx - r0},${cy} a${r0},${r0} 0 1 0 ${2 * r0},0 a${r0},${r0} 0 1 0 ${-2 * r0},0 Z`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="비중 원형 차트"><defs>
       <filter id="${id}s" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0b1a33" flood-opacity=".22"/></filter>
-      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".24"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
-    <g filter="url(#${id}s)">${segs}</g><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#${id}g)" pointer-events="none"/>${labels}</svg>`;
+      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
+    <g filter="url(#${id}s)">${segs}</g><path d="${ring}" fill="url(#${id}g)" fill-rule="evenodd" pointer-events="none"/>${labels}</svg>`;
 }
 // 나란한 시장 카드: 원형 카드가 옆 카드보다 낮으면 원형을 조금 키워 빈 여백을 줄임(210 → 최대 240px)
 function fitMkPies(){
