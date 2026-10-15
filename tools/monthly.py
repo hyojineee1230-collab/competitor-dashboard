@@ -86,7 +86,11 @@ def main():
         print(f"경고: 기준일보다 {late.days}일 늦게 실행 — 주가·공시·보도는 기준일까지 잘라 내지만 재무·시세 요약은 지금 값입니다")
     for f in COPY:
         obj = load(os.path.join(DATA, f))
-        dump(os.path.join(out, f), obj if f in ("market.json", "summaries.json", "meta.json") else trim(obj, w1))
+        if f in ("market.json", "summaries.json", "meta.json"):
+            shutil.copy(os.path.join(DATA, f), os.path.join(out, f))
+        else:   # 원본과 같은 압축 서식(diff를 작게)
+            with open(os.path.join(out, f), "w", encoding="utf-8") as fo:
+                fo.write(json.dumps(trim(obj, w1), ensure_ascii=False, separators=(",", ":")))
     for f in ("news_cats.json", "media.json"):
         os.makedirs(os.path.join(out, "config"), exist_ok=True)
         shutil.copy(os.path.join(ROOT, "config", f), os.path.join(out, "config", f))
