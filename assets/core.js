@@ -315,10 +315,21 @@ function header(){
   const nav = MENUS.map(([k, l]) => `<a href="${href(k, S.field)}"${k === S.menu ? ' aria-current="page"' : ""}><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg><span class="nl">${l}</span><span class="ns">${SHORT[k]}</span></a>`).join("");
   const fsw = FIELDS.map(([k, l]) => `<a href="${href(S.menu, k)}"${k === S.field ? ' aria-current="true"' : ""}>${l}</a>`).join("");
   // 오른쪽: 경쟁사 실적 리포트(기존 보고서 화면, 분야에 맞는 탭)
-  const rep = `<a class="rep" href="${SITE}report/" title="월간 경쟁사 리포트"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/></svg><span class="rl">경쟁사 실적 리포트</span><span class="rs">리포트</span></a>`;
-  return `<div class="hd"><a class="brand" href="#insight/${S.field}">경쟁사 모니터</a><nav class="nav" aria-label="메뉴">${nav}</nav>
-    <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r"><button type="button" class="hlp" data-intro title="이용 안내" aria-label="이용 안내"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17.2h.01"/></svg><span class="hl">이용 안내</span></button>${rep}</div></div>`;
+  const rep = `<a class="rep" href="${SITE}report/" title="월간 경쟁사 리포트"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/></svg><span class="rl">월간 리포트</span><span class="rs">리포트</span></a>`;
+  // 웹: 윗줄 = 제목 · 분야 선택 상자 · ? · 리포트 / 아랫줄 = 메뉴 밑줄 탭
+  // 휴대폰(760px 이하): 분야는 버튼 줄(.fsw), 메뉴는 아래 떠 있는 알약(.nav)
+  const cur = FIELDS.find(f => f[0] === S.field) || FIELDS[1];
+  const fdd = `<span class="fdd"><button type="button" class="fdd-b" aria-haspopup="listbox" aria-expanded="false" title="분야 바꾸기">${esc(cur[1])}<svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+    <span class="fdd-m" role="listbox" hidden>${FIELDS.map(([k, l, g]) => `<a role="option" href="${href(S.menu, k)}"${k === S.field ? ' aria-selected="true"' : ""}><span>${esc(l)}</span><small>${(D[g]?.companies || []).length}개사</small></a>`).join("")}</span></span>`;
+  return `<div class="hd"><a class="brand" href="#insight/${S.field}">경쟁사 모니터</a><span class="hd-sep" aria-hidden="true"></span>${fdd}
+    <div class="sw fsw" role="group" aria-label="분야">${fsw}</div><div class="hd-r"><button type="button" class="hlp" data-intro title="이용 안내" aria-label="이용 안내"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17.2h.01"/></svg><span class="hl">이용 안내</span></button>${rep}</div></div><nav class="nav" aria-label="메뉴"><div class="nav-in">${nav}</div></nav>`;
 }
+document.addEventListener("click", e => {
+  const b = e.target.closest(".fdd-b"), m = document.querySelector(".fdd-m");
+  if (b){ m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); return; }
+  if (m && !m.hidden && !e.target.closest(".fdd")){ m.hidden = true; document.querySelector(".fdd-b")?.setAttribute("aria-expanded", "false"); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape"){ const m = document.querySelector(".fdd-m"); if (m && !m.hidden){ m.hidden = true; document.querySelector(".fdd-b")?.focus(); } } });
 let PAGES = {};
 async function render(){
   parseHash(); lsSet(LS.field, S.field); lsSet(LS.view, VIEW);

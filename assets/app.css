@@ -465,3 +465,34 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .ph .r .seg{flex:1 1 100%}.ph .r .seg button{flex:1;padding:6px 6px;font-size:13.5px}
   .ph .r .pick{flex:1 1 0;min-width:0}
 }
+/* ---------- 머리 A안 (웹): 윗줄 제목·분야·?·리포트 / 아랫줄 메뉴 밑줄 탭 ---------- */
+@media (min-width:761px){
+  header{padding:0}
+  .hd{padding:12px 28px;max-width:none;margin:0;width:100%;padding-left:max(28px,calc((100% - 1280px) / 2 + 28px));padding-right:max(28px,calc((100% - 1280px) / 2 + 28px));gap:14px;flex-wrap:nowrap}
+  .brand{font-size:19px}
+  .hd-sep{width:1px;height:22px;background:rgba(255,255,255,.18)}
+  .fsw{display:none}
+  .hd-r{margin-left:auto}
+  .hlp{width:36px;height:36px;padding:0;justify-content:center}.hlp .hl{display:none}
+  /* 아랫줄 메뉴 */
+  .nav{display:block;margin:0;padding:0 max(28px,calc((100% - 1280px) / 2 + 28px));background:var(--surface);border-radius:0;border-bottom:1px solid var(--line)}
+  .nav .nav-in{display:flex;gap:6px;margin-left:-14px}
+  .nav a{padding:13px 14px 11px;border-radius:0;color:var(--ink-2);font-size:15.5px;font-weight:600;border-bottom:3px solid transparent}
+  .nav a:hover{color:var(--ink)}
+  .nav a[aria-current="page"]{background:none;color:var(--ink);font-weight:700;border-bottom-color:var(--accent)}
+}
+/* 분야 선택 상자 */
+.fdd{position:relative}
+.fdd-b{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 14px;border-radius:10px;background:var(--navy-2);color:#fff;font-size:15px;font-weight:700;border:1px solid rgba(255,255,255,.14);white-space:nowrap}
+.fdd-b:hover{background:#2C4470}
+.fdd-b svg{opacity:.8}
+.fdd-m{position:absolute;left:0;top:calc(100% + 6px);z-index:40;display:flex;flex-direction:column;min-width:200px;background:var(--surface);border-radius:12px;box-shadow:0 10px 30px rgba(19,35,61,.25);padding:6px}
+.fdd-m[hidden]{display:none}
+.fdd-m a{display:flex;justify-content:space-between;gap:16px;padding:9px 12px;border-radius:8px;color:var(--ink);font-size:14.5px;font-weight:500}
+.fdd-m a:hover{background:var(--tag)}
+.fdd-m a[aria-selected="true"]{background:#EEF2F8;font-weight:700}
+.fdd-m small{color:var(--muted);font-weight:400}
+@media (max-width:760px){
+  .fdd,.hd-sep{display:none}
+  .nav .nav-in{display:contents}
+}
