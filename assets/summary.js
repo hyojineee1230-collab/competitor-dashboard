@@ -194,9 +194,10 @@ function valCard(F){
     { lab: 130, fmt: v => `${v.toFixed(2)}배`, dot: true, ref: med != null ? { v: med, label: `중앙값 ${xv(med)}` } : null });
   const body = rows.slice().sort((a, b) => (b.q?.marketCap ?? -1) - (a.q?.marketCap ?? -1)).map(r => {
     if (r.est){
-      const v = r.lo == null || !r.L.rev ? "–" : r.lo === r.hi ? `약 ${big(r.L.rev * r.lo)}` : `${big(r.L.rev * r.lo)}~${big(r.L.rev * r.hi)}`;
+      const same = r.lo != null && r.lo.toFixed(2) === r.hi.toFixed(2);   // 피어 PSR 범위가 반올림해 같으면 한 값으로
+      const v = r.lo == null || !r.L.rev ? "–" : same ? `약 ${big(r.L.rev * r.lo)}` : `${big(r.L.rev * r.lo)}~<wbr>${big(r.L.rev * r.hi)}`;
       const note = F.g.valuationNotes?.[r.c.id], rc = note && ref(note.ref);
-      return [coCell(r.c), `<span class="est">추정</span> ${v}`, big(r.L.rev, r.L.cur || "KRW"), r.lo == null ? "–" : r.lo === r.hi ? `피어 ${xv(r.lo)}` : `피어 ${r.lo.toFixed(2)}~${xv(r.hi)}`, "–", "–", "–"].map((x, i) => i === 0 && rc?.quote?.marketCap ? `${x}<small>참고: ${esc(note.text)} ${big(rc.quote.marketCap)}</small>` : x);
+      return [coCell(r.c), `<span class="est">추정</span>${v}`, big(r.L.rev, r.L.cur || "KRW"), r.lo == null ? "–" : same ? `<span class="sv">${xv(r.lo)}<small>피어</small></span>` : `<span class="sv">${r.lo.toFixed(2)}~<wbr>${xv(r.hi)}<small>피어</small></span>`, "–", "–", "–"].map((x, i) => i === 0 && rc?.quote?.marketCap ? `${x}<small>참고: ${esc(note.text)} ${big(rc.quote.marketCap)}</small>` : x);
     }
     return [coCell(r.c), big(r.q.marketCap, r.q.currency || "KRW"), big(r.L.rev, r.L.cur || "KRW"), xv(r.psr), r.q.per == null ? "–" : r.q.per.toFixed(1) + "배", r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배",
       pct(r.q.change1y, 1, 0)];
@@ -211,8 +212,8 @@ function valCard(F){
 function donut(items, center = ""){
   const R0 = 70, C = 2 * Math.PI * R0, tot = items.reduce((t, x) => t + x.v, 0) || 1; let off = 0;
   const segs = items.map(x => { const len = x.v / tot * C, d = `<circle r="${R0}" cx="90" cy="90" fill="none" stroke="${x.color}" stroke-width="30" stroke-dasharray="${Math.max(len - 1.5, .5).toFixed(2)} ${(C - Math.max(len - 1.5, .5)).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 90 90)"${tipA(x.tip || [x.label, `비중\t${x.v.toFixed(1)}%`])}/>`; off += len; return d; }).join("");
-  const leg = items.map(x => `<div class="dn-r"${tipA(x.tip || [x.label, `비중\t${x.v.toFixed(1)}%`])}><i style="background:${x.color}"></i><span>${esc(x.label)}</span><b>${x.v.toFixed(1)}%</b></div>`).join("");
-  return `<div class="dn"><svg viewBox="0 0 180 180" role="img" aria-label="비중 도넛">${segs}${center ? `<text x="90" y="90" dy=".35em" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">${esc(center)}</text>` : ""}</svg><div class="dn-l">${leg}</div></div>`;
+  const leg = items.map(x => `<div class="dnut-r"${tipA(x.tip || [x.label, `비중\t${x.v.toFixed(1)}%`])}><i style="background:${x.color}"></i><span>${esc(x.label)}</span><b>${x.v.toFixed(1)}%</b></div>`).join("");
+  return `<div class="dnut"><svg viewBox="0 0 180 180" role="img" aria-label="비중 도넛">${segs}${center ? `<text x="90" y="90" dy=".35em" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">${esc(center)}</text>` : ""}</svg><div class="dnut-l">${leg}</div></div>`;
 }
 
 /* ---------- 연구개발 회수 (마이크로바이옴) ----------
@@ -488,9 +489,11 @@ const SUM = {
 
   /* ---------- 시세 ---------- */
   async quotes(F, ui){
-    const per = ui.per || "1Y", N = { "1Y": 250, "3M": 63, "1M": 21 }[per], perL = { "1Y": "1년", "3M": "3개월", "1M": "1개월" }[per];
+    // 기간: 짧은 것부터(1개월 → 2년), 기본 1년. 시세 데이터는 최근 2년(약 490거래일)
+    const RNG = [["1M", "1개월", 21], ["3M", "3개월", 63], ["1Y", "1년", 250], ["2Y", "2년", 9999]];   // 2년 = 받아 둔 전체
+    const per = RNG.some(r => r[0] === ui.per) ? ui.per : "1Y", [, perL, N] = RNG.find(r => r[0] === per);
     const listed = F.cos.filter(c => c.listed && c.price?.close?.length > 20);
-    const step = per === "1Y" ? 3 : 1;
+    const step = per === "2Y" ? 5 : per === "1Y" ? 3 : 1;
     // 날짜 축: 모든 회사 거래일을 합친 최근 N일. 휴장일(해외사 등)은 직전 종가를 이어 씀
     const axis = [...new Set(listed.flatMap(c => c.price.dates))].sort().slice(-N);
     const keep = axis.map((_, i) => i % step === 0 || i === axis.length - 1);
@@ -502,7 +505,7 @@ const SUM = {
       const raw = cl.filter((_, i) => keep[i]);
       return { c, name: c.name, color: c.color, raw, vals: raw.map(x => x && b ? (x / b - 1) * 100 : null), all: cl.filter(x => x != null), b }; });
     const { rows, mk } = todayRows(F), tsLive = rows.find(r => r.ts)?.ts;
-    const seg = [["1Y", "1년"], ["3M", "3개월"], ["1M", "1개월"]].map(([k, l]) => `<button data-ui="per=${k}" aria-pressed="${k === per}">${l}</button>`).join("");
+    const seg = RNG.map(([k, l]) => `<button data-ui="per=${k}" aria-pressed="${k === per}">${l}</button>`).join("");
     const perTbl = tbl(["회사", `시작 <small>${md(axis[0])}</small>`, `현재 <small>${md(axis.at(-1))}</small>`, `${perL} 등락`, `${perL} 최고`, `${perL} 최저`, "52주 범위"],
       ser.filter(s => s.all.length).sort((a, b) => (b.vals.at(-1) ?? -1e9) - (a.vals.at(-1) ?? -1e9)).map(s => { const cur = s.c.quote?.currency || "KRW", q = s.c.quote || {};
         return [coCell(s.c), won(s.b, cur), won(s.all.at(-1), cur), pct(s.b ? (s.all.at(-1) / s.b - 1) * 100 : null, 1, 0), won(Math.max(...s.all), cur), won(Math.min(...s.all), cur),
@@ -597,7 +600,7 @@ const SUM = {
     const CH_PAL = ["#2B5CA8", "#2B8A7E", "#D08A3C", "#7A5AD0", "#C46A6A", "#5B7DB1", "#8AA34B"], isRestCh = n => /(기타|그 외|미공개)/.test(n);
     const chItems = (() => { const it = m.channels?.items || [], rest = it.filter(([n]) => isRestCh(n));
       return rest.length < 2 ? it : [...it.filter(([n]) => !isRestCh(n)), ["그 외", rest.reduce((t, x) => t + x[1], 0), rest.map(([n, v]) => `${n} ${v.toFixed(1)}%`).join(" · ")]]; })();
-    const chs = chItems.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${donut(chItems.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v, sub], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`, sub || null] })))}`, "dn-card") : "";
+    const chs = chItems.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${donut(chItems.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v, sub], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`, sub || null] })))}`, "dnut-card") : "";
     const sh = m.share?.items?.length ? card(`<h2>품목 비중<small>${esc(m.share.title || "")}</small></h2><div style="display:flex;height:40px;border-radius:6px;overflow:hidden;font-size:15px;font-weight:700">${m.share.items.map((x, i) => `<span${tipA([x.name, `비중\t${x.pct}%`])} style="width:${x.pct}%;background:${["#A0522D", "#2B8A7E", "#D3DAE5"][i] || "#B4BFCF"};color:${i < 2 ? "#fff" : "#4A5568"};display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden">${esc(x.name.length > 22 ? x.name.slice(0, 20) + "…" : x.name)} ${x.pct}%</span>`).join("")}</div>`) : "";
     const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;

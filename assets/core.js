@@ -157,7 +157,9 @@ function lineChart(series, { W = 1200, H = 360, fmt = fmtPctTick, zero = true, l
   let lo = Math.min(...all, zero ? 0 : Infinity), hi = Math.max(...all, zero ? 0 : -Infinity); const pad = (hi - lo) * .08 || 1; lo -= pad; hi += pad;
   const n = Math.max(...series.map(s => s.vals.length)), X = i => L + i * (W - L - R) / Math.max(1, n - 1), Y = v => Tp + (hi - v) / (hi - lo) * (H - Tp - B);
   let g = niceTicks(lo, hi).map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="${v === 0 && zero ? "#9AA5B5" : GR}"/>` + T(L - 8, Y(v) + 4, fmt(v), 12.5, MU, "end")).join("");
-  if (xs?.length) [0, Math.floor((n - 1) / 2), n - 1].forEach((i, k) => { if (xs[i]) g += T(X(i), H - 8, md(xs[i]), 12.5, MU, ["start", "middle", "end"][k]); });
+  // 날짜 눈금: 반년 넘는 기간은 연·월(26.10), 짧으면 월·일(10.13)
+  const longX = xs?.length > 1 && (new Date(xs[xs.length - 1]) - new Date(xs[0])) / 864e5 > 200, fx = d => longX ? `${d.slice(2, 4)}.${d.slice(5, 7)}` : md(d);
+  if (xs?.length) [0, Math.floor((n - 1) / 2), n - 1].forEach((i, k) => { if (xs[i]) g += T(X(i), H - 8, fx(xs[i]), 12.5, MU, ["start", "middle", "end"][k]); });
   g += `<line class="guide" x1="-9" x2="-9" y1="${Tp}" y2="${H - B}" stroke="#8C98AB" stroke-dasharray="3 3" style="display:none"/>`;
   const ends = [];
   series.forEach(s => {
