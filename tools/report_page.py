@@ -79,6 +79,11 @@ CSS = """
 .is-pie .c{width:min(190px,80%);justify-self:center}
 .is-pie .c svg{display:block;width:100%;height:auto;overflow:visible}
 .is-pie .c text{font-size:13px;font-weight:700;pointer-events:none}
+/* 마우스를 올린 조각·범례만 진하게(판매 채널 원형과 같은 방식) */
+.is-pie [data-i]{transition:opacity .15s;cursor:default}
+.is-pie.hl .c [data-i]:not(.on){opacity:.25}
+.is-pie.hl .is-leg [data-i]:not(.on){opacity:.4}
+.is-pie .is-leg [data-i].on{background:var(--tag);border-radius:6px}
 .is-leg{display:grid;gap:1px;font-size:14px}
 .is-leg > div{display:grid;grid-template-columns:10px minmax(0,1fr) auto 40px;gap:8px;align-items:center;padding:3px 0;border-top:1px solid var(--line)}
 .is-leg > div:first-child{border-top:0}
@@ -247,6 +252,17 @@ async function renderIssue(){
   if (fb && ctl && fb.parentElement !== ctl) ctl.prepend(fb);
   setTimeout(applyUpd, 400);
 }
+// 기간 중 보도 원형: 조각·범례에 마우스를 올리면 해당 회사만 강조
+document.addEventListener("mouseover", e => {
+  const box = e.target.closest?.(".is-pie"); if (!box) return;
+  const k = e.target.closest("[data-i]")?.dataset.i;
+  box.classList.toggle("hl", k != null);
+  box.querySelectorAll("[data-i]").forEach(x => x.classList.toggle("on", x.dataset.i === k));
+});
+document.addEventListener("mouseout", e => {
+  const box = e.target.closest?.(".is-pie");
+  if (box && !box.contains(e.relatedTarget)){ box.classList.remove("hl"); box.querySelectorAll(".on").forEach(x => x.classList.remove("on")); }
+});
 function applyUpd(){
   const S = REPORT?.sections?.[state.group] || {};
   document.querySelectorAll("#content .upd").forEach(e => e.remove());
