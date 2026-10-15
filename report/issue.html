@@ -313,7 +313,7 @@ tr.sec td:first-child{background:var(--page)}
 .mk-bar .t .x{margin-left:4px}
 .mk-bar:first-child .t i{opacity:1}
 .mk-bar .x{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;font-size:12.5px}
-.mk-pie{display:grid;grid-template-columns:auto minmax(0,320px);justify-content:center;gap:18px;align-items:center}
+.mk-pie{display:grid;grid-template-columns:auto max-content;justify-content:center;gap:28px;align-items:center}
 @media screen and (max-width:600px){.mk-pie{grid-template-columns:minmax(0,1fr);gap:12px}.mk-pie .c{width:min(230px,100%);justify-self:center}}
 @media screen and (min-width:601px){.mk-pie .c{width:210px}}
 .mk-pie .c svg{display:block;width:100%;height:auto;overflow:visible}
@@ -321,11 +321,11 @@ tr.sec td:first-child{background:var(--page)}
 .mk-pie.hl .c [data-i]:not(.on){opacity:.25}
 .mk-pie.hl .mk-leg [data-i]:not(.on){opacity:.45}
 .mk-pie .c text{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
-.mk-leg{display:grid;gap:6px;font-size:13px}
-.mk-leg div{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:8px;align-items:start;padding:1px 4px;margin:0 -4px;border-radius:4px;cursor:default}
+.mk-leg{display:grid;gap:6px;font-size:13px;width:max-content;max-width:260px}
+.mk-leg div{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:8px 14px;align-items:start;padding:1px 4px;margin:0 -4px;border-radius:4px;cursor:default}
 .mk-leg div.on{background:var(--grid)}
 .mk-leg b{width:14px;height:14px;border-radius:3px;display:inline-block;margin-top:3px}
-.mk-leg small{display:block;color:var(--muted);font-size:11px}
+.mk-leg small{display:block;color:var(--muted);font-size:11px;width:0;min-width:100%;white-space:nowrap}   /* 보조 글자는 범례 폭을 늘리지 않음 */
 .mk-leg span:last-child{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
 #mktBrands{min-width:640px}
 #mktBrands td,#mktBrands th{text-align:left;white-space:normal}
@@ -838,7 +838,7 @@ td span.err{font-size:13.5px}
 .is-grid{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:14px}
 .is-grid.n2{grid-template-columns:1fr 1.5fr}
 /* 공시가 없을 때(2칸): 보도 원형과 범례를 옆으로 놓아 높이를 줄임 */
-.is-grid.n2 .is-pie{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:18px}
+.is-grid.n2 .is-pie{grid-template-columns:auto minmax(0,300px);justify-content:center;align-items:center;gap:28px}
 .is-grid.n2 .is-pie .c{width:150px}
 .is-foot{margin:8px 0 0}
 /* 칸 높이가 다르면 줄 간격을 고르게 늘려 아래 빈칸을 없앰 */
@@ -2811,32 +2811,31 @@ function renderSga(){
 
 /* ---------- 시장 개요 (data/market.json, 직접 작성) ---------- */
 let market = null;
-// 원형 차트(SVG, 리포트 입체 양식): 평면 도넛 + 얕은 그림자 + 위쪽 밝은 명암. items = [[이름, 값, 색, 글자색]]
+// 원형 차트(SVG, 리포트 입체 양식): 꽉 찬 평면 원형 + 얕은 그림자 + 위쪽 밝은 명암. items = [[이름, 값, 색, 글자색]]
 // (기울인 3D는 앞쪽 조각이 커 보여 비중이 틀어지므로 쓰지 않음)
 let PIE_N = 0;
 function pie3d(items){
-  const W = 200, cx = 100, cy = 98, R = 90, r0 = 50, H = 204, id = "pz" + (++PIE_N);
+  const W = 200, cx = 100, cy = 98, R = 92, H = 204, id = "pz" + (++PIE_N);
   const tot = items.reduce((t, x) => t + x[1], 0) || 1, line = css("--surface");
   const pt = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)},${(cy + rad * Math.sin(a)).toFixed(2)}`;
   let a = -Math.PI / 2, segs = "", labels = "";
   items.forEach(([n, v, col, lab], k) => {
     const a0 = a, a1 = a + v / tot * 2 * Math.PI, mid = (a0 + a1) / 2; a = a1;
     const tip = `<title>${esc(n)} ${v.toFixed(1)}%</title>`, large = a1 - a0 > Math.PI ? 1 : 0;
-    const d = items.length === 1 ? `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 M${cx - r0},${cy} a${r0},${r0} 0 1 0 ${2 * r0},0 a${r0},${r0} 0 1 0 ${-2 * r0},0 Z`
-      : `M${pt(R, a0)} A${R},${R} 0 ${large} 1 ${pt(R, a1)} L${pt(r0, a1)} A${r0},${r0} 0 ${large} 0 ${pt(r0, a0)} Z`;
-    segs += `<path class="top" data-i="${k}" d="${d}" fill="${col}" fill-rule="evenodd" stroke="${line}" stroke-width="1.2" stroke-linejoin="round">${tip}</path>`;
-    if (items.length > 1 && v / tot >= .08){
-      const [lx, ly] = pt((R + r0) / 2, mid).split(",");
-      labels += `<text data-i="${k}" x="${lx}" y="${ly}" dy=".35em" text-anchor="middle" fill="${lab || "#fff"}"${lab ? "" : ` stroke="rgba(0,0,0,.25)" stroke-width="2" paint-order="stroke"`}>${v.toFixed(0)}%</text>`;
+    const d = items.length === 1 ? `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 Z`
+      : `M${cx},${cy} L${pt(R, a0)} A${R},${R} 0 ${large} 1 ${pt(R, a1)} Z`;
+    segs += `<path class="top" data-i="${k}" d="${d}" fill="${col}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round">${tip}</path>`;
+    if (items.length > 1 && v / tot >= .07){
+      const [lx, ly] = pt(R * (v / tot > .4 ? .5 : .64), mid).split(",");
+      labels += `<text data-i="${k}" x="${lx}" y="${ly}" dy=".35em" text-anchor="middle" fill="${lab || "#fff"}"${lab ? "" : ` stroke="rgba(0,0,0,.25)" stroke-width="2" paint-order="stroke"`}>${v.toFixed(1)}%</text>`;
     }
   });
-  const ring = `M${cx - R},${cy} a${R},${R} 0 1 1 ${2 * R},0 a${R},${R} 0 1 1 ${-2 * R},0 M${cx - r0},${cy} a${r0},${r0} 0 1 0 ${2 * r0},0 a${r0},${r0} 0 1 0 ${-2 * r0},0 Z`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="비중 원형 차트"><defs>
       <filter id="${id}s" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0b1a33" flood-opacity=".22"/></filter>
-      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
-    <g filter="url(#${id}s)">${segs}</g><path d="${ring}" fill="url(#${id}g)" fill-rule="evenodd" pointer-events="none"/>${labels}</svg>`;
+      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".24"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
+    <g filter="url(#${id}s)">${segs}</g><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#${id}g)" pointer-events="none"/>${labels}</svg>`;
 }
-// 나란한 시장 카드 높이가 다르면 원형을 키워 빈 여백을 줄임(최대 300px)
+// 나란한 시장 카드: 원형 카드가 옆 카드보다 낮으면 원형을 조금 키워 빈 여백을 줄임(210 → 최대 240px)
 function fitMkPies(){
   document.querySelectorAll("#mktBody .mk-card > .mk-pie .c").forEach(c => {
     const card = c.closest(".mk-card"), row = card.parentElement; c.style.width = "";
@@ -2844,7 +2843,7 @@ function fitMkPies(){
     const sibs = [...row.children].filter(x => x !== card && Math.abs(x.offsetTop - card.offsetTop) < 4); if (!sibs.length) return;
     row.style.alignItems = "start";
     const target = Math.max(...sibs.map(x => x.offsetHeight)), w0 = c.offsetWidth;
-    for (let w = w0; w <= 300; w += 10){ c.style.width = w + "px"; if (card.offsetHeight > target){ c.style.width = (w - 10) + "px"; break; } }
+    for (let w = w0; w <= 240; w += 10){ c.style.width = w + "px"; if (card.offsetHeight > target){ c.style.width = (w - 10) + "px"; break; } }
     row.style.alignItems = "";
   });
 }
@@ -2985,7 +2984,7 @@ async function renderIssue(){
   const nw = Object.entries(dg.news || {}).sort((a, b) => b[1] - a[1]), mx = nw[0]?.[1] || 1, nt = nw.reduce((t, x) => t + x[1], 0);
   const top = nw.slice(0, 7), rest = nw.slice(7).reduce((t, x) => t + x[1], 0);
   const pieIt = [...top.map(([id, n]) => [nm(id), n, col(id)]), ...(rest ? [["그 외", rest, css("--axis")]] : [])];
-  const news = nt ? `<div class="is-pie"><div class="c">${pie3d(pieIt.map(([n, v, c]) => [n, v / nt * 100, c, ""]))}</div>
+  const news = nt ? `<div class="is-pie"><div class="c">${pie3d(pieIt.map(([n, v, c]) => [n, v / nt * 100, c, n === "그 외" ? css("--ink-2") : ""]))}</div>
       <div class="is-leg">${pieIt.map(([n, v, c], i) => `<div data-i="${i}"><b style="background:${c}"></b><span>${esc(n)}</span><span>${v}건</span><span>${(v / nt * 100).toFixed(0)}%</span></div>`).join("")}</div></div>` : "";
   $("secIssue").innerHTML = `<div class="is-hd"><div><span class="is-k">${esc(R.title || "")}${R.pilot ? " · 시범호" : ""}</span><h2>${FIELD_NAME[F] || ""} · 이번 달 인사이트</h2>
       <p class="hint">기준일 ${d2(R.asOf)} · 주가 ${d2(R.close)} 종가 · 기간 ${d2(R.window?.[0])} ~ ${d2(R.window?.[1])} · 재무는 OpenDART, 주가는 KRX·Yahoo</p></div></div>
@@ -3010,7 +3009,8 @@ function fitIssuePie(){
   g.style.alignItems = "start";
   const target = Math.max(...others.map(b => b.offsetHeight));
   let best = null;
-  for (let w = 120; w <= 180; w += 5){ c.style.width = w + "px"; const d = Math.abs(news.offsetHeight - target); if (!best || d < best.d) best = { w, d }; }
+  const wMax = g.classList.contains("n2") ? 240 : 180;
+  for (let w = 120; w <= wMax; w += 5){ c.style.width = w + "px"; const d = Math.abs(news.offsetHeight - target); if (!best || d < best.d) best = { w, d }; }
   c.style.width = best.w + "px"; g.style.alignItems = "";
 }
 addEventListener("resize", () => requestAnimationFrame(fitIssuePie));
