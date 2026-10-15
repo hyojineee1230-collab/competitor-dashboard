@@ -198,7 +198,7 @@ function barChart(items, { lab = 140, fmt = v => nf(v), colorFn = null, dot = fa
     const c = colorFn ? colorFn(it.v) : it.color, a = P(Math.min(it.v, 0)), b = P(Math.max(it.v, 0)), e = P(it.v);
     const mark = dot ? `<i class="hb-d" style="left:${e.toFixed(2)}%;background:${c}"></i>` : `<i class="hb-b" style="left:${a.toFixed(2)}%;width:${Math.max(b - a, .6).toFixed(2)}%;background:${c}"></i>`;
     const vpos = it.v < 0 && !dot ? `right:calc(${(100 - a).toFixed(2)}% + 7px)` : `left:calc(${(dot ? e : b).toFixed(2)}% + ${dot ? 11 : 7}px)`;
-    return `<div class="hb-r"${tipA(it.tip || [it.label, `값\t${fmt(it.v)}`])}><span class="hb-l">${esc(it.label)}</span><span class="hb-t">${mark}<b class="hb-v" style="${vpos};color:${colorFn ? c : "var(--ink)"}">${fmt(it.v)}</b></span></div>`;
+    return `<div class="hb-r${it.on ? " on" : ""}"${it.attr || ""}${tipA(it.tip || [it.label, `값\t${fmt(it.v)}`])}><span class="hb-l">${esc(it.label)}</span><span class="hb-t">${mark}<b class="hb-v" style="${vpos};color:${colorFn ? c : "var(--ink)"}">${fmt(it.v)}</b></span></div>`;
   }).join("");
   const refL = ref ? `<span class="hb-ref" style="left:${P(ref.v).toFixed(2)}%"><em>${esc(ref.label)}</em></span>` : "";
   return `<div class="hb${neg ? " neg" : ""}${dot ? " hbdot" : ""}" style="--lab:${lab}px;--z:${z.toFixed(2)}%;--refh:${items.length * 34 + 4}px">${rows}${refL ? `<div class="hb-rr"><span></span><span class="hb-t">${refL}</span></div>` : ""}</div>`;
