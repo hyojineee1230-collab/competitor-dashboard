@@ -837,6 +837,16 @@ td span.err{font-size:13.5px}
 .is-ins .act-src{margin:6px 0 0 16px}
 .is-none{color:var(--muted);margin:0 0 18px}
 .is-grid{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:14px}
+.is-grid.n2{grid-template-columns:1fr 1.5fr}
+/* 공시가 없을 때(2칸): 보도 원형과 범례를 옆으로 놓아 높이를 줄임 */
+.is-grid.n2 .is-pie{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:18px}
+.is-grid.n2 .is-pie .c{width:150px}
+.is-foot{margin:8px 0 0}
+/* 칸 높이가 다르면 줄 간격을 고르게 늘려 아래 빈칸을 없앰 */
+.is-box{display:flex;flex-direction:column}
+.is-box > .is-row,.is-box > .is-d{flex:1 1 auto;align-content:center}
+.is-box > .is-d{display:flex;align-items:center}
+.is-box > .is-pie{flex:1 1 auto;align-content:center}
 .is-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
 .is-box h3{margin:0 0 8px;font-size:14px;color:var(--ink-2);display:flex;justify-content:space-between}
 .is-box h3 b{color:var(--ink)}
@@ -870,10 +880,12 @@ td span.err{font-size:13.5px}
 .fr-row .tr i{top:0;bottom:auto;height:16px;border-radius:3px}
 .fr-row .tr i.pv{top:20px;height:5px;border-radius:2px;opacity:.35}
 .fr-row .tr em{top:-3px;bottom:-3px}
-.upd{margin:0 0 10px;font-size:13px;font-weight:600;display:inline-block;border-radius:999px;padding:2px 10px}
+.upd-l{margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.upd-l small{font-size:13px;color:var(--muted)}
+.upd{font-size:13px;font-weight:600;display:inline-block;border-radius:999px;padding:2px 10px}
 .upd.new{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
 .upd.same{background:var(--tag);color:var(--muted)}
-@media screen and (max-width:760px){ .is-grid{grid-template-columns:1fr} .is-hd h2{font-size:19px} .hdr-r .info-btn{white-space:nowrap;padding:5px 8px;font-size:12.5px} #updated{white-space:nowrap} }
+@media screen and (max-width:760px){ .is-grid,.is-grid.n2{grid-template-columns:1fr} .is-grid.n2 .is-pie{grid-template-columns:1fr} .is-grid.n2 .is-pie .c{width:min(190px,80%) !important} .is-hd h2{font-size:19px} .hdr-r .info-btn{white-space:nowrap;padding:5px 8px;font-size:12.5px} #updated{white-space:nowrap} }
 /* 인쇄 메뉴 */
 .pm{position:relative;display:inline-block}
 .pm-m{position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;min-width:150px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:4px}
@@ -913,6 +925,7 @@ td span.err{font-size:13.5px}
   #printRoot .panel h2, #printRoot .panel h3, #printRoot .upd, #printRoot .hint{break-after:avoid}
   #printRoot .chart-box, #printRoot img.pimg, #printRoot .core-card, #printRoot tr, #printRoot li, #printRoot .is-box, #printRoot .card{break-inside:avoid}
   #printRoot .is-grid{grid-template-columns:1fr 1.4fr 1fr !important}
+  #printRoot .is-grid.n2{grid-template-columns:1fr 1.5fr !important}
 }
 </style>
 </head>
@@ -1942,7 +1955,8 @@ async function renderVal(){
   const segFor = c => g.segments?.find(x => x.members.includes(c.id));
   const latest = c => { const a = c.annual, i = a?.years?.length ? a.years.length - 1 : -1; return i < 0 ? {} : { rev: a.revenue?.[i], y: a.years[i], cur: a.currency }; };
   const xv = v => v == null ? "–" : `${v.toFixed(2)}배`;
-  const rows = list.map(c => {
+  // 비상장사 추정 가치는 비교 상장사가 적어 범위가 무의미 → 상장사만 (메인과 같음)
+  const rows = list.filter(c => c.listed).map(c => {
     const L = latest(c), q = c.quote || {};
     if (c.listed) return { c, v: { mcap: q.marketCap == null ? null : q.marketCap * (q.currency === "KRW" ? 1 : 1350), rev: L.rev, psr: psrOf(c), per: q.per, pbr: q.pbr, r1m: q.change1m, r3m: q.change3m, r1y: q.change1y }, L, q };
     const peers = g.companies.filter(p => p.listed && segFor(p) === segFor(c)).map(psrOf).filter(v => v != null);
@@ -1989,7 +2003,7 @@ async function renderVal(){
                  : `<span class="lg"><i style="background:${color(x.c)}"></i>${esc(x.c.name)} <b class="${last > 0 ? "up" : last < 0 ? "down" : ""}" style="font-weight:600">${last == null ? "–" : `${last > 0 ? "+" : ""}${last}%`}</b></span>`; }).join("");
   }
   const hasEst = rows.some(r => r.est);
-  $("valHint").textContent = `${md(REPORT?.close || "")} 종가 기준`;
+  $("valHint").textContent = "";
   $("valNotes").innerHTML = "";
 }
 
@@ -1999,21 +2013,20 @@ $("valView").addEventListener("click", e => { const b = e.target.closest("button
 async function renderCore(){
   const S = await loadSummaries(), list = comps();
   const yrs = list.map(c => c.annual?.years?.at(-1)).filter(Boolean);
-  $("coreHint").textContent = `최근 사업연도 · 카드를 누르면 상세`;
+  $("coreHint").textContent = `최근 사업연도`;
   $("coreBody").style.setProperty("--n", list.length);
   $("coreBody").innerHTML = list.map(c => {
     const a = c.annual, i = a?.years?.length ? a.years.length - 1 : -1;
     const rev = i < 0 ? null : a.revenue?.[i], gr = i < 1 ? null : growth(rev, a.revenue?.[i - 1]), opm = i < 0 ? null : margin(a.operatingIncome?.[i], rev);
     const hd = S.companies?.[c.id]?.[0]?.h;
     const on = coreSel === c.id;
-    return `<div class="core-card" role="button" tabindex="0" data-id="${esc(c.id)}" aria-pressed="${on}" aria-haspopup="dialog" style="--cc:${color(c)}" title="누르면 회사 상세 보기"><span class="nm"><i></i><b class="t">${esc(c.name)}</b>${isSelf(c) ? `<span class="tag self">자사</span>` : ""}</span>
+    return `<div class="core-card" role="button" tabindex="0" data-id="${esc(c.id)}" aria-pressed="${on}" aria-haspopup="dialog" style="--cc:${color(c)}"><span class="nm"><i></i><b class="t">${esc(c.name)}</b>${isSelf(c) ? `<span class="tag self">자사</span>` : ""}</span>
       ${c.brand ? `<span class="brand-line">${esc(c.brand)}</span>` : `<span class="brand-line none">&nbsp;</span>`}
       <span class="yr">${i < 0 ? "실적 없음" : `${a.years[i]}년 매출`}${c.fs === "OFS" ? ` · ${ofsTag(c)}` : ""}</span>
       <span class="rev">${fmtBig(rev, a?.currency || "KRW")}</span>
       ${(g => g ? `<span class="cc-seg" title="사업보고서 영업부문 주석 · ${esc(g.name)} 부문 외부 매출">${esc(g.name.replace("건강기능식품", "건기식"))} 부문 <b>${fmtBig(g.rev, "KRW")}</b>${g.share == null ? "" : ` · ${g.share.toFixed(0)}%`}</span>` : "")(bizSeg(c, a?.years?.[i]))}
       <span class="kv"><span>성장률 <b>${gr == null ? "–" : fmtPct(gr)}</b></span><span>영업이익률 <b class="${opm < 0 ? "down" : ""}">${opm == null ? "–" : opm.toFixed(1) + "%"}</b></span></span>
-      ${(t => t.length ? `<span class="drv" title="성장 원인(핵심 동인)">${t.map(x => `<span>${esc(x.tag)}</span>`).join("")}</span>` : hd ? `<span class="hd">${esc(hd)}</span>` : "")((S.drivers?.[c.id] || []).filter(x => x.lv >= 2).slice(0, 3))}
-      <span class="go"><span class="open">상세 보기 ›</span><button class="sel-btn" type="button" aria-pressed="${on}" title="차트·성장 원인·실적 비교에서 이 회사 강조"><span>강조</span><span class="sw" aria-hidden="true"></span></button></span></div>`;
+      ${(t => t.length ? `<span class="drv" title="성장 원인(핵심 동인)">${t.map(x => `<span>${esc(x.tag)}</span>`).join("")}</span>` : hd ? `<span class="hd">${esc(hd)}</span>` : "")((S.drivers?.[c.id] || []).filter(x => x.lv >= 2).slice(0, 3))}</div>`;
   }).join("");
 }
 // 카드 = 켜고 끄는 선택 버튼. 켜면 실적 표 행 강조·주요 활동·공시 회사가 그 회사로, 끄면 원래대로
@@ -2176,9 +2189,7 @@ async function openCo(id){
       <div class="cp-sec"><h3>최근 동향 <small>AI 정리 · ${esc(S.updatedAt || "")}</small></h3>
         ${pts.length ? `<ul class="cp-trend">${pts.map(p => `<li><b>${esc(p.h)}</b><p>${esc(p.d)}</p></li>`).join("")}</ul>` : `<p class="note">정리된 동향이 없습니다.</p>`}</div>
       <div class="cp-sec"><h3>뉴스 키워드 <small>최근 기사 ${news.length}건</small></h3>${kw}</div>
-    </div>
-    <div class="cp-foot"><span></span>
-      <button class="btn" type="button" id="coPopSel">이 회사 강조</button></div>` : ""}`;
+    </div>` : ""}`;
   $("coPopX").onclick = closeCo;
   const wbox = $("cpWhy");
   if (wbox) wbox.onclick = e => { const b = e.target.closest(".why-cell"); if (!b) return;
@@ -2967,7 +2978,7 @@ async function renderIssue(){
   $("updated").textContent = `기준 ${(R.asOf || "").replace(/-/g, ".")}`;
   const all = await allCompanies(), nm = id => all.get(id)?.name || id, col = id => color(all.get(id) || {id});
   const moves = (dg.moves || []).map(x => `<div class="is-row"><span><i class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:${col(x.c)}"></i>${esc(nm(x.c))}</span><b class="${x.m1 > 0 ? "up" : x.m1 < 0 ? "down" : ""}">${arrow(x.m1)}</b></div>`).join("");
-  const disc = (dg.disc || []).slice(0, 8).map(x => `<div class="is-d"><small>${d2(x.d)}</small><b>${esc(nm(x.c))}</b> <a href="${esc(x.url || "#")}" target="_blank" rel="noopener">${esc(x.t)}</a></div>`).join("");
+  const disc = (dg.disc || []).slice(0, 8).map(x => `<div class="is-d"><span><small>${d2(x.d)}</small><b>${esc(nm(x.c))}</b> <a href="${esc(x.url || "#")}" target="_blank" rel="noopener">${esc(x.t)}</a></span></div>`).join("");
   const nw = Object.entries(dg.news || {}).sort((a, b) => b[1] - a[1]), mx = nw[0]?.[1] || 1, nt = nw.reduce((t, x) => t + x[1], 0);
   const top = nw.slice(0, 7), rest = nw.slice(7).reduce((t, x) => t + x[1], 0);
   const pieIt = [...top.map(([id, n]) => [nm(id), n, col(id)]), ...(rest ? [["그 외", rest, css("--axis")]] : [])];
@@ -2976,16 +2987,30 @@ async function renderIssue(){
   $("secIssue").innerHTML = `<div class="is-hd"><div><span class="is-k">${esc(R.title || "")}${R.pilot ? " · 시범호" : ""}</span><h2>${FIELD_NAME[F] || ""} · 이번 달 인사이트</h2>
       <p class="hint">기준일 ${d2(R.asOf)} · 주가 ${d2(R.close)} 종가 · 기간 ${d2(R.window?.[0])} ~ ${d2(R.window?.[1])} · 재무는 OpenDART, 주가는 KRX·Yahoo</p></div></div>
     ${ins?.items?.length ? `<ul class="is-ins">${ins.items.map(x => `<li><b>${esc(x.h)}</b><ul>${String(x.d || "").split(/(?<=\.)\s+(?=\S)/).filter(Boolean).map(z => `<li>${esc(z)}</li>`).join("")}</ul>${srcLinks(x.s)}</li>`).join("")}</ul>` : `<p class="is-none">이번 호 인사이트를 작성 중입니다.</p>`}
-    <div class="is-grid">
+    <div class="is-grid${disc ? "" : " n2"}">
       <div class="is-box"><h3>1개월 주가 <span>상장사</span></h3>${moves || '<p class="hint">상장사 없음</p>'}</div>
-      <div class="is-box"><h3>기간 중 공시 <b>${(dg.disc || []).length}건</b></h3>${disc || '<p class="hint">기간 중 공시 없음</p>'}</div>
-      <div class="is-box"><h3>기간 중 보도 <b>${nt}건</b></h3>${news || '<p class="hint">기간 중 보도 없음</p>'}<p class="hint" style="margin:6px 0 0">시세 기사 제외 · 같은 날 비슷한 제목은 1건</p></div>
+      ${disc ? `<div class="is-box"><h3>기간 중 공시 <b>${(dg.disc || []).length}건</b></h3>${disc}</div>` : ""}
+      <div class="is-box"><h3>기간 중 보도 <b>${nt}건</b></h3>${news || '<p class="hint">기간 중 보도 없음</p>'}</div>
     </div>`;
+  $("secIssue").insertAdjacentHTML("beforeend", '<p class="hint is-foot">보도 건수 = 시세 기사 제외 · 같은 날 비슷한 제목은 1건</p>');
+  requestAnimationFrame(fitIssuePie);
   // 별도 재무제표 스위치는 숫자가 바뀌는 실적 비교 구역에 둠
   const fb = $("fsBtn"), ctl = document.querySelector("#secAnnual .controls");
   if (fb && ctl && fb.parentElement !== ctl) ctl.prepend(fb);
   setTimeout(applyUpd, 400);
 }
+// 인사이트 아래 칸들의 높이를 맞춤: 보도 원형 크기를 다른 칸 내용 높이에 맞춰 조절(빈 여백 방지)
+function fitIssuePie(){
+  const g = document.querySelector("#secIssue .is-grid"), c = g?.querySelector(".is-pie .c"); if (!c) return;
+  const boxes = [...g.children], news = c.closest(".is-box"), others = boxes.filter(b => b !== news);
+  if (getComputedStyle(g).gridTemplateColumns.split(" ").length < 2){ c.style.width = ""; return; }   // 한 줄 배치(모바일)는 그대로
+  g.style.alignItems = "start";
+  const target = Math.max(...others.map(b => b.offsetHeight));
+  let best = null;
+  for (let w = 120; w <= 180; w += 5){ c.style.width = w + "px"; const d = Math.abs(news.offsetHeight - target); if (!best || d < best.d) best = { w, d }; }
+  c.style.width = best.w + "px"; g.style.alignItems = "";
+}
+addEventListener("resize", () => requestAnimationFrame(fitIssuePie));
 // 기간 중 보도 원형: 조각·범례에 마우스를 올리면 해당 회사만 강조
 document.addEventListener("mouseover", e => {
   const box = e.target.closest?.(".is-pie"); if (!box) return;
@@ -2999,13 +3024,14 @@ document.addEventListener("mouseout", e => {
 });
 function applyUpd(){
   const S = REPORT?.sections?.[state.group] || {};
-  document.querySelectorAll("#content .upd").forEach(e => e.remove());
+  document.querySelectorAll("#content .upd-l").forEach(e => e.remove());
   Object.entries(S).forEach(([id, x]) => {
     const sec = $(id); if (!sec) return;
     const host = sec.tagName === "SECTION" ? sec : sec.querySelector("section.panel"); if (!host) return;
-    let el = host.querySelector(":scope > .upd");
+    let el = host.querySelector(":scope > .upd-l");
     if (!el){ el = document.createElement("p"); host.prepend(el); }
-    el.className = "upd " + x.st; el.textContent = x.t;
+    const [lab, ...rest] = String(x.t || "").split(" · "), det = rest.filter(t => !/^AI 정리|^\d{4}\.\d{2} ~ /.test(t)).join(" · ");
+    el.className = "upd-l"; el.innerHTML = `<span class="upd ${x.st}">${esc(lab)}</span>${det ? `<small>${esc(det)}</small>` : ""}`;
   });
 }
 /* ---------- 인쇄: 분야별로 그려 그래프는 그림으로 담음 ---------- */
