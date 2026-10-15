@@ -508,3 +508,6 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
   .valc .sp-l{display:flex;flex-direction:column}
   .valc .sp-l .hb{flex:1;align-content:space-around;padding-top:34px}
 }
+/* 평균 제외 표시 */
+.xa{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;background:var(--tag);color:var(--muted);font-size:12px;font-weight:500;vertical-align:1px;white-space:nowrap}
+.hmt td:first-child .xa,.val-t td:first-child .xa,.adt td:first-child .xa{display:block;width:max-content;margin:3px 0 0 18px}

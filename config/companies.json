@@ -33,6 +33,8 @@
       "mode": "business",
       "description": "핵심 경쟁사 실적·동향",
       "members": ["ckdhealth", "hpo", "acebiome", "esther", "hem"],
+      "avgExclude": ["hem"],
+      "avgExcludeNote": "신약",
       "growExtra": ["cjwellcare"]
     },
     {

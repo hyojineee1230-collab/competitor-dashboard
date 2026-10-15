@@ -1097,6 +1097,8 @@ const LABELS_KEY = "cm-labels-v2";
 let labels = { self: "", sections: {}, cap: [] };
 try { labels = { ...labels, ...JSON.parse(localStorage.getItem(LABELS_KEY) || "{}") }; } catch(e){}
 const isSelf = c => labels.self && c.id === labels.self;
+// 평균 제외: 자사 + 묶음 설정 avgExclude(예: 핵심 경쟁사의 신약 회사) — 화면에는 그대로, 평균·중앙값 계산에서만 뺌
+const noAvg = c => isSelf(c) || (grp().avgExclude || []).includes(c.id);
 // 경쟁사 평균: 자사(표시 설정에서 지정)를 뺀 회사들의 단순 평균, 값이 없는 회사는 빼고 계산
 const mean = a => { const v = a.filter(x => x != null && isFinite(x)); return v.length ? v.reduce((t, x) => t + x, 0) / v.length : null; };
 /* 표 머리글 클릭 정렬: 내림차순 → 오름차순 → 기본 순서. 값 없는 회사는 항상 뒤, 경쟁사 평균 행은 맨 아래 고정 */
@@ -1145,7 +1147,7 @@ const noteTag = c => c.note ? `<span class="tag" title="${esc(c.note)}">주석</
 // 실적을 별도 재무제표로 보는 회사(config fs: "OFS") 표시
 const ofsTag = c => c.fs === "OFS" ? `<span class="tag" title="실적은 별도 재무제표 기준(자회사 제외) · 시가총액은 회사 전체">별도</span>` : "";
 const coCell = (c, sub) => `<div class="co"><i style="background:${color(c)}"></i><b>${esc(c.name)}</b>${brandChip(c)}${
-  isSelf(c) ? `<span class="tag self">자사</span>` : ""}${ofsTag(c)}${noteTag(c)}${
+  isSelf(c) ? `<span class="tag self">자사</span>` : ""}${!isSelf(c) && noAvg(c) ? `<span class="tag" title="평균 계산에서 제외">평균 제외</span>` : ""}${ofsTag(c)}${noteTag(c)}${
   c.listed ? `<span>${esc(sub ?? c.ticker)}</span>` : ""}</div>`;
 // 섹션 구조: [{title|null, items:[company]}] — 자사(표시 설정)와 섹션 밖 회사가 맨 위
 function sectioned(list, g = grp(), gid = state.group){
@@ -1541,7 +1543,7 @@ function renderGrow(){
   const main = Object.keys(yc).sort((a, b) => yc[b] - yc[a])[0];
   $("growHint").textContent = `${main || "–"}년 · 가로 = 광고/판촉+판매수수료(매출 대비) · 원 크기 = 매출`;
   $("growNotes").innerHTML = miss.length ? `<p class="note">판관비 세부 없음: ${esc(miss.join(", "))}</p>` : "";
-  const peers = rows.filter(r => !isSelf(r.c));
+  const peers = rows.filter(r => !noAvg(r.c));
   const ax = mean(peers.map(r => r.mk)), ay = mean(peers.map(r => r.gr));
   const maxRev = Math.max(...rows.map(r => r.rev), 1);
   const ink = css("--ink"), ink2 = css("--ink-2"), muted = css("--muted"), grid = css("--grid"), axis = css("--axis");
@@ -2463,7 +2465,7 @@ function renderQuarter(){
       <td>${signed(op, f.currency)}</td><td>${fmtMargin(margin(op, rev))}</td>
       <td>${fmtBig(c.quote?.marketCap, c.quote?.currency)}</td></tr>${segBlank(c)}`;
   }).join("");
-  const peers = shown.filter(c => c.quarterly && !isSelf(c)).map(qv);
+  const peers = shown.filter(c => c.quarterly && !noAvg(c)).map(qv);
   const A = k => mean(peers.map(r => r[k]));
   const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}<td></td><td>${fmtBig(A("rev"),"KRW")}</td>
     <td>${fmtPct(A("yoy"))}</td><td>${fmtPct(A("qoq"))}</td><td>${signed(A("gp"),"KRW")}</td><td>${fmtMargin(A("gpm"))}</td>
@@ -2513,7 +2515,7 @@ function renderFinBars(list, m, years, isPct, unit, scale){
   const pos = v => (Math.max(v, lo) - lo) / span * 100, z = pos(0), clipped = rows.some(r => r.cur < lo);
   const fv = v => isPct ? `${v.toFixed(1)}%` : fmtBig(v, state.currency);
   const fc = v => v == null ? "–" : `<span class="${upDown(v)}">${v > 0 ? "+" : ""}${v.toFixed(1)}${isPct ? "%p" : "%"}</span>`;
-  const top = rows[0], mv = rows.filter(r => r.chg != null && !isSelf(r.c)).sort((a, b) => b.chg - a.chg), avg = mean(rows.filter(r => !isSelf(r.c)).map(r => r.cur));
+  const top = rows[0], mv = rows.filter(r => r.chg != null && !isSelf(r.c)).sort((a, b) => b.chg - a.chg), avg = mean(rows.filter(r => !noAvg(r.c)).map(r => r.cur));
   const up = isPct ? ["가장 높은", "가장 많이 개선된", "가장 덜 나빠진"] : ["가장 큰", "가장 많이 늘어난", "가장 덜 줄어든"];
   box.innerHTML = `<p class="fin-ans">${esc(lab)} ${up[0]} 곳 <b>${esc(top.c.name)}</b> ${fv(top.cur)}`
     + (mv.length ? ` · 전년보다 ${mv[0].chg >= 0 ? up[1] : up[2]} 곳 <b>${esc(mv[0].c.name)}</b> ${fc(mv[0].chg)}` : "")
@@ -2625,7 +2627,7 @@ function renderAnnual(){
       <td class="err">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(f.source)} ↗</a>` : esc(f.source)}</td></tr>${segRow(c, last, cur)}`;
   }).join("");
   // 금액 평균은 선택한 통화로 보고하는 회사만, 비율 평균은 전체
-  const peers = list.filter(c => !isSelf(c)).map(av);
+  const peers = list.filter(c => !noAvg(c)).map(av);
   const segNotes = list.map(c => { const g = bizSeg(c, last); return g?.others?.length ? `${c.name} 그 외 부문(${g.y}): ${g.others.map(([n, v]) => `${n} ${fmtBig(v, "KRW")}`).join(" · ")}` : null; }).filter(Boolean);
   const A = k => mean(peers.map(r => r[k]));
   const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}<td>${fmtBig(A("rev"), state.currency)}</td><td>${fmtPct(A("gr"))}</td>
@@ -2684,7 +2686,7 @@ function renderSga(){
       ${cell(fmtBig(r.rev, "KRW"), null)}${cell(fmtBig(r.tot, "KRW"), pct(r.sgaRev))}
       ${SGA_COLS.map(([k]) => r[k] === 0 ? cell("–", null) : cell(signed(r[k], "KRW"), pct(r[k + "P"]), tip(r, k))).join("")}
       <td class="err">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.src)}">원문 ↗</a>` : ""}</td></tr>`).join("");
-  const peers = ok.filter(x => !isSelf(x.c)).map(x => x.r), A = k => mean(peers.map(r => r[k]));
+  const peers = ok.filter(x => !noAvg(x.c)).map(x => x.r), A = k => mean(peers.map(r => r[k]));
   const avg = peers.length < 2 ? "" : `<tr class="avg">${avgHead(peers.length)}${cell(fmtBig(A("rev"), "KRW"), null)}${cell(fmtBig(A("tot"), "KRW"), pct(A("sgaRev")))}
     ${SGA_COLS.map(([k]) => cell(signed(A(k), "KRW"), pct(A(k + "P")))).join("")}<td></td></tr>`;
   $("sgaTable").innerHTML = head + `<tbody>${body + avg}</tbody>`;
