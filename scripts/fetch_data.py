@@ -863,8 +863,8 @@ def main():
     DATA_DIR.mkdir(exist_ok=True)
 
     needs_fin = {m for g in groups if g.get("mode", "full") != "market" for m in g["members"]}
-    # 분기 실적은 사업현황(business) 탭에서만 보여주므로 그 회사들만 조회 (회사당 DART 12회 호출 절약)
-    needs_q = {m for g in groups if g.get("mode") == "business" for m in g["members"]}
+    # 분기 실적: 월간 리포트 '최근 공시 실적'(반기·분기 누적)에 쓰므로 재무를 받는 회사 전부 (상장사만 해당, 비상장은 감사보고서뿐)
+    needs_q = set(needs_fin)
     needs_ad = {m for g in groups if "ad" in g.get("extras", []) for m in g["members"]}
     needs_rnd = {m for g in groups if "rnd" in g.get("extras", []) for m in g["members"]}
     needs_act = {m for g in groups if g.get("mode") == "business" for m in g["members"]}

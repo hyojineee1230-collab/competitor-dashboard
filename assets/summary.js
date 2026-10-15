@@ -72,7 +72,7 @@ function coPL(c, F){
     kpi(`${ys[i] || ""} 매출`, big(rev, cur), `성장률 ${upPct(me.gr)} · ${avgLbl} ${upPct(avgOf("gr"))}`),
     kpi("매출총이익률", pctTxt(me.gpm), `${avgLbl} ${pctTxt(avgOf("gpm"))} ${pp(me.gpm, avgOf("gpm"))}`),
     kpi("영업이익률", `<span class="${me.opm < 0 ? "dn" : ""}">${pctTxt(me.opm)}</span>`, `${avgLbl} ${pctTxt(avgOf("opm"))} ${pp(me.opm, avgOf("opm"))}`),
-    kpi(qy == null ? "최근 분기 매출 YoY" : `${qLbl} 매출 YoY`, qy == null ? `<span class="dim" style="font-size:18px">${c.listed ? "분기 미수집" : "분기 미공시"}</span>` : upPct(qy), qy == null ? (c.listed ? "분기 실적은 핵심 경쟁사만" : "연간 실적만 공시") : "전년 같은 분기 대비"),
+    kpi(qy == null ? "최근 분기 매출 YoY" : `${qLbl} 매출 YoY`, qy == null ? `<span class="dim" style="font-size:18px">${c.listed ? "분기 미수집" : "분기 미공시"}</span>` : upPct(qy), qy == null ? (c.listed ? "분기 자료 없음" : "연간 실적만 공시") : "전년 같은 분기 대비"),
   ].join("");
   // 머리줄
   const Q = c.quote || {};
