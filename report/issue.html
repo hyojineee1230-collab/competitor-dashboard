@@ -223,7 +223,7 @@ h2{margin:0;font-size:16px;font-weight:600}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px}
 .lg{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 0;cursor:pointer;color:var(--ink-2);font-size:13px}
 .lg i{width:14px;height:3px;border-radius:2px;display:inline-block}
-.lg[aria-pressed="false"]{opacity:.35}
+.lg[aria-pressed="false"]{color:var(--muted)}
 
 .rank{list-style:none;margin:0;padding:0}
 .rank li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;height:40px;padding:0;border-bottom:1px solid var(--grid);cursor:pointer}
@@ -1742,14 +1742,14 @@ function renderPrice(){
   const datasets = series.map(({c, s}) => {
     const base = s.close[0];
     const map = new Map(s.dates.map((d,i) => [d, isM ? s.mcap[i] / 1e8 : s.close[i] / base * 100]));
-    const col = color(c), dim = state.focus != null && state.focus !== c.id;
+    const col = color(c), dim = state.focus != null && state.focus !== c.id, off = state.hidden.has(c.id);   // off: 범례에서 끈 회사는 지우지 않고 연한 회색으로 뒤에
     return {
-      label: c.name, cid: c.id,
+      label: c.name, cid: c.id, off,
       data: all.map(d => map.has(d) ? +map.get(d).toFixed(isM ? 0 : 2) : null),
-      borderColor: dim ? col + "40" : col, backgroundColor: col,
-      borderWidth: state.focus === c.id ? 3 : 2, pointRadius: 0, pointHoverRadius: 4,
+      borderColor: off ? "#D5DBE3" : dim ? col + "40" : col, backgroundColor: off ? "#D5DBE3" : col,
+      borderWidth: off ? 1.5 : state.focus === c.id ? 3 : 2, pointRadius: 0, pointHoverRadius: off ? 0 : 4, order: off ? 1 : 0,
       pointHoverBorderWidth: 2, pointHoverBorderColor: css("--surface"),
-      spanGaps: true, tension: 0, hidden: state.hidden.has(c.id),
+      spanGaps: true, tension: 0,
     };
   });
   draw("price", "priceChart", {
@@ -1760,7 +1760,7 @@ function renderPrice(){
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: { ...tip, usePointStyle: true, itemSort: (a,b) => b.parsed.y - a.parsed.y,
+        tooltip: { ...tip, usePointStyle: true, itemSort: (a,b) => b.parsed.y - a.parsed.y, filter: x => !x.dataset.off,
           callbacks: { label: x => isM
             ? ` ${x.dataset.label}  ${x.parsed.y >= 10000 ? (x.parsed.y/10000).toFixed(2) + "조" : Math.round(x.parsed.y).toLocaleString("ko-KR") + "억"}`
             : ` ${x.dataset.label}  ${x.parsed.y.toFixed(1)} (${x.parsed.y >= 100 ? "+" : ""}${(x.parsed.y-100).toFixed(1)}%)` } },
@@ -1781,13 +1781,12 @@ function renderPrice(){
 function renderLegend(){
   const el = $("legend"), isM = state.view === "mcap";
   el.innerHTML = comps().filter(c => c.price && (!isM || mcapEligible(c))).map(c =>
-    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${color(c)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</button>`).join("");
+    `<button class="lg" data-id="${esc(c.id)}" aria-pressed="${!state.hidden.has(c.id)}"><i style="background:${state.hidden.has(c.id) ? "#C9D2DE" : color(c)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</button>`).join("");
   el.onclick = e => {
     const b = e.target.closest(".lg"); if (!b) return;
     const id = b.dataset.id;
     state.hidden.has(id) ? state.hidden.delete(id) : state.hidden.add(id);
-    b.setAttribute("aria-pressed", !state.hidden.has(id));
-    renderPrice();
+    renderPrice(); renderLegend();
   };
 }
 function setFocus(id){
