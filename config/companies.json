@@ -17,7 +17,7 @@
     "kolmarbnh":    { "name": "콜마비앤에이치",   "ticker": "200130.KQ", "dart": "200130", "country": "KR", "segment": "식품" },
     "cosmaxnbt":    { "name": "코스맥스엔비티",   "ticker": "222040.KQ", "dart": "222040", "country": "KR" },
     "novarex":      { "name": "노바렉스",         "ticker": "194700.KQ", "dart": "194700", "country": "KR" },
-    "suheung":      { "name": "서흥",             "ticker": "008490.KS", "dart": "008490", "country": "KR", "note": "젤라틴(원료)·화장품 자회사 포함 · 부문 매출이 내부거래 조정 전 금액이라 건기식만 분리하지 않음" },
+    "suheung":      { "name": "서흥",             "ticker": "008490.KS", "dart": "008490", "country": "KR", "news_exclude": "김씨|문중|완문|서흥(초|중학|중,|중\\s|고등|동\\s|동\\b|상회|책방)|군산서흥|서귀포", "note": "젤라틴(원료)·화장품 자회사 포함 · 부문 매출이 내부거래 조정 전 금액이라 건기식만 분리하지 않음" },
     "herbalife":    { "name": "Herbalife",        "ticker": "HLF", "cik": "0001180262",       "country": "US" },
     "usana":        { "name": "USANA Health Sciences", "ticker": "USNA", "cik": "0000896264", "country": "US" },
     "cellbiotech":  {"brand": "듀오락",  "name": "쎌바이오텍",       "ticker": "049960.KQ", "dart": "049960", "country": "KR" },
