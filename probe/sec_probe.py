@@ -1,6 +1,6 @@
 """SEC EDGAR companyfacts 원문 구조 확인용(임시). 결과는 probe-out/sec.json"""
 import json, os, time, urllib.request
-UA = {"User-Agent": "competitor-dashboard-monitor noreply@users.noreply.github.com", "Accept-Encoding": "identity"}
+UA = {"User-Agent": "CompetitorDashboard admin@example.com"}
 def get(u):
     time.sleep(0.3)
     with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r:
