@@ -535,3 +535,5 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .bchip{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:13px;font-weight:600;line-height:1.5;white-space:nowrap;vertical-align:middle;color:var(--cc);background:color-mix(in srgb,var(--cc) 12%,#fff)}
 .cp-head h2 .bchip{font-size:14px}
 .home td .bchip{display:table;margin:2px 0 0 16px}   /* 홈 좁은 열의 표: 브랜드는 이름 아래 줄로(표가 넘치지 않게) */
+/* 첫 열 폭이 고정된 표(판관비 세부·기업가치·광고비 등): 브랜드는 이름 아래 줄로 */
+.hmt td:first-child .bchip,.val-t td:first-child .bchip,.adt td:first-child .bchip{display:table;margin:3px 0 0 18px}
