@@ -911,9 +911,9 @@ td span.err{font-size:13.5px}
   .wrap{max-width:none !important;padding:0 !important;margin:0 !important}
   body.printing .wrap > *:not(header):not(#printRoot){display:none !important}
   body.printing #printRoot{display:block;zoom:.8}
-  header{border-radius:0 !important;margin:0 0 10px !important;break-after:avoid}
+  header{border-radius:0 !important;margin:0 0 10px !important;break-after:avoid;padding:22px 24px 18px !important}
   .hdr-r .meta > *:not(#updated), #themeBtn, #fsBtn, .pm, #introBtn, #setBtn{display:none !important}
-  .pgrp + .pgrp{margin-top:18px}
+  .pgrp + .pgrp{break-before:page;margin-top:0}   /* 분야(산업)마다 새 쪽 */
   .pgrp-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--brand);padding:2px 2px 6px;margin:0 0 12px;break-after:avoid}
   .pgrp-h b{font-size:20px}
   .pgrp-h span{font-size:13px;color:var(--muted)}
@@ -928,10 +928,53 @@ td span.err{font-size:13.5px}
   #printRoot .panel:has(img.pimg){break-inside:avoid}   /* 그래프가 있는 구역은 제목·그래프를 한 쪽에 */
   #printRoot .pgrp-h + *{break-before:avoid}
   #printRoot .is-pie .c{width:150px}
-  #printRoot .panel h2, #printRoot .panel h3, #printRoot .upd, #printRoot .hint{break-after:avoid}
+  #printRoot .panel h2, #printRoot .panel h3, #printRoot .upd-l, #printRoot .panel > .ph{break-after:avoid}   /* 제목만 내용과 붙임(칸 끝 주석까지 붙이면 다음 구역과 엮여 통째로 넘어감) */
   #printRoot .chart-box, #printRoot img.pimg, #printRoot .core-card, #printRoot tr, #printRoot li, #printRoot .is-box, #printRoot .card{break-inside:avoid}
   #printRoot .is-grid{grid-template-columns:1fr 1.4fr 1fr !important}
   #printRoot .is-grid.n2{grid-template-columns:1fr 1.5fr !important}
+  /* 쪽 나눔: 그래프 구역·핵심 경쟁사는 통째로, 표·카드 묶음 구역은 행·카드 단위로 이어서(빈 여백 줄이기) */
+  #printRoot .panel{padding:14px 16px !important;margin-bottom:10px !important}
+  #printRoot #secCore, #printRoot .panel:has(img.pimg){break-inside:avoid}
+  #printRoot .mk-card, #printRoot .mk-two, #printRoot .mk-kpis, #printRoot .mk-defrow, #printRoot .mk-trend, #printRoot .is-grid, #printRoot .is-ins > li, #printRoot .bench{break-inside:avoid}
+  #printRoot .is-foot{display:none}   /* 종이에서는 보도 칸 안 주석으로(아래) */
+  #printRoot .is-foot-in{display:block !important;margin:6px 0 0;font-size:12px}
+  #printRoot .panel:not(:has(table)):not(:has(.mk-two)):not(:has(.is-ins)):not(:has(.bench)){break-inside:avoid}   /* 작은 구역(핵심 요약 등)은 쪼개지 않음 */
+  #printRoot thead{display:table-header-group}
+  #printRoot .mk-card:has(> .mk-pie){display:block}   /* 쪽이 갈릴 때 원형이 다음 카드와 겹치지 않게 */
+  /* 인사이트: 종이에서는 줄 간격을 좁게 */
+  #printRoot .is-hd{margin-bottom:8px}
+  #printRoot .is-ins{margin-bottom:10px}
+  #printRoot .is-ins > li{padding:7px 2px}
+  #printRoot .is-ins ul{font-size:13.5px;line-height:1.5}
+  #printRoot .is-ins .act-src{margin-top:3px}
+  #printRoot .is-box{padding:8px 12px}
+  #printRoot .is-row{padding:2px 0}
+  /* 핵심 경쟁사 카드: 종이에서는 낮게(여백 줄이기) */
+  #printRoot .core-card{padding:10px 12px;gap:3px;min-height:0}
+  #printRoot .core-card .nm{font-size:15px}
+  #printRoot .core-card .brand-line{font-size:12px;padding:1px 8px}
+  #printRoot .core-card .yr{font-size:12px}
+  #printRoot .core-card .rev{font-size:21px}
+  #printRoot .core-card .kv{font-size:12.5px;gap:10px;flex-wrap:wrap}
+  #printRoot .core-card .cc-seg{font-size:12px;white-space:normal}
+  #printRoot .core-card .drv{gap:4px;padding-top:6px}
+  #printRoot .core-card .drv span{font-size:11.5px;padding:1px 7px}
+  /* 표: 열이 많은 표도 종이 폭 안에(종목 코드는 빼고) */
+  #printRoot table{font-size:12.5px}
+  #printRoot th, #printRoot td{padding-left:6px !important;padding-right:6px !important}
+  #printRoot .co > span:not(.tag):not(.brand-chip){display:none}
+  #printRoot .is-pie .c{width:140px !important}
+  /* 시장 원형: 카드 폭 안에(원형 150px + 범례) */
+  #printRoot .mk-pie{grid-template-columns:150px minmax(0,1fr) !important;gap:16px !important;justify-content:start}
+  #printRoot .mk-pie .c{width:150px !important}
+  #printRoot .mk-leg{width:auto;max-width:none}
+  #printRoot details.mk-src summary{list-style:none;pointer-events:none}
+  #printRoot details.mk-src ol{columns:2;column-gap:24px;font-size:11.5px;line-height:1.45;margin-top:4px}
+  #printRoot details.mk-src{break-inside:avoid}
+  #printRoot .segbar{break-after:avoid}   /* '경쟁사 보기' 줄이 쪽 끝에 홀로 남지 않게 */
+  #printRoot details.mk-src li, #printRoot details.mk-src li a{font-size:11.5px}
+  #printRoot .panel:has(table):not(:has(tbody tr:nth-child(13))){break-inside:avoid}   /* 12행 이하 표는 한 쪽에, 긴 표만 행 단위로 이어서 */
+  #printRoot .is-grid.n2 .is-pie .c{width:160px !important}
 }
 </style>
 </head>
@@ -2831,7 +2874,7 @@ async function renderIssue(){
     <div class="is-grid${disc ? "" : " n2"}">
       <div class="is-box"><h3>1개월 주가 <span>상장사</span></h3>${moves || '<p class="hint">상장사 없음</p>'}</div>
       ${disc ? `<div class="is-box"><h3>기간 중 공시 <b>${(dg.disc || []).length}건</b></h3>${disc}</div>` : ""}
-      <div class="is-box"><h3>기간 중 보도 <b>${nt}건</b></h3>${news || '<p class="hint">기간 중 보도 없음</p>'}</div>
+      <div class="is-box"><h3>기간 중 보도 <b>${nt}건</b></h3>${news || '<p class="hint">기간 중 보도 없음</p>'}<p class="hint is-foot-in" hidden>시세 기사 제외 · 같은 날 비슷한 제목은 1건</p></div>
     </div>`;
   $("secIssue").insertAdjacentHTML("beforeend", '<p class="hint is-foot">보도 건수 = 시세 기사 제외 · 같은 날 비슷한 제목은 1건</p>');
   requestAnimationFrame(fitIssuePie);
@@ -2900,9 +2943,12 @@ function snapGroup(name){
   sa.forEach((el, i) => { if (ca[i] && getComputedStyle(el).display === "none") ca[i].setAttribute("hidden", ""); });
   const a = src.querySelectorAll("canvas"), b = cl.querySelectorAll("canvas");
   a.forEach((c, i) => { const d = b[i]; if (!d || !c.width) return;
+    if (!c.offsetParent){ d.remove(); return; }   // 화면에서 숨긴 그래프는 빼서(빈 그림이 구역을 통째로 넘기지 않게)
     try { const img = new Image(); img.src = c.toDataURL("image/png"); img.className = "pimg"; img.alt = c.getAttribute("aria-label") || ""; d.replaceWith(img); } catch (e) {} });
+  { const iss = cl.querySelector("#secIssue"), hd = cl.querySelector("#secHead"); if (iss && hd && !hd.hidden) iss.after(hd); }   // (원본과 순서로 짝짓는 위 두 단계 뒤에) 종이: 인사이트 → 핵심 요약 → 카드 순
+  cl.querySelectorAll("details.mk-src").forEach(d => d.open = true);   // 종이: 출처 목록은 펼쳐서
   cl.querySelectorAll(".hint, small").forEach(e => { e.innerHTML = e.innerHTML.replace(/\s*·\s*[^·<]*누르면[^·<]*/g, ""); });
-  cl.querySelectorAll("[id]").forEach(e => e.removeAttribute("id")); cl.removeAttribute("id");
+  cl.querySelectorAll("[id]:not(svg *)").forEach(e => e.removeAttribute("id")); cl.removeAttribute("id");   // 그래프(SVG) 안 id는 그림자·명암 참조라 남김
   const sec = document.createElement("section"); sec.className = "pgrp";
   sec.innerHTML = `<div class="pgrp-h"><b>${esc(name)}</b><span>${esc($("issueBadge").textContent)} · ${esc($("updated").textContent)}</span></div>`;
   sec.append(cl); return sec;
