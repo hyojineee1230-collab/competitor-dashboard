@@ -1015,12 +1015,12 @@ td span.err{font-size:13.5px}
 
     <!-- 핵심 경쟁사 (요약 탭) -->
     <section class="panel" id="secCore" hidden>
-      <div class="ph"><div><h2>핵심 경쟁사</h2><p class="hint" id="coreHint"></p></div></div>
+      <div class="ph"><div><h2>핵심 경쟁사</h2><p class="hint" id="coreHint"></p></div><button type="button" class="fs-btn fs-dup" aria-pressed="false" title="재무 숫자 기준 · 끄면 연결(자회사 포함), 켜면 별도(자회사 제외) · 모든 탭에 적용"><span>별도 재무제표</span><span class="sw" aria-hidden="true"></span></button></div>
       <div class="core-grid" id="coreBody"></div>
     </section>
     <!-- 성장 근거 (요약 탭): 성장 vs 마케팅 강도 차트 / 성장 원인 매트릭스를 탭으로 -->
     <section class="panel" id="secGrow" hidden>
-      <div class="ph"><div><h2>성장 vs 마케팅 강도</h2><p class="hint" id="growHint"></p></div></div>
+      <div class="ph"><div><h2>성장 vs 마케팅 강도</h2><p class="hint" id="growHint"></p></div><button type="button" class="fs-btn fs-dup" aria-pressed="false" title="재무 숫자 기준 · 끄면 연결(자회사 포함), 켜면 별도(자회사 제외) · 모든 탭에 적용"><span>별도 재무제표</span><span class="sw" aria-hidden="true"></span></button></div>
       <div id="growPane"><div class="chart-box grow-box"><canvas id="growChart"></canvas></div>
       <div id="growNotes"></div></div>
     </section>
@@ -1459,8 +1459,10 @@ function applyBasis(g){
     c.sga = alt ? (alt.sga || null) : c._main.sga;
     c.segment = alt ? null : c._main.segment;     // 부문 주석은 연결 기준
   });
-  $("fsBtn").setAttribute("aria-pressed", state.ofs);
+  document.querySelectorAll("#fsBtn, .fs-dup").forEach(b => b.setAttribute("aria-pressed", state.ofs));
 }
+// 같은 스위치를 실적이 바뀌는 구역마다 둠(성장 vs 마케팅 강도 · 핵심 경쟁사 · 최근 공시 실적) — 하나를 누르면 모두 함께
+document.addEventListener("click", e => { if (e.target.closest(".fs-dup")) $("fsBtn").click(); });
 $("fsBtn").addEventListener("click", () => {
   state.ofs = !state.ofs;
   closeCo(); Object.values(state.data).forEach(g => g?.companies && applyBasis(g)); state.currency = null; setCurrency(); renderCompanies();
