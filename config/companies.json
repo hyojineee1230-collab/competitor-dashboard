@@ -3,7 +3,7 @@
 
   "companies": {
     "hpo":          {"brand": "덴마크 유산균이야기",  "name": "에이치피오",       "ticker": "357230.KQ", "dart": "357230", "country": "KR", "segment": "건강기능식품" },
-    "nutri":        {"brand": "에버콜라겐",  "name": "뉴트리",           "ticker": "270870.KQ", "dart": "270870", "country": "KR", "news_must": "(^|[^가-힣A-Za-z])뉴트리([^가-힣A-Za-z]|$)" },
+    "nutri":        {"brand": "에버콜라겐",  "name": "뉴트리",           "ticker": "270870.KQ", "dart": "270870", "news_exclude": "뉴트리-가드|뉴트리\\s*제노믹스|케어푸드", "country": "KR", "news_must": "(^|[^가-힣A-Za-z])뉴트리([^가-힣A-Za-z]|$)" },
     "bioneer":      { "name": "바이오니아",       "ticker": "064550.KQ", "dart": "064550", "country": "KR", "news_exclude": "엔바이오니아" },
     "hem":          { "name": "에이치이엠파마",    "ticker": "376270.KQ", "dart": "376270", "country": "KR", "news_names": ["에이치이엠파마", "HEM파마"] },
     "kobiolabs":    { "name": "고바이오랩",       "ticker": "348150.KQ", "dart": "348150", "country": "KR", "note": "연결 매출 대부분이 건기식 판매 자회사(위바이옴) · 본체(별도) 매출 38억(2025)" },
@@ -21,7 +21,7 @@
     "herbalife":    { "name": "Herbalife",        "ticker": "HLF", "cik": "0001180262",       "country": "US" },
     "usana":        { "name": "USANA Health Sciences", "ticker": "USNA", "cik": "0000896264", "country": "US" },
     "cellbiotech":  {"brand": "듀오락",  "name": "쎌바이오텍",       "ticker": "049960.KQ", "dart": "049960", "country": "KR" },
-    "bifido":       { "name": "비피도",           "ticker": "238200.KQ", "dart": "238200", "country": "KR" },
+    "bifido":       { "name": "비피도",           "ticker": "238200.KQ", "dart": "238200", "news_exclude": "비피도\\s*핏|GNC", "country": "KR" },
     "seres":        { "name": "Seres Therapeutics", "ticker": "MCRB", "cik": "0001609809",    "country": "US" },
     "maat":         { "name": "MaaT Pharma",      "ticker": "MAAT.PA",   "country": "FR" }
   },
