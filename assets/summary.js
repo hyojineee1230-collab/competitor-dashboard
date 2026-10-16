@@ -486,13 +486,16 @@ const SUM = {
 
   /* ---------- 시세 ---------- */
   async quotes(F, ui){
-    // 기간: 짧은 것부터(1개월 → 2년), 기본 1년. 시세 데이터는 최근 2년(약 490거래일)
-    const RNG = [["1M", "1개월", 21], ["3M", "3개월", 63], ["1Y", "1년", 250], ["2Y", "2년", 9999]];   // 2년 = 받아 둔 전체
-    const per = RNG.some(r => r[0] === ui.per) ? ui.per : "1Y", [, perL, N] = RNG.find(r => r[0] === per);
+    // 기간(증권 화면 관례): 1주·1개월·3개월·연초 이후·1년, 기본 1년. 1일은 아래 '당일 시세' 카드
+    const RNG = [["1W", "1주", 5], ["1M", "1개월", 21], ["3M", "3개월", 63], ["YTD", "연초 이후", null], ["1Y", "1년", 250]];
+    const per = RNG.some(r => r[0] === ui.per) ? ui.per : "1Y", [, perL] = RNG.find(r => r[0] === per);
     const listed = F.cos.filter(c => c.listed && c.price?.close?.length > 20);
-    const step = per === "2Y" ? 5 : per === "1Y" ? 3 : 1;
+    const step = per === "1Y" ? 3 : 1;
     // 날짜 축: 모든 회사 거래일을 합친 최근 N일. 휴장일(해외사 등)은 직전 종가를 이어 씀
-    const axis = [...new Set(listed.flatMap(c => c.price.dates))].sort().slice(-N);
+    // 연초 이후 = 전년 마지막 거래일 종가를 0%로(올해 거래일 + 1일)
+    const allD = [...new Set(listed.flatMap(c => c.price.dates))].sort();
+    const N = per === "YTD" ? allD.filter(d => d >= `${(allD.at(-1) || "").slice(0, 4)}-01-01`).length + 1 : RNG.find(r => r[0] === per)[2] + 1;
+    const axis = allD.slice(-N);
     const keep = axis.map((_, i) => i % step === 0 || i === axis.length - 1);
     const xs = axis.filter((_, i) => keep[i]);
     const ser = listed.map(c => {

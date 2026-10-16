@@ -1154,7 +1154,12 @@ td span.err{font-size:13.5px}
 
 <script src="../assets/colors.js"></script>
 <script>
-const PERIODS = [["1M",21],["3M",63],["6M",126],["1Y",252],["2Y",504]];
+// 기간(증권 화면 관례, 호 기준): 1개월(이번 호 기간) · 3개월 · 연초 이후 · 1년. n = 거래일 수(연초 이후는 계산)
+const PERIODS = [["1M",21,"1개월"],["3M",63,"3개월"],["YTD",null,"연초 이후"],["1Y",252,"1년"]];
+const perLabel = k => (PERIODS.find(p => p[0] === k) || [])[2] || k;
+// 연초 이후 등락률: 전년 마지막 거래일 종가 대비
+function ytdOf(c){ const p = c.price; if (!p?.close?.length) return null; const y = p.dates.at(-1).slice(0, 4), k = p.dates.findIndex(d => d >= `${y}-01-01`);
+  return k > 0 ? (p.close.at(-1) / p.close[k - 1] - 1) * 100 : null; }
 const METRICS = [["revenue","매출액"],["grossProfit","매출이익"],["gpm","매출이익률"],["operatingIncome","영업이익"],["opm","영업이익률"]];
 const PCT_METRICS = new Set(["gpm", "opm"]);   // 비율 지표 (통화와 무관하게 전체 비교)
 const EXTRA_METRICS = { ad: ["adr","광고선전비/매출"], rnd: ["rndr","연구비/판관비"] };
@@ -1335,7 +1340,7 @@ async function init(){
   $("tabs").innerHTML = html;
   $("tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if (b) selectGroup(b.dataset.id); });
 
-  segment("periods", PERIODS.map(p => [p[0], p[0]]), () => state.period, v => { state.period = v; renderPrice(); renderRank(); });
+  segment("periods", PERIODS.map(p => [p[0], p[2]]), () => state.period, v => { state.period = v; renderPrice(); renderRank(); });
   segment("views", [["rel","상대 수익률"],["mcap","시가총액"]], () => state.view, v => { state.view = v; renderPrice(); renderRank(); });
   segment("metrics", METRICS, () => state.metric, v => { state.metric = v; renderAnnual(); });
   segment("mktRegion", [["kr","국내"],["global","해외"]], () => state.mktRegion, v => { state.mktRegion = v; renderMkt(); });
@@ -1735,8 +1740,9 @@ function renderGrow(){
 
 /* ---------- 주가 · 시가총액 ---------- */
 function periodSlice(c){
-  const n = PERIODS.find(p => p[0] === state.period)[1], p = c.price;
-  if (!p) return null;
+  const p = c.price; if (!p) return null;
+  const P = PERIODS.find(x => x[0] === state.period) || PERIODS.at(-1);
+  const n = P[1] ?? p.dates.filter(d => d >= `${p.dates.at(-1).slice(0, 4)}-01-01`).length;
   const s = Math.max(0, p.dates.length - n - 1);
   return { dates: p.dates.slice(s), close: p.close.slice(s), mcap: p.mcap ? p.mcap.slice(s) : null };
 }
@@ -1816,7 +1822,7 @@ function renderRank(){
   if (isM){
     // 시가총액 크기 순: 이름 | 현재 시총 | 기간 변화율 (한 줄)
     $("rankTitle").textContent = "시가총액 순위";
-    $("rankHint").textContent = `현재 시가총액 · 최근 ${state.period} 변화율`;
+    $("rankHint").textContent = `현재 시가총액 · ${perLabel(state.period)} 변화율`;
     const rows = comps().filter(mcapEligible).map(c => ({c, v: c.quote?.marketCap ?? c.price.mcap.at(-1), r: periodReturn(c)}))
       .sort((a,b) => b.v - a.v);
     $("rank").innerHTML = rows.map(({c,v,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
@@ -1824,7 +1830,7 @@ function renderRank(){
       <span class="rv"><span>${fmtBig(v,"KRW")}</span><span class="chg">${fmtPct(r)}</span></span></li>`).join("") || `<li class="empty">데이터 없음</li>`;
   } else {
     $("rankTitle").textContent = "기간 수익률 순위";
-    $("rankHint").textContent = `최근 ${state.period} 주가 등락률`;
+    $("rankHint").textContent = `${perLabel(state.period)} 주가 등락률`;
     const rows = comps().map(c => ({c, r: periodReturn(c)})).filter(x => x.r != null).sort((a,b) => b.r - a.r);
     $("rank").innerHTML = rows.map(({c,r}) => `<li data-id="${esc(c.id)}" class="${state.focus===c.id?"sel":""}">
         <span class="nm"><i style="background:${color(c)}"></i>${esc(c.name)}${isSelf(c) ? ' <span class="tag self">자사</span>' : ""}</span>
@@ -1837,12 +1843,13 @@ function renderRank(){
 // 약어 풀이(머리글 마우스오버)
 const ABBR = { PSR: "PSR = Price-to-Sales Ratio, 주가매출비율", PER: "PER = Price-to-Earnings Ratio, 주가수익비율", PBR: "PBR = Price-to-Book-value Ratio, 주가순자산비율" };
 const abbrTitle = l => ABBR[l] ? ` title="${ABBR[l]}"` : "";
-const QCOLS = [["name","종목"],["price","현재가"],["change1d","1일"],["change1w","1주"],["change1m","1개월"],
-  ["change3m","3개월"],["change1y","1년"],["range","52주 범위"],["marketCap","시가총액"],["per","PER"],["pbr","PBR"]];
+const QCOLS = [["name","종목"],["price","현재가"],["change1m","1개월"],
+  ["change3m","3개월"],["ytd","연초 이후"],["change1y","1년"],["range","52주 범위"],["marketCap","시가총액"],["per","PER"],["pbr","PBR"]];
 function qval(c, k){
   const q = c.quote || {};
   if (k === "name") return c.name;
   if (k === "order") return c._ci;
+  if (k === "ytd") return ytdOf(c);
   if (k === "range") return (q.high52w && q.low52w && q.high52w > q.low52w) ? (q.price - q.low52w) / (q.high52w - q.low52w) : null;
   if (k === "marketCap") return q.marketCap == null ? null : q.marketCap * (q.currency === "KRW" ? 1 : 1350); // 정렬용 대략 환산
   return q[k];
@@ -1862,8 +1869,8 @@ function renderQuotes(){
     const pos = qval(c, "range");
     return `<tr data-id="${esc(c.id)}" class="click ${state.focus===c.id?"sel":""}">
       <td>${coCell(c)}</td><td>${fmtPrice(q.price, q.currency)}</td>
-      <td>${fmtPct(q.change1d,2)}</td><td>${fmtPct(q.change1w)}</td><td>${fmtPct(q.change1m)}</td>
-      <td>${fmtPct(q.change3m)}</td><td>${fmtPct(q.change1y)}</td>
+      <td>${fmtPct(q.change1m)}</td>
+      <td>${fmtPct(q.change3m)}</td><td>${fmtPct(ytdOf(c))}</td><td>${fmtPct(q.change1y)}</td>
       <td title="최저 ${fmtPrice(q.low52w,q.currency)} / 최고 ${fmtPrice(q.high52w,q.currency)}">${pos==null?"–":`<span class="range"><i style="left:calc(${pos*100}% - 1px)"></i></span>`}</td>
       <td>${fmtBig(q.marketCap, q.currency)}</td><td>${fmtX(q.per)}</td><td>${fmtX(q.pbr)}</td></tr>`;
   };
@@ -1958,25 +1965,25 @@ async function renderVal(){
   // 비상장사 추정 가치는 비교 상장사가 적어 범위가 무의미 → 상장사만 (메인과 같음)
   const rows = list.filter(c => c.listed).map(c => {
     const L = latest(c), q = c.quote || {};
-    if (c.listed) return { c, v: { mcap: q.marketCap == null ? null : q.marketCap * (q.currency === "KRW" ? 1 : 1350), rev: L.rev, psr: psrOf(c), per: q.per, pbr: q.pbr, r1m: q.change1m, r3m: q.change3m, r1y: q.change1y }, L, q };
+    if (c.listed) return { c, v: { mcap: q.marketCap == null ? null : q.marketCap * (q.currency === "KRW" ? 1 : 1350), rev: L.rev, psr: psrOf(c), per: q.per, pbr: q.pbr, r1m: q.change1m, r3m: q.change3m, ytd: ytdOf(c), r1y: q.change1y }, L, q };
     const peers = g.companies.filter(p => p.listed && segFor(p) === segFor(c)).map(psrOf).filter(v => v != null);
     const lo = peers.length ? Math.min(...peers) : null, hi = peers.length ? Math.max(...peers) : null;
     return { c, est: true, lo, hi, n: peers.length, v: { mcap: lo == null || !L.rev ? null : L.rev * (lo + hi) / 2, rev: L.rev, psr: null }, L };
   });
   const sa = k => sortAttr("val", k);
-  const head = `<thead><tr><th${sa("name")}>종목</th><th${sa("mcap")}>시가총액</th><th${sa("rev")}>매출(최근 연간)</th><th${sa("psr")}${abbrTitle("PSR")}>PSR</th><th${sa("per")}${abbrTitle("PER")}>PER</th><th${sa("pbr")}${abbrTitle("PBR")}>PBR</th><th${sa("r1m")}>1개월</th><th${sa("r3m")}>3개월</th><th${sa("r1y")}>1년</th></tr></thead>`;
+  const head = `<thead><tr><th${sa("name")}>종목</th><th${sa("mcap")}>시가총액</th><th${sa("rev")}>매출(최근 연간)</th><th${sa("psr")}${abbrTitle("PSR")}>PSR</th><th${sa("per")}${abbrTitle("PER")}>PER</th><th${sa("pbr")}${abbrTitle("PBR")}>PBR</th><th${sa("r1m")}>1개월</th><th${sa("r3m")}>3개월</th><th${sa("ytd")}>연초 이후</th><th${sa("r1y")}>1년</th></tr></thead>`;
   const body = sortRows(rows, "val").map(r => {
     if (r.est){
       const v = r.lo == null || !r.L.rev ? "–" : r.lo === r.hi ? `약 ${fmtBig(r.L.rev * r.lo, "KRW")}` : `${fmtBig(r.L.rev * r.lo, "KRW")} ~ ${fmtBig(r.L.rev * r.hi, "KRW")}`;
       const note = g.valuationNotes?.[r.c.id], ref = note && refG?.get(note.ref);
       return `<tr><td>${coCell(r.c, "")}</td><td class="est"><span class="est-tag">추정</span><b>${v}</b></td><td>${fmtBig(r.L.rev, r.L.cur)}</td>
         <td class="est" title="같은 묶음 상장사 ${r.n}곳의 PSR 범위">${r.lo == null ? "–" : r.lo === r.hi ? `피어 ${xv(r.lo)}` : `피어 ${r.lo.toFixed(2)}~${xv(r.hi)}`}</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>` +
-        (ref?.quote?.marketCap ? `<tr class="sub-row"><td colspan="9" class="err" style="padding-left:30px">참고: ${esc(note.text)} ${fmtBig(ref.quote.marketCap, "KRW")}</td></tr>` : "");
+        (ref?.quote?.marketCap ? `<tr class="sub-row"><td colspan="10" class="err" style="padding-left:30px">참고: ${esc(note.text)} ${fmtBig(ref.quote.marketCap, "KRW")}</td></tr>` : "");
     }
     return `<tr><td>${coCell(r.c, "")}</td><td>${fmtBig(r.q.marketCap, r.q.currency)}</td><td>${fmtBig(r.L.rev, r.L.cur)}</td><td>${xv(r.v.psr)}</td>
-      <td>${r.q.per == null ? "–" : r.q.per.toFixed(1) + "배"}</td><td>${r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배"}</td><td>${fmtPct(r.q.change1m)}</td><td>${fmtPct(r.q.change3m)}</td><td>${fmtPct(r.q.change1y)}</td></tr>`;
+      <td>${r.q.per == null ? "–" : r.q.per.toFixed(1) + "배"}</td><td>${r.q.pbr == null ? "–" : r.q.pbr.toFixed(1) + "배"}</td><td>${fmtPct(r.q.change1m)}</td><td>${fmtPct(r.q.change3m)}</td><td>${fmtPct(ytdOf(r.c))}</td><td>${fmtPct(r.q.change1y)}</td></tr>`;
   }).join("");
-  $("valTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="9" class="empty">데이터 없음</td></tr>`}</tbody>`;
+  $("valTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="10" class="empty">데이터 없음</td></tr>`}</tbody>`;
   bindSort("valTable", "val", renderVal);
   // 1년 주가 흐름(상장사): 약 250거래일 전 종가 = 0%
   const lst = list.filter(c => c.listed && c.price?.close?.length);
