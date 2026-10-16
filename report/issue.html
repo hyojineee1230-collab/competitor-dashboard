@@ -2602,7 +2602,7 @@ function latestFiling(c){
       const ix = [...Array(qn)].map((_, k) => q.periods.indexOf(`${yr}Q${k + 1}`)), px = [...Array(qn)].map((_, k) => q.periods.indexOf(`${+yr - 1}Q${k + 1}`));
       const sum = (key, xs) => xs.every(i => i >= 0 && q[key]?.[i] != null) ? xs.reduce((t, i) => t + q[key][i], 0) : null;
       if (ix.every(i => i >= 0)){
-        const nm = qn === 2 ? "반기보고서" : "분기보고서", mm = String(qn * 3).padStart(2, "0");
+        const nm = !c.dart ? `${q.source || "Yahoo Finance"} (분기 합산)` : qn === 2 ? "반기보고서" : "분기보고서", mm = String(qn * 3).padStart(2, "0");   // 해외사는 DART 보고서명이 아님
         const d = (c.disclosures || []).find(x => x.title.includes(nm) && x.title.includes(`${yr}.${mm}`));
         return { lab: `${yr.slice(2)}년 ${qn === 2 ? "상반기" : qn === 1 ? "1분기" : "1~3분기"}`, ord: `${yr}Q${qn}`, cur: q.currency || "KRW",
                  rev: sum("revenue", ix), op: sum("operatingIncome", ix), pRev: sum("revenue", px), pOp: sum("operatingIncome", px), url: d?.url, src: (d?.title || nm).replace(/^\[[^\]]*\]\s*/, "") };
