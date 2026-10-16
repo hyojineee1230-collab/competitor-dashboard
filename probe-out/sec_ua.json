@@ -1,0 +1,53 @@
+{
+"res": [
+[
+"competitor-dashboard-monitor noreply@users.noreply.github.com",
+"gzip, deflate",
+"<HTTPError 403: 'Forbidden'>",
+0
+],
+[
+"competitor-dashboard-monitor noreply@users.noreply.github.com",
+null,
+"<HTTPError 403: 'Forbidden'>",
+0
+],
+[
+"CompetitorDashboard admin@example.com",
+"gzip, deflate",
+200,
+7977
+],
+[
+"CompetitorDashboard admin@example.com",
+null,
+200,
+7977
+],
+[
+"Mozilla/5.0 (compatible; CompetitorDashboard/1.0; +https://github.com)",
+"gzip, deflate",
+"<HTTPError 403: 'Forbidden'>",
+0
+],
+[
+"Mozilla/5.0 (compatible; CompetitorDashboard/1.0; +https://github.com)",
+null,
+"<HTTPError 403: 'Forbidden'>",
+0
+],
+[
+"Sample Company Name AdminContact@samplecompanydomain.com",
+"gzip, deflate",
+200,
+7977
+],
+[
+"Sample Company Name AdminContact@samplecompanydomain.com",
+null,
+200,
+7977
+]
+],
+"ip": "132.196.19.237"
+}
