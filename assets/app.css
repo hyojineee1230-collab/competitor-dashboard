@@ -530,3 +530,8 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .mk-src{margin-top:4px}
 .mk-src ol{margin:6px 0 0;padding-left:28px;font-size:14px;line-height:1.7;color:var(--ink-2)}
 .mk-src ol a{color:inherit}
+
+/* 대표 브랜드 칩: 회사 이름 옆, 회사 색 옅은 바탕 */
+.bchip{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:13px;font-weight:600;line-height:1.5;white-space:nowrap;vertical-align:middle;color:var(--cc);background:color-mix(in srgb,var(--cc) 12%,#fff)}
+.cp-head h2 .bchip{font-size:14px}
+.home td .bchip{display:table;margin:2px 0 0 16px}   /* 홈 좁은 열의 표: 브랜드는 이름 아래 줄로(표가 넘치지 않게) */

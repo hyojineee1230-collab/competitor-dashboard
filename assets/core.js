@@ -78,7 +78,9 @@ function fieldCtx(fid, ofs = S.ofs){
   return { id: f[0], name: f[1], gid: f[2], g, cos, mk: (D.market?.groups || {})[MARKET_OF[f[0]]] || {} };
 }
 const isKR = c => /\.(KQ|KS)$/.test(c.ticker || "");
-const coLabel = (c, extra = "") => `<span class="co"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}${extra}</span>`;
+// 대표 브랜드 칩(config companies.brand) — 회사 이름 옆에
+const brandTag = c => c?.brand ? `<span class="bchip" style="--cc:${c.color}" title="대표 브랜드">${esc(c.brand)}</span>` : "";
+const coLabel = (c, extra = "") => `<span class="co"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}${brandTag(c)}${extra}</span>`;
 // 오늘 등락: 장중이면 지연 시세, 아니면 최근 종가 기준
 function quoteToday(c){
   const q = c.quote || {}, L = D.live?.quotes?.[c.id], t = todayKST();

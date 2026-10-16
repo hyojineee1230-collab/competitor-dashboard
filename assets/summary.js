@@ -8,7 +8,7 @@ const icard = (meta, num, numCol, head, chart, { isNew = false, sub = "", link =
   <div class="big"><b style="color:${numCol}">${num}</b><span>${head}</span></div>${sub ? `<div class="sub">${sub}</div>` : ""}${chart}${more}`, "ic");
 const won = (v, cur = "KRW") => v == null ? "–" : cur === "KRW" ? `${nf(v)}원` : `${{ USD: "$", EUR: "€" }[cur] || ""}${nf(v, 2)}`;
 const xaTag = c => c.noAvg ? `<span class="xa" title="평균·중앙값 계산에서 제외">평균 제외</span>` : "";
-const coCell = c => `<button type="button" class="co cob" data-co="${esc(c.id)}"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</button>${xaTag(c)}`;
+const coCell = c => `<button type="button" class="co cob" data-co="${esc(c.id)}"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</button>${brandTag(c)}${xaTag(c)}`;
 // 제목 옆 ⓘ: 표 아래 주석 대신 기준 설명을 마우스오버(모바일은 탭)로
 const infoI = text => `<button type="button" class="ii" aria-label="기준 설명"${tipA(["기준", ...text.split(" · ")])}>i</button>`;
 const capFn = v => v == null ? null : Math.abs(v) > MCAP ? null : v;
@@ -132,7 +132,7 @@ function coPL(c, F){
   // 최근 보도(수집 기사 그대로, AI 정리 아님)
   const news = (D.newsfx?.recent || []).filter(e => e.c === c.id && e.cat !== "market").slice(0, 5);
   return `<div class="cp-head" style="--cc:${c.color}"><div>
-      <h2 id="coPopTitle"><i></i>${esc(c.name)}${c.listed ? "" : '<span class="tag">비상장</span>'}${c.fs === "OFS" ? '<span class="tag">별도</span>' : ""}</h2>
+      <h2 id="coPopTitle"><i></i>${esc(c.name)}${brandTag(c)}${c.listed ? "" : '<span class="tag">비상장</span>'}${c.fs === "OFS" ? '<span class="tag">별도</span>' : ""}</h2>
       <div class="cp-meta">${capTxt}${lastDisc ? `<span>최근 공시 <a href="${esc(lastDisc.url)}" target="_blank" rel="noopener">${esc(lastDisc.title)}</a> <small>${md(lastDisc.date)}</small></span>` : ""}</div>
     </div><button class="cp-x" type="button" data-close aria-label="닫기">✕</button></div>
     <div class="cp-kpis">${kpis}</div>${sgm}
@@ -442,7 +442,7 @@ const SUM = {
       const whyTag = k => !k.why ? "" : k.why.type === "filing" ? "공시" : `${catName(k.why.cat)} 보도`;
       const whyLink = k => !k.why ? `<span class="dim">확인된 공시·보도 없음</span>` : `<a class="more" href="${esc(k.why.url || "#")}" target="_blank" rel="noopener">${esc(k.why.title)}</a>`;
       const rowsH = kept.slice(0, 4).map(k => { const x = F.cos.find(y => y.id === k.c);
-        return `<div class="sg-r"><div class="sg-h"><button type="button" class="co cob" data-co="${esc(x.id)}"><i class="dot" style="background:${x.color}"></i>${esc(x.name)}</button>
+        return `<div class="sg-r"><div class="sg-h"><button type="button" class="co cob" data-co="${esc(x.id)}"><i class="dot" style="background:${x.color}"></i>${esc(x.name)}</button>${brandTag(x)}
             <b style="color:${colOf(k.idio)}">${arrow(k.idio)}</b><span class="mu">${md(k.d)}</span>
             <span class="sg-m"${tipA([`${x.name} · ${md(k.d)}`, `고유 등락률\t${sgn(k.idio)}`, `실제 등락률\t${sgn(k.ar)}`, `평소 하루 변동폭\t±${k.sd.toFixed(1)}%`, `변동 배수\t${k.z.toFixed(1)}배`, k.vr ? `거래량\t평소의 ${k.vr.toFixed(1)}배` : null])}>평소의 ${k.z.toFixed(1)}배${k.vr ? ` · 거래량 ${k.vr.toFixed(1)}배` : ""}</span></div>
           <div class="sg-w">${k.why ? `<span class="tag">${esc(gap(k))} ${esc(whyTag(k))}</span>` : ""}${whyLink(k)}</div></div>`; }).join("");
@@ -548,7 +548,7 @@ const SUM = {
     const avgTip = k => AVG[k] == null ? null : `비교 평균 ${RATE}\t${AVG[k].toFixed(1)}% (${AVN[k]}개사)`;
     // 분기: 연간 카드와 같은 회사·같은 순서. 분기 자료가 없는 회사는 카드 자리만 두고 비움
     const qCard = c => {
-      const q = c.quarterly, head = `<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}${xaTag(c)}</div>`;
+      const q = c.quarterly, head = `<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}${brandTag(c)}${xaTag(c)}</div>`;
       if (!q?.periods?.length) return card(`${head}<div class="qempty">${c.listed ? "분기 미수집" : "분기 미공시 · 연간만"}</div>`, "fcard", ` data-co="${esc(c.id)}" role="button" tabindex="0"`);
       const cur = q.currency || "KRW", n = q.periods.length, val = k => met === "rv" ? q.revenue?.[k] : met === "op" ? q.operatingIncome?.[k] : q.revenue?.[k] != null && q.costOfSales?.[k] != null ? q.revenue[k] - q.costOfSales[k] : null, ks = [...Array(Math.min(5, n)).keys()].map(j => n - Math.min(5, n) + j);
       const ql = p => `${p.slice(2, 4)}.${p.slice(5)}Q`, yoyI = k => q.periods.indexOf(`${+q.periods[k].slice(0, 4) - 1}${q.periods[k].slice(4)}`);
@@ -572,7 +572,7 @@ const SUM = {
       const tips = ks.map((k, j) => { const p = P[j], pv = j ? P[j - 1][met] : k > 0 ? plAt(a, k - 1)[met] : null;
         return [`${c.name} · ${ys[j]}`, `${MET[met]}\t${big(p[met], cur)}`, p.gpm != null && met === "gp" ? `매출총이익률\t${p.gpm.toFixed(1)}%` : null, pv != null && p[met] != null ? `${met === "rv" ? "매출 성장률" : "전년 대비"}\t${pv > 0 ? sgn(growth(p[met], pv)) : "전년 적자"}` : null,
           met !== "rv" ? `매출\t${big(p.rv, cur)}` : null, p.opm != null && met !== "gp" ? `영업이익률\t${p.opm.toFixed(1)}%` : null, avgTip(ys[j])]; });
-      return card(`<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}${xaTag(c)}</div>
+      return card(`<div style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}${brandTag(c)}${xaTag(c)}</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px"><span style="font-size:28px;font-weight:700">${big(last[met], cur)}</span><span style="font-size:15px;color:${MU};white-space:nowrap">${ys.at(-1)} ${MET[met]}</span>${met === "rv" ? `<span style="font-size:17px;font-weight:700">${pct(last.g, 1, 0)}</span>` : rateNum(last[met === "gp" ? "gp" : "op"], last.rv)}</div>
         ${colChart(vals, ys, { W: 360, H: 130, colors: vals.map((v, i) => v < 0 ? "#9DB5DD" : i === vals.length - 1 ? c.color : "#D5DCE7"), fmt: v => v == null ? "–" : cur === "KRW" ? nf(v) : (Math.abs(v) < 10 ? v.toFixed(1) : nf(v)) + "M", tips })}
         <div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-top:6px;color:${MU}"><span>${RATE}</span><span>${P.map(p => rateCell(met === "gp" ? p.gp : p.op, p.rv)).join(" → ")}</span></div>${avgLine(ys)}
