@@ -18,11 +18,11 @@
     "cosmaxnbt":    { "name": "코스맥스엔비티",   "ticker": "222040.KQ", "dart": "222040", "country": "KR" },
     "novarex":      { "name": "노바렉스",         "ticker": "194700.KQ", "dart": "194700", "country": "KR" },
     "suheung":      { "name": "서흥",             "ticker": "008490.KS", "dart": "008490", "country": "KR", "note": "젤라틴(원료)·화장품 자회사 포함 · 부문 매출이 내부거래 조정 전 금액이라 건기식만 분리하지 않음" },
-    "herbalife":    { "name": "Herbalife",        "ticker": "HLF",       "country": "US" },
-    "usana":        { "name": "USANA Health Sciences", "ticker": "USNA", "country": "US" },
+    "herbalife":    { "name": "Herbalife",        "ticker": "HLF", "cik": "0001180262",       "country": "US" },
+    "usana":        { "name": "USANA Health Sciences", "ticker": "USNA", "cik": "0000896264", "country": "US" },
     "cellbiotech":  {"brand": "듀오락",  "name": "쎌바이오텍",       "ticker": "049960.KQ", "dart": "049960", "country": "KR" },
     "bifido":       { "name": "비피도",           "ticker": "238200.KQ", "dart": "238200", "country": "KR" },
-    "seres":        { "name": "Seres Therapeutics", "ticker": "MCRB",    "country": "US" },
+    "seres":        { "name": "Seres Therapeutics", "ticker": "MCRB", "cik": "0001609809",    "country": "US" },
     "maat":         { "name": "MaaT Pharma",      "ticker": "MAAT.PA",   "country": "FR" }
   },
 

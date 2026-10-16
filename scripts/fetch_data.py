@@ -27,6 +27,7 @@ import krx  # noqa: E402
 import activity  # noqa: E402
 import newsraw  # noqa: E402
 import newsfx  # noqa: E402
+import sec  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config" / "companies.json"
@@ -938,7 +939,15 @@ def main():
                                 e["alt"] = {"basis": "OFS", "annual": a2, "quarterly": q2}
                         except Exception as ex:
                             log_err(f"{c['name']} DART 별도 실패: {ex}")
-                # 재무 숫자는 OpenDART만 사용: Yahoo 재무는 DART가 없는 해외 종목에만
+                # 미국 상장사(config cik): SEC EDGAR 10-K·10-Q 원문 숫자. 실패하면 아래 Yahoo로
+                if c.get("cik") and not c.get("dart"):
+                    try:
+                        e["annual"], q_sec, e["_rnd_sec"] = sec.sec_fin(c["cik"])
+                        if cid in needs_q:
+                            e["quarterly"] = q_sec
+                    except Exception as ex:
+                        log_err(f"{c['name']} SEC EDGAR 실패: {ex}")
+                # 재무 숫자는 OpenDART만 사용: Yahoo 재무는 DART·SEC가 없는 해외 종목에만(또는 SEC 실패 시)
                 if yf_t is not None and not c.get("dart"):
                     e["annual"] = e["annual"] or annual_from_yf(yf_t)
                     if cid in needs_q:
@@ -1003,6 +1012,9 @@ def main():
                     e.update(listed_extras(corp, want_ad, want_rnd, c.get("fs")))
             except Exception as ex:
                 log_err(f"{c['name']} 광고·R&D 실패: {ex}")
+        rnd_sec = e.pop("_rnd_sec", None)
+        if want_rnd and not e.get("rnd") and rnd_sec:
+            e["rnd"] = rnd_sec
         if want_rnd and not e.get("rnd") and yf_t is not None and not c.get("dart"):
             e["rnd"] = rnd_from_yf(yf_t)
         # 광고선전비/매출 계산용 매출액(같은 연도)

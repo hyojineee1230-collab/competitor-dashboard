@@ -581,7 +581,7 @@ const SUM = {
     const yr = cos[0]?.annual?.years?.at(-1) || "";
     const lastQ = per === "q" ? cos.flatMap(c => c.quarterly?.periods || []).sort().at(-1) : null;
     const when = per === "q" ? `최근 5개 분기${lastQ ? ` (~${lastQ.slice(2, 4)}.${lastQ.slice(5)}Q)` : ""}` : `${yr} 사업연도`;
-    return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()}${infoI(`OpenDART ${basisLbl()} 재무제표 · 비교 평균 = 표시된 회사 이익률 단순평균(매출 미미 제외)`)}</span><span class="r">${metBtn}${segBtn}${perBtn}${ofsBtn()}</span></div>
+    return `<div class="ph"><h1>재무</h1><span class="m">${when} · ${basisLbl()}${infoI(`OpenDART ${basisLbl()} 재무제표 · 미국 상장사 SEC EDGAR, 그 외 해외 Yahoo Finance · 비교 평균 = 표시된 회사 이익률 단순평균(매출 미미 제외)`)}</span><span class="r">${metBtn}${segBtn}${perBtn}${ofsBtn()}</span></div>
       <div class="g3">${cards || '<div class="card empty">재무 데이터 없음</div>'}</div>
       ${F.id === "microbiome" ? rndCard(cos) : F.id === "hff" ? adCard(cos, ui) : ""}
       ${sgaCard(cos)}`;

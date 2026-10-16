@@ -39,7 +39,7 @@ GitHub Pages로 호스팅하고, GitHub Actions가 하루 3회 전체 수집 + �
 4. 리포트 화면은 `report/issue.html` 한 파일입니다(이전 메인 보관본은 git 기록에만 남김).
 
 ## 데이터 원칙
-- **국내 재무 숫자는 OpenDART API에서만** 받습니다. 상장사는 `fnlttSinglAcnt`·`fnlttSinglAcntAll`(연결 기본, 별도는 `alt`), 비상장사·주석은 공시 원문(`document.xml`, 연결감사보고서가 있으면 연결 기본). Yahoo 재무는 DART가 없는 해외 종목만 씁니다.
+- **국내 재무 숫자는 OpenDART API에서만** 받습니다. 상장사는 `fnlttSinglAcnt`·`fnlttSinglAcntAll`(연결 기본, 별도는 `alt`), 비상장사·주석은 공시 원문(`document.xml`, 연결감사보고서가 있으면 연결 기본). 미국 상장사(`config` `cik`)는 **SEC EDGAR XBRL**(10-K·10-Q 제출 숫자, 4분기 = 연간 − 1~3분기, 원문 링크 포함, `scripts/sec.py`)에서 받고, 그 외 해외 종목·SEC 실패 시만 Yahoo 재무를 씁니다. SEC는 User-Agent에 '이름 연락처' 형식이 필요합니다(Secrets `SEC_USER_AGENT`로 바꿀 수 있음, 없으면 기본값).
 - 국내 PER·PBR = KRX 시가총액 ÷ OpenDART 당기순이익·자본총계.
 - 수동 정리 문장(`data/summaries.json`)에는 뉴스 출처 재무 숫자를 쓰지 않습니다.
 - 인증키는 GitHub Secrets에만 둡니다. 수집 로그에서도 가려집니다.
@@ -68,7 +68,8 @@ summary/ · detail/             예전 주소 이동용
 config/companies.json          회사 · 그룹(탭) 설정
 config/news_cats.json          기사 유형 규칙
 config/media.json              매체 등급 · 표기 통일
-scripts/fetch_data.py          전체 수집 (OpenDART · KRX · Yahoo)
+scripts/fetch_data.py          전체 수집 (OpenDART · KRX · SEC · Yahoo)
+scripts/sec.py                 미국 상장사 재무 (SEC EDGAR XBRL)
 scripts/dart_audit.py          감사보고서 원문 손익 추출
 scripts/krx.py                 KRX 일별매매·지수 (캐시 data/krx_cache.json)
 scripts/activity.py            기사·공시 목록, 노이즈 필터

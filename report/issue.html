@@ -1136,7 +1136,7 @@ td span.err{font-size:13.5px}
   </div>
 
   <footer>
-    데이터: KRX·Yahoo Finance(시세), OpenDART(정기보고서·감사보고서) · 각 호의 숫자는 기준일에 고정 · 투자 판단의 근거로 사용하지 마십시오.
+    데이터: KRX·Yahoo Finance(시세), OpenDART(정기보고서·감사보고서), SEC EDGAR(미국 상장사 10-K·10-Q) · 각 호의 숫자는 기준일에 고정 · 투자 판단의 근거로 사용하지 마십시오.
   </footer>
 </div>
 
@@ -2605,14 +2605,15 @@ function latestFiling(c){
         const nm = !c.dart ? `${q.source || "Yahoo Finance"} (분기 합산)` : qn === 2 ? "반기보고서" : "분기보고서", mm = String(qn * 3).padStart(2, "0");   // 해외사는 DART 보고서명이 아님
         const d = (c.disclosures || []).find(x => x.title.includes(nm) && x.title.includes(`${yr}.${mm}`));
         return { lab: `${yr.slice(2)}년 ${qn === 2 ? "상반기" : qn === 1 ? "1분기" : "1~3분기"}`, ord: `${yr}Q${qn}`, cur: q.currency || "KRW",
-                 rev: sum("revenue", ix), op: sum("operatingIncome", ix), pRev: sum("revenue", px), pOp: sum("operatingIncome", px), url: d?.url, src: (d?.title || nm).replace(/^\[[^\]]*\]\s*/, "") };
+                 rev: sum("revenue", ix), op: sum("operatingIncome", ix), pRev: sum("revenue", px), pOp: sum("operatingIncome", px),
+                 url: d?.url || q.links?.[last], src: (d?.title || (q.links?.[last] ? `10-Q (${yr}.${mm})` : nm)).replace(/^\[[^\]]*\]\s*/, "") };
       }
     }
   }
   if (!ay) return null;
   const i = a.years.length - 1, d = (c.disclosures || []).find(x => /사업보고서|감사보고서/.test(x.title) && x.title.includes(`${ay}.12`));
   return { lab: `${ay}년`, ord: `${ay}Q4`, cur: a.currency || "KRW", rev: a.revenue?.[i], op: a.operatingIncome?.[i], pRev: a.revenue?.[i - 1], pOp: a.operatingIncome?.[i - 1],
-           url: a.links?.[ay] || d?.url, src: (d?.title || a.source || "").replace(/^\[[^\]]*\]\s*/, "") };
+           url: a.links?.[ay] || d?.url, src: (d?.title || (/SEC/.test(a.source || "") ? `10-K (${ay})` : a.source) || "").replace(/^\[[^\]]*\]\s*/, "") };
 }
 function renderAnnual(){
   ["finPeriod", "metrics", "currency"].forEach(k => $(k).hidden = true);
@@ -2869,7 +2870,7 @@ async function renderIssue(){
   const news = nt ? `<div class="is-pie"><div class="c">${pie3d(pieIt.map(([n, v, c]) => [n, v / nt * 100, c, n === "그 외" ? css("--ink-2") : ""]))}</div>
       <div class="is-leg">${pieIt.map(([n, v, c], i) => `<div data-i="${i}"><b style="background:${c}"></b><span>${esc(n)}</span><span>${v}건</span><span>${(v / nt * 100).toFixed(0)}%</span></div>`).join("")}</div></div>` : "";
   $("secIssue").innerHTML = `<div class="is-hd"><div><span class="is-k">${esc(R.title || "")}${R.pilot ? " · 시범호" : ""}</span><h2>${FIELD_NAME[F] || ""} · 이번 달 인사이트</h2>
-      <p class="hint">기준일 ${d2(R.asOf)} · 주가 ${d2(R.close)} 종가 · 기간 ${d2(R.window?.[0])} ~ ${d2(R.window?.[1])} · 재무는 OpenDART, 주가는 KRX·Yahoo</p></div></div>
+      <p class="hint">기준일 ${d2(R.asOf)} · 주가 ${d2(R.close)} 종가 · 기간 ${d2(R.window?.[0])} ~ ${d2(R.window?.[1])} · 재무는 OpenDART·SEC, 주가는 KRX·Yahoo</p></div></div>
     ${ins?.items?.length ? `<ul class="is-ins">${ins.items.map(x => `<li><b>${esc(x.h)}</b><ul>${String(x.d || "").split(/(?<=\.)\s+(?=\S)/).filter(Boolean).map(z => `<li>${esc(z)}</li>`).join("")}</ul>${srcLinks(x.s)}</li>`).join("")}</ul>` : `<p class="is-none">이번 호 인사이트를 작성 중입니다.</p>`}
     <div class="is-grid${disc ? "" : " n2"}">
       <div class="is-box"><h3>1개월 주가 <span>상장사</span></h3>${moves || '<p class="hint">상장사 없음</p>'}</div>

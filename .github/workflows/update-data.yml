@@ -40,6 +40,7 @@ jobs:
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
           KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}   # 선택: '이름 연락처' (없으면 기본값)
         run: python scripts/fetch_data.py
 
       - name: Commit if changed
