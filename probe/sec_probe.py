@@ -9,8 +9,13 @@ TAGS = ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "Reve
         "CostOfRevenue", "CostOfGoodsAndServicesSold", "CostOfGoodsSold",
         "OperatingIncomeLoss", "NetIncomeLoss", "GrossProfit", "ResearchAndDevelopmentExpense", "SellingGeneralAndAdministrativeExpense"]
 out = {}
-tick = get("https://www.sec.gov/files/company_tickers.json")
-cik = {v["ticker"]: str(v["cik_str"]).zfill(10) for v in tick.values()}
+cik = {"HLF": "0001180262", "USNA": "0000896264", "MCRB": "0001609809"}
+try:
+    tick = get("https://www.sec.gov/files/company_tickers.json")
+    cik.update({v["ticker"]: str(v["cik_str"]).zfill(10) for v in tick.values() if v["ticker"] in cik})
+    out["_tickers"] = "ok"
+except Exception as e:
+    out["_tickers"] = repr(e)
 for t in ["HLF", "USNA", "MCRB"]:
     c = cik.get(t); res = {"cik": c}
     try:
