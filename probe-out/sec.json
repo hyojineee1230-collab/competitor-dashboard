@@ -1,0 +1,15 @@
+{
+"_tickers": "<HTTPError 403: 'Forbidden'>",
+"HLF": {
+"cik": "0001180262",
+"error": "<HTTPError 403: 'Forbidden'>"
+},
+"USNA": {
+"cik": "0000896264",
+"error": "<HTTPError 403: 'Forbidden'>"
+},
+"MCRB": {
+"cik": "0001609809",
+"error": "<HTTPError 403: 'Forbidden'>"
+}
+}
