@@ -522,3 +522,11 @@ td .est{font-size:11px;font-weight:700;color:#7A5A12;background:#F3EAD7;border-r
 .tl-t b .dot{margin-right:5px}
 .tl-t small{display:block;color:var(--muted);font-size:13px}
 .tl-m{margin:6px 0 0;font-size:13px;color:var(--muted)}
+
+/* 시장: 출처 번호(누르면 원문)와 접힌 출처 목록 */
+.srcn{font-size:13px;font-weight:600;margin-left:3px;vertical-align:baseline;position:relative;top:-.45em;white-space:nowrap}
+.srcn a,.srcn span{color:var(--accent);text-decoration:none}
+.srcn a:hover{text-decoration:underline}
+.mk-src{margin-top:4px}
+.mk-src ol{margin:6px 0 0;padding-left:28px;font-size:14px;line-height:1.7;color:var(--ink-2)}
+.mk-src ol a{color:inherit}

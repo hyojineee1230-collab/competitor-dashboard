@@ -587,23 +587,29 @@ const SUM = {
   /* ---------- 시장 ---------- */
   async market(F, ui){
     const reg = ui.reg || "kr", m = F.mk[reg] || {};
+    // 출처 번호: market.json 의 s(0부터) → [s+1], 누르면 원문. 화면에 쓴 출처만 아래 목록에(번호는 리포트와 같음)
+    const SRC = m.sources || [], used = new Set();
+    const sref = s => { const ix = (Array.isArray(s) ? s : [s]).filter(i => Number.isInteger(i) && SRC[i]); if (!ix.length) return "";
+      ix.forEach(i => used.add(i));
+      return `<sup class="srcn">${ix.map(i => SRC[i].url ? `<a href="${esc(SRC[i].url)}" target="_blank" rel="noopener" title="${esc(SRC[i].t)}">[${i + 1}]</a>` : `<span title="${esc(SRC[i].t)}">[${i + 1}]</span>`).join("")}</sup>`; };
     const regBtn = `<span class="seg">${[["kr", "국내"], ["global", "해외"]].filter(([k]) => F.mk[k]).map(([k, l]) => `<button data-ui="reg=${k}" aria-pressed="${k === reg}">${l}</button>`).join("")}</span>`;
-    const kp = (m.size?.kpis || []).slice(0, 3).map(k => card(`<div style="font-size:15px;color:${MU}">${esc(k.label)}</div><div style="font-size:30px;font-weight:700;margin:4px 0;letter-spacing:-.02em">${esc(k.value)}</div><div style="font-size:15px;font-weight:600;color:${/\+/.test(k.sub || "") ? UP : MU}">${esc(k.sub || "")}</div>`)).join("");
+    const kp = (m.size?.kpis || []).slice(0, 3).map(k => card(`<div style="font-size:15px;color:${MU}">${esc(k.label)}${sref(k.s)}</div><div style="font-size:30px;font-weight:700;margin:4px 0;letter-spacing:-.02em">${esc(k.value)}</div><div style="font-size:15px;font-weight:600;color:${/\+/.test(k.sub || "") ? UP : MU}">${esc(k.sub || "")}</div>`)).join("");
     const ser = m.size?.series?.[0];
     let trend = "";
     if (ser?.points?.length > 1){
       const v = ser.points.map(p => p[1]), u = m.size.unit ? ` ${m.size.unit}` : "";
-      trend = card(`<h2>시장 규모 추이<small>${esc(m.size.unit || "")} · ${esc(ser.name)}</small></h2>${colChart(v, ser.points.map(p => p[0]), { H: 300, unit: u, subs: v.map((x, i) => i ? (() => { const g = growth(x, v[i - 1]); return `${g > 0 ? "+" : g < 0 ? "−" : ""}${Math.abs(g).toFixed(1)}%`; })() : "") })}`);
+      trend = card(`<h2>시장 규모 추이${sref(ser.s ?? m.size.s)}<small>${esc(m.size.unit || "")} · ${esc(ser.name)}</small></h2>${colChart(v, ser.points.map(p => p[0]), { H: 300, unit: u, subs: v.map((x, i) => i ? (() => { const g = growth(x, v[i - 1]); return `${g > 0 ? "+" : g < 0 ? "−" : ""}${Math.abs(g).toFixed(1)}%`; })() : "") })}`);
     }
     const CH_PAL = ["#2B5CA8", "#2B8A7E", "#D08A3C", "#7A5AD0", "#C46A6A", "#5B7DB1", "#8AA34B"], isRestCh = n => /(기타|그 외|미공개)/.test(n);
     const chItems = (() => { const it = m.channels?.items || [], rest = it.filter(([n]) => isRestCh(n));
       return rest.length < 2 ? it : [...it.filter(([n]) => !isRestCh(n)), ["그 외", rest.reduce((t, x) => t + x[1], 0), rest.map(([n, v]) => `${n} ${v.toFixed(1)}%`).join(" · ")]]; })();
-    const chs = chItems.length ? card(`<h2>판매 채널 비중<small>${esc(m.channels.title || "")}</small></h2>${donut(chItems.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v, sub], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`, sub || null] })))}`, "dnut-card") : "";
-    const sh = m.share?.items?.length ? card(`<h2>품목 비중<small>${esc(m.share.title || "")}</small></h2><div style="display:flex;height:40px;border-radius:6px;overflow:hidden;font-size:15px;font-weight:700">${m.share.items.map((x, i) => `<span${tipA([x.name, `비중\t${x.pct}%`])} style="width:${x.pct}%;background:${["#A0522D", "#2B8A7E", "#D3DAE5"][i] || "#B4BFCF"};color:${i < 2 ? "#fff" : "#4A5568"};display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden">${esc(x.name.length > 22 ? x.name.slice(0, 20) + "…" : x.name)} ${x.pct}%</span>`).join("")}</div>`) : "";
-    const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}</span></div>`).join("")}</div>`);
+    const chs = chItems.length ? card(`<h2>판매 채널 비중${sref(m.channels.s)}<small>${esc(m.channels.title || "")}</small></h2>${donut(chItems.slice().sort((a, b) => isRestCh(a[0]) - isRestCh(b[0]) || b[1] - a[1]).map(([n, v, sub], i) => ({ label: n.replace(/\(.*\)/, ""), color: isRestCh(n) ? "#C3CEDF" : CH_PAL[i % CH_PAL.length], v, tip: [n, `비중\t${v.toFixed(1)}%`, sub || null] })))}`, "dnut-card") : "";
+    const sh = m.share?.items?.length ? card(`<h2>품목 비중${sref(m.share.s)}<small>${esc(m.share.title || "")}</small></h2><div style="display:flex;height:40px;border-radius:6px;overflow:hidden;font-size:15px;font-weight:700">${m.share.items.map((x, i) => `<span${tipA([x.name, `비중\t${x.pct}%`])} style="width:${x.pct}%;background:${["#A0522D", "#2B8A7E", "#D3DAE5"][i] || "#B4BFCF"};color:${i < 2 ? "#fff" : "#4A5568"};display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden">${esc(x.name.length > 22 ? x.name.slice(0, 20) + "…" : x.name)} ${x.pct}%</span>`).join("")}</div>`) : "";
+    const pipe = !m.brands || m.brands.layout === "grouped" ? "" : card(`<h2>${esc(m.brands.title || "")}</h2><div style="display:flex;flex-direction:column">${m.brands.rows.slice(0, 7).map(r => `<div class="prow"><b>${esc(r[0])}</b><span>${esc(r[1])} <span class="mu">· ${esc(r[2])}</span></span><span style="text-align:right">${esc(r[3])}${typeof r.at(-1) === "number" ? sref(r.at(-1)) : ""}</span></div>`).join("")}</div>`);
     const upd = ser?.points?.length ? `${ser.points.at(-1)[0]}년 기준` : `${md(D.market?.updatedAt)} 정리`;
     return `<div class="ph"><h1>시장</h1><span class="m">${esc(m.label || F.name)} · ${upd}</span><span class="r">${regBtn}</span></div>
-      ${kp ? `<div class="g3">${kp}</div>` : ""}${trend || chs ? `<div class="g2">${trend}${chs}</div>` : ""}${sh}${pipe}`;
+      ${kp ? `<div class="g3">${kp}</div>` : ""}${trend || chs ? `<div class="g2">${trend}${chs}</div>` : ""}${sh}${pipe}
+      ${used.size ? `<div class="mk-src">${fold(`mk-src-${F.id}-${reg}`, `출처 ${used.size}건`, `<ol>${[...used].sort((a, b) => a - b).map(i => `<li value="${i + 1}">${SRC[i].url ? `<a href="${esc(SRC[i].url)}" target="_blank" rel="noopener">${esc(SRC[i].t)} ↗</a>` : esc(SRC[i].t)}</li>`).join("")}</ol>`)}</div>` : ""}`;
   },
 
   /* ---------- 공시·기사 ---------- */
